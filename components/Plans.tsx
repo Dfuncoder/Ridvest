@@ -47,14 +47,14 @@ const plans = [
 
 export default function Plans() {
   return (
-    <section id="plans" style={{ padding: "72px 40px", background: "#f0f6ff" }}>
+    <section id="plans" style={{ padding: "clamp(40px, 8vw, 72px) 20px", background: "#f0f6ff" }}>
       <div style={{ textAlign: "center", marginBottom: 52 }}>
         <div style={{ fontSize: 12, color: "#2563a8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>Investment plans</div>
-        <h2 style={{ fontSize: 36, fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Choose your stake</h2>
+        <h2 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Choose your stake</h2>
         <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>All plans include full asset management, verified drivers, and monthly payouts.</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
         {plans.map((plan) => (
           <div
             key={plan.name}

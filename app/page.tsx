@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Counters from "@/components/Counters";
 import Plans from "@/components/Plans";
+import InvestmentCards from "@/components/InvestmentCards";
 import VehicleLineup from "@/components/VehicleLineup";
 import { HowItWorks, WhyRidvest } from "@/components/Sections";
 import Calculator from "@/components/Calculator";
@@ -19,7 +20,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Counters />
-      <Plans />
+      <InvestmentCards />
       <VehicleLineup />
       <HowItWorks />
       <Calculator />

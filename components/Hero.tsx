@@ -8,7 +8,7 @@ export default function Hero() {
         minHeight: "92vh",
         display: "flex",
         alignItems: "center",
-        padding: "80px 40px",
+        padding: "clamp(60px, 10vw, 80px) 20px",
         position: "relative",
         overflow: "hidden",
       }}
@@ -18,9 +18,9 @@ export default function Hero() {
       <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "#f59e0b", bottom: -150, left: -100, filter: "blur(80px)", opacity: 0.10, pointerEvents: "none" }} />
 
       <div
+        className="hero-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
           gap: 60,
           alignItems: "center",
           maxWidth: 1100,
@@ -60,7 +60,7 @@ export default function Hero() {
 
           <h1
             style={{
-              fontSize: 52,
+              fontSize: "clamp(32px, 5vw, 52px)",
               fontWeight: 800,
               color: "#fff",
               lineHeight: 1.1,
@@ -86,7 +86,7 @@ export default function Hero() {
             monthly returns — fully managed, asset-backed, and transparent.
           </p>
 
-          <div style={{ display: "flex", gap: 12 }}>
+          <div className="hero-btns" style={{ display: "flex", gap: 12 }}>
             <button
               onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
               style={{
@@ -126,7 +126,7 @@ export default function Hero() {
         </div>
 
         {/* Right: card with keke image + floating stats */}
-        <div style={{ position: "relative" }}>
+        <div className="hero-visual" style={{ position: "relative" }}>
           <div
             style={{
               background: "rgba(255,255,255,0.05)",
@@ -185,8 +185,29 @@ export default function Hero() {
       </div>
 
       <style>{`
+        .hero-grid {
+          grid-template-columns: 1fr 1fr;
+        }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @media (max-width: 991px) {
+          .hero-grid {
+            grid-template-columns: 1fr;
+            text-align: center;
+          }
+          .hero-grid p {
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .hero-btns {
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          .hero-visual {
+            max-width: 500px;
+            margin: 0 auto;
+          }
+        }
       `}</style>
     </section>
   );

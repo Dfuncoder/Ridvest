@@ -46,7 +46,7 @@ export default function Counters() {
   return (
     <>
       {/* Amber strip */}
-      <div style={{ background: "#f59e0b", padding: "20px 40px", display: "flex", justifyContent: "center", gap: 60, flexWrap: "wrap" }}>
+      <div style={{ background: "#f59e0b", padding: "20px 20px", display: "flex", justifyContent: "center", gap: "20px 60px", flexWrap: "wrap" }}>
         {[
           { label: "TOTAL INVESTED", value: fmtCurrency(invested) },
           { label: "INVESTORS ONBOARDED", value: teams.toLocaleString() },
@@ -54,21 +54,21 @@ export default function Counters() {
           { label: "TOTAL PAYOUTS MADE", value: fmtCurrency(payouts) },
         ].map((s) => (
           <div key={s.label} style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "#0d2137" }}>{s.value}</div>
+            <div style={{ fontSize: "clamp(20px, 4vw, 28px)", fontWeight: 800, color: "#0d2137" }}>{s.value}</div>
             <div style={{ fontSize: 12, color: "rgba(13,33,55,0.65)", fontWeight: 600, letterSpacing: "0.5px", marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Counter cards */}
-      <section ref={ref} style={{ padding: "72px 40px", background: "#fff" }}>
+      <section ref={ref} style={{ padding: "clamp(40px, 8vw, 72px) 20px", background: "#fff" }}>
         <div style={{ textAlign: "center", marginBottom: 52 }}>
           <div style={{ fontSize: 12, color: "#2563a8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>By the numbers</div>
-          <h2 style={{ fontSize: 36, fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Growing every day</h2>
+          <h2 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Growing every day</h2>
           <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>Real numbers from real investors earning real returns on Nigeria's roads.</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24, maxWidth: 800, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
           {[
             { icon: "💰", value: fmtCurrency(invested), label: "TOTAL MONEY INVESTED" },
             { icon: "👥", value: teams.toLocaleString(), label: "TEAMS / INVESTORS FORMED" },
