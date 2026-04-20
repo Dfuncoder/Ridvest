@@ -31,7 +31,7 @@ export function Footer() {
         </span>
         <div style={{ fontSize: 12, color: "#334155", marginTop: 4 }}>Invest. Ride. Earn.</div>
       </div>
-      <p style={{ fontSize: 12, color: "#334155" }}>© 2025 Ridvest Ltd. Ogidi, Anambra State, Nigeria.</p>
+      <p style={{ fontSize: 12, color: "#334155" }}>© 2026 Ridvest Ltd. Ogidi, Anambra State, Nigeria.</p>
       <div style={{ display: "flex", gap: 20 }}>
         {["Privacy", "Terms", "FAQ", "Contact"].map((l) => (
           <a key={l} href="#" style={{ fontSize: 12, color: "#475569", textDecoration: "none" }}>{l}</a>
