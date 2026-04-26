@@ -8,7 +8,7 @@ export default function Hero() {
         minHeight: "92vh",
         display: "flex",
         alignItems: "center",
-        padding: "clamp(60px, 10vw, 80px) 20px",
+        padding: "clamp(80px, 12vw, 120px) 20px",
         position: "relative",
         overflow: "hidden",
       }}
@@ -30,37 +30,13 @@ export default function Hero() {
       >
         {/* Left: text */}
         <div>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(245,158,11,0.12)",
-              border: "1px solid rgba(245,158,11,0.35)",
-              color: "#fbbf24",
-              fontSize: 12,
-              padding: "6px 14px",
-              borderRadius: 100,
-              marginBottom: 24,
-              letterSpacing: 1,
-              fontWeight: 600,
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#f59e0b",
-                animation: "pulse 1.5s infinite",
-              }}
-            />
-            NOW LIVE IN ANAMBRA STATE
-          </div>
+          
+            
+          
 
           <h1
             style={{
-              fontSize: "clamp(32px, 5vw, 52px)",
+              fontSize: "clamp(36px, 6vw, 56px)",
               fontWeight: 800,
               color: "#fff",
               lineHeight: 1.1,
@@ -75,7 +51,7 @@ export default function Hero() {
 
           <p
             style={{
-              fontSize: 17,
+              fontSize: "clamp(15px, 2vw, 17px)",
               color: "#94a3b8",
               lineHeight: 1.75,
               marginBottom: 36,
@@ -86,7 +62,7 @@ export default function Hero() {
             monthly returns — fully managed, asset-backed, and transparent.
           </p>
 
-          <div className="hero-btns" style={{ display: "flex", gap: 12 }}>
+          <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button
               onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
               style={{
@@ -126,7 +102,7 @@ export default function Hero() {
         </div>
 
         {/* Right: card with keke image + floating stats */}
-        <div className="hero-visual" style={{ position: "relative" }}>
+        <div className="hero-visual" style={{ position: "relative", width: "100%" }}>
           <div
             style={{
               background: "rgba(255,255,255,0.05)",
@@ -137,7 +113,7 @@ export default function Hero() {
             }}
           >
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Keke_Napep_in_Ibadan.jpg/1280px-Keke_Napep_in_Ibadan.jpg"
+              src="/header_image.png"
               alt="Keke Napep"
               style={{ width: "100%", borderRadius: 14, height: 220, objectFit: "cover", display: "block" }}
             />
@@ -147,7 +123,7 @@ export default function Hero() {
           <div
             style={{
               position: "absolute",
-              top: -20,
+              top: -10,
               right: -10,
               background: "rgba(13,33,55,0.92)",
               border: "0.5px solid rgba(255,255,255,0.15)",
@@ -166,7 +142,7 @@ export default function Hero() {
           <div
             style={{
               position: "absolute",
-              bottom: -16,
+              bottom: -10,
               left: -10,
               background: "rgba(13,33,55,0.92)",
               border: "0.5px solid rgba(255,255,255,0.15)",

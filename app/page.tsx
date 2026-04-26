@@ -2,9 +2,10 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Counters from "@/components/Counters";
 import Plans from "@/components/Plans";
+import AboutUs from "@/components/AboutUs";
+import HowItWorks from "@/components/HowItWorks";
 import InvestmentCards from "@/components/InvestmentCards";
 import VehicleLineup from "@/components/VehicleLineup";
-import { HowItWorks, WhyRidvest } from "@/components/Sections";
 import Calculator from "@/components/Calculator";
 import { CTABanner, Footer } from "@/components/Footer";
 
@@ -19,12 +20,10 @@ export default function Home() {
     <main>
       <Navbar />
       <Hero />
-      <Counters />
-      <InvestmentCards />
-      <VehicleLineup />
+      <AboutUs />
       <HowItWorks />
+      <VehicleLineup />
       <Calculator />
-      <WhyRidvest />
       <CTABanner />
       <Footer />
     </main>

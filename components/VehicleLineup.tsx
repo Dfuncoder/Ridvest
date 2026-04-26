@@ -1,19 +1,19 @@
 const vehicles = [
   {
     name: "🛺 Keke Napep",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Keke_Napep_in_Ibadan.jpg/1280px-Keke_Napep_in_Ibadan.jpg",
+    img: "/header_image.png",
     status: "live",
     label: "Live now",
   },
   {
     name: "🚌 Mini Buses",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Lagos_danfo.jpg/1280px-Lagos_danfo.jpg",
+    img: "/minibus_image.png",
     status: "soon",
     label: "Coming soon",
   },
   {
     name: "🏍️ Motorcycles",
-    img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Okada_riders_in_Lagos.jpg/1280px-Okada_riders_in_Lagos.jpg",
+    img: "/delivery_cycle_image.png",
     status: "soon",
     label: "Coming soon",
   },
