@@ -154,7 +154,7 @@ export default function Hero() {
             }}
           >
             <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Annual ROI</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>25%</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>50%</div>
             <div style={{ fontSize: 11, color: "#f59e0b" }}>Fixed rate · Asset-backed</div>
           </div>
         </div>

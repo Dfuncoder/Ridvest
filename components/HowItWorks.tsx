@@ -47,8 +47,8 @@ const steps = [
   },
   {
     n: "02",
-    title: "Pick how you want to invest",
-    desc: "Own a keke outright on your own, or join a public or private pool with others from as little as ₦100,000.",
+    title: "Create or Join a Pool",
+    desc: "Own a Tricycle (keke) outright on your own, or join a public or private pool with others from as little as ₦100,000.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
@@ -78,7 +78,7 @@ const steps = [
   {
     n: "05",
     title: "Collect weekly returns",
-    desc: "Every week, your interest and capital are paid directly to your dashboard — steadily, over 12 months. Track every payout live on your dashboard.",
+    desc: "Every week, your interest and capital are paid directly to your dashboard — steadily, over 78 Weeks. Track every payout live on your dashboard.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
@@ -88,7 +88,7 @@ const steps = [
   {
     n: "06",
     title: "Reinvest",
-    desc: "Once your 12-month cycle is complete, choose what's next — reinvest or join a new pool.",
+    desc: "Once your 78 Weeks cycle is complete, choose what's next — reinvest or join a new pool.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -125,10 +125,10 @@ const poolTypes = [
 ];
 
 const timeline = [
-  { when: "Day 1", title: "Investment confirmed", sub: "Keke acquired, driver assigned" },
-  { when: "Week 1–51", title: "Weekly returns paid", sub: "Directly to your dashboard, every 7 days" },
-  { when: "Week 52", title: "Final payout", sub: "Your last payment. Cycle complete." },
-  { when: "After year 1", title: "Your choice", sub: "Reinvest or join a new pool." },
+  { when: "Day 1", title: "Investment confirmed", sub: "Tricycle (Keke) acquired, driver assigned" },
+  { when: "Week 1–78", title: "Weekly returns paid", sub: "Directly to your dashboard, every 7 days" },
+  { when: "Week 78", title: "Final payout", sub: "Your last payment. Cycle complete." },
+  { when: "After 1.5 years", title: "Your choice", sub: "Reinvest or join a new pool." },
 ];
 
 export default function HowItWorks() {
@@ -149,7 +149,7 @@ export default function HowItWorks() {
               to <span className="text-blue-600">earning.</span>
             </h2>
             <p className="text-lg text-slate-500 leading-relaxed">
-              No keke driving. No operations. No headaches. You handle the money — we handle everything else.
+              No Tricycle (keke) driving. No operations. No headaches. You handle the money — we handle everything else.
             </p>
           </div>
         </FadeUp>
@@ -193,7 +193,7 @@ export default function HowItWorks() {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-slate-900 mb-1">Full ownership</div>
-                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full keke cost yourself. You own it alone and keep all the returns.</div>
+                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full Tricycle (keke) cost yourself. You own it alone and keep all the returns.</div>
                   </div>
                 </div>
 
@@ -220,8 +220,8 @@ export default function HowItWorks() {
             <div className="bg-[#0d2137] rounded-2xl p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400 opacity-[0.05] blur-3xl rounded-full pointer-events-none" />
 
-              <h3 className="text-lg font-extrabold text-white mb-2">The 12-month cycle</h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-8">Every investment — pool or full ownership — runs for exactly one year.</p>
+              <h3 className="text-lg font-extrabold text-white mb-2">The 78 Weeks cycle</h3>
+              <p className="text-slate-400 text-sm leading-relaxed mb-8">Every investment — pool or full ownership — runs for exactly 1.5 years.</p>
 
               <div className="flex flex-col">
                 {timeline.map((t, i) => (

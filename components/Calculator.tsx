@@ -6,9 +6,9 @@ async function fetchRate(): Promise<number> {
   try {
     const res = await fetch("/api/interest-rate");
     const data = await res.json();
-    return data.rate ?? 0.25;
+    return data.rate ?? 0.5;
   } catch {
-    return 0.25;
+    return 0.5;
   }
 }
 
@@ -17,14 +17,15 @@ function fmt(n: number) {
 }
 
 export default function Calculator() {
-  const [rate, setRate] = useState(0.25);
+  const [rate, setRate] = useState(0.5);
   const [amount, setAmount] = useState("");
 
   useEffect(() => { fetchRate().then(setRate); }, []);
 
   const amt = parseFloat(amount) || 0;
   const yearly = amt + amt * rate;
-  const weekly = yearly / 52;
+  const monthly = yearly / 18;
+  const weekly = yearly / 78;
   const hasValue = amt > 0;
 
   return (
@@ -54,14 +55,15 @@ export default function Calculator() {
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#dcfce7", color: "#15803d", fontSize: 10, padding: "3px 8px", borderRadius: 100, fontWeight: 700 }}>● LIVE</span>
               Annual rate
             </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{(rate * 100).toFixed(0)}% per annum</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{(rate * 100).toFixed(0)}% ROI</div>
           </div>
 
           {hasValue ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
               {[
                 { label: "Weekly profit", value: fmt(weekly), accent: true },
-                { label: "Yearly profit", value: fmt(yearly) },
+                { label: "Monthly profit", value: fmt(monthly), accent: true },
+                { label: "Total profit", value: fmt(yearly) },
               ].map((r) => (
                 <div key={r.label} style={{ background: "#0d2137", borderRadius: 16, padding: "24px 20px", textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: "#64748b", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>{r.label}</div>

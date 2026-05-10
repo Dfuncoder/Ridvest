@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -24,7 +25,12 @@ export default function Navbar() {
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2">
+      <Link
+        href="/"
+        onClick={() => setMenuOpen(false)}
+        className="flex items-center gap-2 hover:opacity-90 transition-opacity focus:outline-none"
+        aria-label="Ridvest Home"
+      >
         <svg width="32" height="32" viewBox="0 0 36 36">
           <rect width="36" height="36" rx="8" fill="#1a3a5c" />
           <rect x="6" y="14" width="22" height="12" rx="4" fill="#2563a8" />
@@ -40,7 +46,7 @@ export default function Navbar() {
         <span className="text-white font-extrabold text-xl tracking-tight">
           Rid<span className="text-yellow-500">vest</span>
         </span>
-      </div>
+      </Link>
 
       {/* Mobile Toggle */}
       <button
@@ -58,6 +64,13 @@ export default function Navbar() {
             : "hidden md:flex"
         }`}
       >
+        <Link
+          href="/"
+          onClick={() => setMenuOpen(false)}
+          className="text-sm text-white/70 hover:text-white transition-colors cursor-pointer"
+        >
+          Home
+        </Link>
         {[
           { label: "About Us", id: "about" },
           { label: "How it works", id: "hiw" },

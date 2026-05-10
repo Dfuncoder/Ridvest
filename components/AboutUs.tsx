@@ -60,7 +60,7 @@ const features = [
       </svg>
     ),
     title: "Capital protected",
-    desc: "After 12 months of earning, your original investment is returned to you in full.",
+    desc: "After 78 Weeks of earning, your original investment is returned to you in full.",
   },
   {
     icon: (
@@ -70,7 +70,7 @@ const features = [
       </svg>
     ),
     title: "Real, physical asset",
-    desc: "Your investment is backed by an actual keke on actual Nigerian roads — not a digital promise.",
+    desc: "Your investment is backed by an actual Tricycle (Keke) —  on actual Nigerian roads — not a digital promise.",
   },
 ];
 
@@ -137,7 +137,7 @@ export default function AboutUs() {
                   We remove every <span className="text-amber-400">barrier.</span>
                 </h3>
                 <p className="text-slate-400 text-sm leading-relaxed mb-8">
-                  Buying and running a keke is expensive and stressful. We handle every part of the operation so you never have to worry about it.
+                  Buying and running a Tricycle (Keke) is expensive and stressful. We handle every part of the operation so you never have to worry about it.
                 </p>
 
                 <ul className="space-y-4 mb-8">
