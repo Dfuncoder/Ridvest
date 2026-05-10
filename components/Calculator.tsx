@@ -23,8 +23,8 @@ export default function Calculator() {
   useEffect(() => { fetchRate().then(setRate); }, []);
 
   const amt = parseFloat(amount) || 0;
-  const yearly = amt * rate;
-  const monthly = yearly / 12;
+  const yearly = amt + amt * rate;
+  const weekly = yearly / 52;
   const hasValue = amt > 0;
 
   return (
@@ -43,7 +43,7 @@ export default function Calculator() {
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 200000"
+              placeholder="e.g. 100000"
               min={100000}
               style={{ width: "100%", padding: "16px 20px", border: "1.5px solid #e2e8f0", borderRadius: 14, fontSize: 20, fontWeight: 700, color: "#0d2137", fontFamily: "inherit", outline: "none" }}
             />
@@ -60,7 +60,7 @@ export default function Calculator() {
           {hasValue ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
               {[
-                { label: "Monthly profit", value: fmt(monthly), accent: true },
+                { label: "Weekly profit", value: fmt(weekly), accent: true },
                 { label: "Yearly profit", value: fmt(yearly) },
               ].map((r) => (
                 <div key={r.label} style={{ background: "#0d2137", borderRadius: 16, padding: "24px 20px", textAlign: "center" }}>

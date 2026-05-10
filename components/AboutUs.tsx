@@ -50,8 +50,8 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
       </svg>
     ),
-    title: "Monthly payouts",
-    desc: "Returns hit your bank account every 30 days — consistent, predictable, no chasing anyone.",
+    title: "Weekly payouts",
+    desc: "Returns hit your bank account every 7 days — consistent, predictable, no chasing anyone.",
   },
   {
     icon: (
@@ -105,11 +105,11 @@ export default function AboutUs() {
                 your street.
               </h2>
               <p className="text-lg sm:text-xl text-slate-600 leading-relaxed font-medium mb-5">
-                Keke napeps have moved millions of Nigerians for decades. They run every day, earn every day, and stop for nothing. But everyday people never had a clean way to profit from them.
+                Transport vehicles have moved millions of Nigerians for decades. They run every day, earn every day, and stop for nothing. Yet for the everyday Nigerian, a structured way to profit from them has never existed, until now.
               </p>
-              <p className="text-base text-slate-500 leading-relaxed">
-                Ridvest changes that. We built the structure so you can own a stake in a keke, collect monthly returns for a year, and walk away with your capital intact — without touching a steering wheel.
-              </p>
+              {/*<p className="text-base text-slate-500 leading-relaxed">
+                Ridvest changes that. We built the structure so you can own a stake in a transport vehicle, collect monthly returns for a year, and walk away with your capital intact; without touching a steering wheel.
+              </p>*/}
             </FadeUp>
 
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">

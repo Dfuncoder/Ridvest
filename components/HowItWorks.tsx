@@ -67,8 +67,8 @@ const steps = [
   },
   {
     n: "04",
-    title: "We acquire and deploy",
-    desc: "We buy the keke, vet and assign a verified driver, and handle all operations from day one. You just get updates.",
+    title: "We deploy",
+    desc: "We vet and assign a verified driver, and handle all operations from day one. You just get updates.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
@@ -77,8 +77,8 @@ const steps = [
   },
   {
     n: "05",
-    title: "Collect monthly returns",
-    desc: "Every month for 12 months, your returns are paid directly to your bank. Track everything live on your dashboard.",
+    title: "Collect weekly returns",
+    desc: "Every week, your interest and capital are paid directly to your dashboard — steadily, over 12 months. Track every payout live on your dashboard.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
@@ -87,8 +87,8 @@ const steps = [
   },
   {
     n: "06",
-    title: "Get your capital back",
-    desc: "At month 12, your original investment is returned in full. Then you choose — reinvest, join a new pool, or exit.",
+    title: "Reinvest",
+    desc: "Once your 12-month cycle is complete, choose what's next — reinvest or join a new pool.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -126,9 +126,9 @@ const poolTypes = [
 
 const timeline = [
   { when: "Day 1", title: "Investment confirmed", sub: "Keke acquired, driver assigned" },
-  { when: "Month 1–11", title: "Monthly returns paid", sub: "Directly to your bank, every 30 days" },
-  { when: "Month 12", title: "Final payout + capital back", sub: "Your original money returned in full" },
-  { when: "After year 1", title: "Your choice", sub: "Reinvest, join a new pool, or exit" },
+  { when: "Week 1–51", title: "Weekly returns paid", sub: "Directly to your dashboard, every 7 days" },
+  { when: "Week 52", title: "Final payout", sub: "Your last payment. Cycle complete." },
+  { when: "After year 1", title: "Your choice", sub: "Reinvest or join a new pool." },
 ];
 
 export default function HowItWorks() {

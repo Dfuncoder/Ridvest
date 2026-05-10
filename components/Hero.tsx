@@ -46,7 +46,7 @@ export default function Hero() {
           >
             Turn{" "}
             <span style={{ color: "#f59e0b" }}>₦100k</span>{" "}
-            into a keke that earns for you
+            into an asset that earns for you
           </h1>
 
           <p
@@ -58,8 +58,8 @@ export default function Hero() {
               maxWidth: 480,
             }}
           >
-            Ridvest lets everyday Nigerians co-invest in tricycles and earn consistent
-            monthly returns — fully managed, asset-backed, and transparent.
+            Ridvest lets everyday Nigerians co-invest in transport vehicles and earn consistent
+            weekly returns — fully managed, asset-backed, and transparent.
           </p>
 
           <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -119,7 +119,7 @@ export default function Hero() {
             />
           </div>
 
-          {/* Floating card 1 */}
+          {/* Floating card 1 
           <div
             style={{
               position: "absolute",
@@ -133,10 +133,10 @@ export default function Hero() {
               animation: "float 3s ease-in-out infinite",
             }}
           >
-            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Monthly payout</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>₦4,167</div>
-            <div style={{ fontSize: 11, color: "#f59e0b" }}>↑ on ₦200k invested</div>
-          </div>
+            {/*<div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Weekly Payout</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>₦2,400</div>
+            <div style={{ fontSize: 11, color: "#f59e0b" }}>↑ on ₦100k invested</div>
+          </div>*/}
 
           {/* Floating card 2 */}
           <div
