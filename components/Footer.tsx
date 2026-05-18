@@ -1,8 +1,9 @@
 "use client";
+import Link from "next/link";
+
 export function CTABanner() {
   return (
     <section className="relative bg-[#0d2137] py-24 px-6 overflow-hidden">
-      {/* Background glows */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-10 pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-amber-400 rounded-full blur-[100px] opacity-10 pointer-events-none" />
 
@@ -11,14 +12,12 @@ export function CTABanner() {
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
           <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Limited slots available</span>
         </div>
-
         <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight mb-5">
           Your asset is waiting.
         </h2>
         <p className="text-lg text-blue-200 leading-relaxed mb-10 max-w-xl mx-auto">
           Join early investors earning from Nigeria's busiest transport sector. Start with as little as ₦100,000 today.
         </p>
-
         <div className="flex flex-wrap gap-4 justify-center">
           <button className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20">
             Create free account →
@@ -71,18 +70,18 @@ const socials = [
 ];
 
 const navLinks = [
-  { label: "Home", href: "#" },
-  { label: "How it works", href: "#hiw" },
-  { label: "Invest now", href: "#invest" },
-  { label: "Returns calculator", href: "#calc" },
-  { label: "About us", href: "#about" },
+  { label: "Home", href: "/" },
+  { label: "How it works", href: "/#hiw" },
+  { label: "Invest now", href: "/#invest" },
+  { label: "Returns calculator", href: "/#calc" },
+  { label: "About us", href: "/#about" },
 ];
 
 const resources = [
-  { label: "Terms of service", href: "#" },
-  { label: "Privacy policy", href: "#" },
-  { label: "FAQ", href: "#" },
-  { label: "Investment risks", href: "#" },
+  { label: "Terms of service", href: "/terms" },
+  { label: "Privacy policy", href: "/privacy" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Investment risks", href: "/terms#risk-disclosure" },
 ];
 
 const contact = [
@@ -94,6 +93,7 @@ const contact = [
     ),
     label: "hello@ridvest.ng",
     href: "mailto:hello@ridvest.ng",
+    external: false,
   },
   {
     icon: (
@@ -103,11 +103,13 @@ const contact = [
     ),
     label: "+234 800 000 0000",
     href: "tel:+2348000000000",
+    external: false,
   },
   {
     icon: <WhatsApp />,
     label: "WhatsApp us",
     href: "https://wa.me/2348000000000",
+    external: true,
   },
   {
     icon: (
@@ -118,18 +120,24 @@ const contact = [
     ),
     label: "Ogidi, Anambra State, Nigeria",
     href: "#",
+    external: false,
   },
 ];
+
+const chevron = (
+  <svg className="w-3 h-3 text-slate-700 group-hover:text-amber-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+  </svg>
+);
 
 export function Footer() {
   return (
     <footer className="bg-[#060f1a]">
 
-      {/* Main footer grid */}
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
 
-          {/* Brand column */}
+          {/* Brand */}
           <div className="lg:col-span-1">
             <div className="mb-4">
               <span className="text-2xl font-black text-white tracking-tight">
@@ -138,9 +146,8 @@ export function Footer() {
               <p className="text-xs text-slate-500 mt-1 tracking-widest uppercase">Invest. Ride. Earn.</p>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              Ridvest lets everyday Nigerians co-invest in transport vehicles and earn consistent weekly returns
+              Ridvest lets everyday Nigerians co-invest in transport vehicles and earn consistent monthly returns.
             </p>
-            {/* Socials */}
             <div className="flex gap-3 flex-wrap">
               {socials.map((s) => (
                 <a
@@ -163,15 +170,13 @@ export function Footer() {
             <ul className="flex flex-col gap-3">
               {navLinks.map((l) => (
                 <li key={l.label}>
-                  <a
+                  <Link
                     href={l.href}
                     className="text-sm text-slate-500 hover:text-amber-400 transition-colors duration-150 flex items-center gap-2 group"
                   >
-                    <svg className="w-3 h-3 text-slate-700 group-hover:text-amber-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
+                    {chevron}
                     {l.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -183,15 +188,13 @@ export function Footer() {
             <ul className="flex flex-col gap-3">
               {resources.map((r) => (
                 <li key={r.label}>
-                  <a
+                  <Link
                     href={r.href}
                     className="text-sm text-slate-500 hover:text-amber-400 transition-colors duration-150 flex items-center gap-2 group"
                   >
-                    <svg className="w-3 h-3 text-slate-700 group-hover:text-amber-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
+                    {chevron}
                     {r.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -205,6 +208,8 @@ export function Footer() {
                 <li key={c.label}>
                   <a
                     href={c.href}
+                    target={c.external ? "_blank" : undefined}
+                    rel={c.external ? "noopener noreferrer" : undefined}
                     className="flex items-start gap-3 group"
                   >
                     <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/8 text-slate-500 group-hover:bg-amber-400/10 group-hover:border-amber-400/20 group-hover:text-amber-400 flex items-center justify-center shrink-0 transition-all duration-150 mt-0.5">
@@ -226,14 +231,12 @@ export function Footer() {
       <div className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-600">
-            © 2026 Ridvest Ltd. Ogidi, Anambra State, Nigeria. All rights reserved.
+            © 2026 Ridvest Ltd. Nigeria. All rights reserved.
           </p>
           <div className="flex gap-5">
-            {["Privacy policy", "Terms of service"].map((l) => (
-              <a key={l} href="#" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
-                {l}
-              </a>
-            ))}
+            <Link href="/privacy" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">Privacy policy</Link>
+            <Link href="/terms" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">Terms of service</Link>
+            <Link href="/faq" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">FAQ</Link>
           </div>
         </div>
       </div>
