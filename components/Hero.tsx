@@ -5,10 +5,10 @@ export default function Hero() {
     <section
       style={{
         background: "linear-gradient(135deg,#060f1a 0%,#0d2137 50%,#0f2e52 100%)",
-        minHeight: "92vh",
+        minHeight: "90vh",
         display: "flex",
         alignItems: "center",
-        padding: "clamp(80px, 12vw, 120px) 20px",
+        padding: "clamp(40px, 8vw, 80px) 20px",
         position: "relative",
         overflow: "hidden",
       }}
@@ -103,19 +103,16 @@ export default function Hero() {
 
         {/* Right: card with keke image + floating stats */}
         <div className="hero-visual" style={{ position: "relative", width: "100%" }}>
-          <div
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "0.5px solid rgba(255,255,255,0.12)",
-              borderRadius: 20,
-              padding: 28,
-              backdropFilter: "blur(10px)",
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <img
-              src="/header_image.png"
+              src="/header_image-2.png"
               alt="Keke Napep"
-              style={{ width: "100%", borderRadius: 14, height: 220, objectFit: "cover", display: "block" }}
+              style={{ 
+                width: "100%", 
+                maxHeight: "450px", 
+                objectFit: "contain", 
+                display: "block" 
+              }}
             />
           </div>
 

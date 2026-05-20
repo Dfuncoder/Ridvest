@@ -71,10 +71,10 @@ const socials = [
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "How it works", href: "/#hiw" },
+  { label: "How it works", href: "/how-it-works" },
   { label: "Invest now", href: "/#invest" },
   { label: "Returns calculator", href: "/#calc" },
-  { label: "About us", href: "/#about" },
+  { label: "About us", href: "/about" },
 ];
 
 const resources = [
@@ -118,7 +118,7 @@ const contact = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
       </svg>
     ),
-    label: "Ogidi, Anambra State, Nigeria",
+    label: "Anambra State, Nigeria",
     href: "#",
     external: false,
   },
