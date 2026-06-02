@@ -7,8 +7,8 @@ export const metadata = {
 
 const sections = [
   {
-    title: "1. Who We Are",
-    content: `Ridvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Ridvest platform, which allows individuals to invest in commercial tricycles (keke napep) and earn monthly returns.
+    title: "1. Who We Are", 
+    content: `Ridvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Ridvest platform, which allows individuals to invest in commercial vehicles and earn monthly returns.
 
 This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@ridvest.ng.`,
   },

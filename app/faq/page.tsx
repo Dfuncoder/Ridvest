@@ -9,7 +9,7 @@ const faqs = [
     questions: [
       {
         q: "What is Ridvest?",
-        a: "Ridvest is a Nigerian co-investment platform that lets you own a stake in a commercial tricycle (keke napep) and earn monthly returns for 12 months. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
+        a: "Ridvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn monthly returns for 12 months. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
       },
       {
         q: "Who can invest on Ridvest?",
@@ -21,7 +21,7 @@ const faqs = [
       },
       {
         q: "Is Ridvest safe?",
-        a: "Yes. Every investment is backed by a real, physical keke on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the investment term. Your capital is returned in full at the end of 12 months.",
+        a: "Yes. Every investment is backed by a real, physical vehicle on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the investment term. Your capital is returned in full at the end of 12 months.",
       },
     ],
   },
@@ -30,11 +30,11 @@ const faqs = [
     questions: [
       {
         q: "What is the minimum amount I can invest?",
-        a: "The minimum investment to join a public or private pool is ₦100,000. If you want to own a full keke outright by yourself, the amount depends on the current cost of the vehicle, which is shown on the investment page.",
+        a: "The minimum investment to join a public or private pool is ₦100,000. If you want to own a full vehicle outright by yourself, the amount depends on the current cost of the vehicle, which is shown on the investment page.",
       },
       {
         q: "What are my investment options?",
-        a: "You have three options:\n\n1. Full Ownership — you fund the entire cost of a keke and own it alone for the year.\n\n2. Public Pool — you join an open pool with other investors on the platform. Once the pool hits its target, the keke is deployed.\n\n3. Private Pool — you create or join a pool with people you invite, like family, friends, or your cooperative.",
+        a: "You have three options:\n\n1. Full Ownership — you fund the entire cost of a vehicle and own it alone for the year.\n\n2. Public Pool — you join an open pool with other investors on the platform. Once the pool hits its target, the vehicle is deployed.\n\n3. Private Pool — you create or join a pool with people you invite, like family, friends, or your cooperative.",
       },
       {
         q: "What is the interest rate?",
@@ -59,7 +59,7 @@ const faqs = [
     questions: [
       {
         q: "When do I start receiving returns?",
-        a: "Returns begin from the month after your investment is confirmed and the keke is deployed. For pool investments, the clock starts once the pool is fully funded and the vehicle is on the road.",
+        a: "Returns begin from the month after your investment is confirmed and the vehicle is deployed. For pool investments, the clock starts once the pool is fully funded and the vehicle is on the road.",
       },
       {
         q: "How are my returns paid?",
@@ -67,7 +67,7 @@ const faqs = [
       },
       {
         q: "Can I track my earnings?",
-        a: "Yes. Your Ridvest dashboard shows your investment activity, monthly returns, payout history, and the performance of your keke in real time.",
+        a: "Yes. Your Ridvest dashboard shows your investment activity, monthly returns, payout history, and the performance of your vehicle in real time.",
       },
       {
         q: "What if a payout is delayed?",
@@ -80,7 +80,7 @@ const faqs = [
     questions: [
       {
         q: "What is a public pool?",
-        a: "A public pool is an open investment opportunity visible to all Ridvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the keke is acquired and deployed.",
+        a: "A public pool is an open investment opportunity visible to all Ridvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the vehicle is acquired and deployed.",
       },
       {
         q: "What is a private pool?",
@@ -104,16 +104,16 @@ const faqs = [
         a: "Currently, only Keke Napep (commercial tricycles) are available for investment. Mini buses and motorcycles are coming soon — early investors on the platform will get priority access when they launch.",
       },
       {
-        q: "Who manages the keke?",
+        q: "Who manages the vehicle?",
         a: "Ridvest manages everything. We acquire the vehicle, vet and onboard a verified driver, handle routine maintenance, cover insurance, and monitor daily operations. You are not involved in any of this.",
       },
       {
-        q: "What if the keke breaks down or gets damaged?",
+        q: "What if the vehicle breaks down or gets damaged?",
         a: "All vehicles on the Ridvest platform are insured and covered for maintenance. In the event of damage or a breakdown, we handle repairs and continue operations. This does not affect your scheduled monthly payouts.",
       },
       {
-        q: "Can I see which keke my money is in?",
-        a: "Yes. Once your investment is confirmed and the vehicle is deployed, your dashboard will show details about the keke associated with your investment, including operational updates.",
+        q: "Can I see which vehicle my money is in?",
+        a: "Yes. Once your investment is confirmed and the vehicle is deployed, your dashboard will show details about the vehicle associated with your investment, including operational updates.",
       },
     ],
   },

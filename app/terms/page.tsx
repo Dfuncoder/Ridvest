@@ -8,7 +8,7 @@ export const metadata = {
 const sections = [
   {
     title: "1. About Ridvest",
-    content: `Ridvest is a transport co-investment platform operated by Ridvest Ltd, registered in Nigeria and headquartered in Ogidi, Anambra State. We provide a structured platform that allows individuals to invest in commercial tricycles (keke napep) and earn returns over a specified investment term.
+    content: `Ridvest is a transport co-investment platform operated by Ridvest Ltd, registered in Nigeria and headquartered in Ogidi, Anambra State. We provide a structured platform that allows individuals to invest in commercial vehicles and earn returns over a specified investment term.
 
 By accessing or using the Ridvest platform — whether through our website, mobile application, or any associated service — you agree to be bound by these Terms of Service. If you do not agree, please do not use our platform.`,
   },
@@ -27,9 +27,9 @@ By creating an account, you confirm that all information you provide is true, ac
     title: "3. How Investment Works",
     content: `Ridvest offers three investment structures:
 
-Full Ownership — You fund the full cost of a keke napep yourself. You are the sole investor on that vehicle for the duration of the specified investment term.
+Full Ownership — You fund the full cost of a vehicle yourself. You are the sole investor on that vehicle for the duration of the specified investment term.
 
-Public Pool — You contribute a minimum amount to an open investment pool alongside other investors on the platform. Once the pool reaches its funding target, the keke is acquired and deployed, and returns begin for the specified term.
+Public Pool — You contribute a minimum amount to an open investment pool alongside other investors on the platform. Once the pool reaches its funding target, the vehicle is acquired and deployed, and returns begin for the specified term.
 
 Private Pool — You create or join an invitation-only pool with people you trust — family, friends, or a cooperative. The pool functions the same way as a public pool once fully funded.
 
@@ -115,9 +115,7 @@ export default function TermsPage() {
             </svg>
             Back to home
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 mb-5">
-            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Legal</span>
-          </div>
+          
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Terms of Service</h1>
           <p className="text-slate-400 text-sm">Last updated: January 2026 · Ridvest Ltd, Ogidi, Anambra State, Nigeria</p>
         </div>
