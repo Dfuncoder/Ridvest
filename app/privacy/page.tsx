@@ -1,20 +1,20 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy — Ridvest",
-  description: "How Ridvest collects, uses, and protects your personal data.",
+  title: "Privacy Policy — Rydvest",
+  description: "How Rydvest collects, uses, and protects your personal data.",
 };
 
 const sections = [
   {
     title: "1. Who We Are", 
-    content: `Ridvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Ridvest platform, which allows individuals to invest in commercial vehicles and earn monthly returns.
+    content: `Rydvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Rydvest platform, which allows individuals to invest in commercial vehicles and earn monthly returns.
 
-This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@ridvest.ng.`,
+This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@rydvest.ng.`,
   },
   {
     title: "2. Information We Collect",
-    content: `When you use Ridvest, we collect the following types of information:
+    content: `When you use Rydvest, we collect the following types of information:
 
 Identity Information — Your full name, date of birth, and government-issued ID (such as NIN, BVN, international passport, or driver's licence) collected during account verification.
 
@@ -26,37 +26,37 @@ Investment Activity — Details of your investments, pool memberships, payout hi
 
 Device and Usage Data — Your IP address, browser type, device information, and how you navigate the platform. This helps us improve our service and detect fraud.
 
-Communications — Records of messages, emails, or support conversations you have with Ridvest.`,
+Communications — Records of messages, emails, or support conversations you have with Rydvest.`,
   },
   {
     title: "3. Why We Collect Your Information",
     content: `We use your information to:
 
-— Create and manage your Ridvest account
+— Create and manage your Rydvest account
 — Verify your identity in compliance with Nigerian financial regulations
 — Process your investments, monthly payouts, and capital returns
 — Send you important account updates, payout notifications, and platform announcements
 — Detect, prevent, and investigate fraud or suspicious activity
-— Improve the Ridvest platform and user experience
+— Improve the Rydvest platform and user experience
 — Comply with legal and regulatory obligations
 
 We do not use your information for purposes beyond what is listed here without your explicit consent.`,
   },
   {
     title: "4. How We Share Your Information",
-    content: `Ridvest does not sell your personal data to anyone. We may share your information only in the following limited circumstances:
+    content: `Rydvest does not sell your personal data to anyone. We may share your information only in the following limited circumstances:
 
 Service Providers — We work with trusted third-party providers (such as payment processors and identity verification services) who help us operate the platform. They are only given information they need to perform their specific function and are bound by confidentiality agreements.
 
 Legal Requirements — We may disclose your information if required to do so by Nigerian law, a court order, or a government regulatory body.
 
-Business Continuity — In the unlikely event of a merger, acquisition, or restructuring of Ridvest Ltd, your data may be transferred to the succeeding entity, and you will be notified in advance.
+Business Continuity — In the unlikely event of a merger, acquisition, or restructuring of Rydvest Ltd, your data may be transferred to the succeeding entity, and you will be notified in advance.
 
 We will never share your data with advertisers or third parties for marketing purposes.`,
   },
   {
     title: "5. How We Protect Your Information",
-    content: `We take the security of your data seriously. Ridvest uses industry-standard encryption for data in transit and at rest. Access to personal data within our team is restricted on a need-to-know basis.
+    content: `We take the security of your data seriously. Rydvest uses industry-standard encryption for data in transit and at rest. Access to personal data within our team is restricted on a need-to-know basis.
 
 However, no method of data transmission or storage is completely secure. While we do everything reasonably possible to protect your information, we cannot guarantee absolute security. In the event of a data breach that affects your rights, we will notify you promptly.`,
   },
@@ -76,11 +76,11 @@ Investment records may be retained for up to 7 years in compliance with Nigerian
 — Withdraw consent for optional data uses at any time
 — Lodge a complaint with the relevant data protection authority in Nigeria
 
-To exercise any of these rights, contact us at hello@ridvest.ng. We will respond within 14 business days.`,
+To exercise any of these rights, contact us at hello@rydvest.ng. We will respond within 14 business days.`,
   },
   {
     title: "8. Cookies",
-    content: `Ridvest uses cookies and similar tracking technologies to keep you logged in, remember your preferences, and understand how people use our platform. You can control cookie settings through your browser. Disabling cookies may affect some features of the platform.`,
+    content: `Rydvest uses cookies and similar tracking technologies to keep you logged in, remember your preferences, and understand how people use our platform. You can control cookie settings through your browser. Disabling cookies may affect some features of the platform.`,
   },
   {
     title: "9. Third-Party Links",
@@ -94,7 +94,7 @@ To exercise any of these rights, contact us at hello@ridvest.ng. We will respond
     title: "11. Contact Us",
     content: `For any privacy-related questions or requests, reach us at:
 
-Email: hello@ridvest.ng
+Email: hello@rydvest.ng
 Phone/WhatsApp: +234 800 000 0000
 Address: Ogidi, Anambra State, Nigeria`,
   },
@@ -113,11 +113,9 @@ export default function PrivacyPage() {
             </svg>
             Back to home
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 mb-5">
-            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Legal</span>
-          </div>
+          
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Privacy Policy</h1>
-          <p className="text-slate-400 text-sm">Last updated: January 2026 · Ridvest Ltd, Ogidi, Anambra State, Nigeria</p>
+          <p className="text-slate-400 text-sm">Last updated: January 2026 · Rydvest Ltd, Ogidi, Anambra State, Nigeria</p>
         </div>
       </div>
 
@@ -140,7 +138,7 @@ export default function PrivacyPage() {
       {/* Footer strip */}
       <div className="border-t border-slate-100 py-8 px-6">
         <div className="max-w-3xl mx-auto flex flex-wrap gap-4 justify-between items-center">
-          <span className="text-sm font-black text-slate-900">Rid<span className="text-amber-400">vest</span></span>
+          <span className="text-sm font-black text-slate-900">Ryd<span className="text-amber-400">vest</span></span>
           <div className="flex gap-5">
             <Link href="/terms" className="text-xs text-slate-400 hover:text-slate-700 transition-colors">Terms of Service</Link>
             <Link href="/faq" className="text-xs text-slate-400 hover:text-slate-700 transition-colors">FAQ</Link>

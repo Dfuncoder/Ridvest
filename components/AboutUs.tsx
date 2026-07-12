@@ -92,7 +92,7 @@ export default function AboutUs() {
         <FadeUp>
           <div className="flex items-center gap-2 mb-8">
             <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-[3px] text-blue-700">About Ridvest</span>
+            <span className="text-[10px] font-bold uppercase tracking-[3px] text-blue-700">About Rydvest</span>
           </div>
         </FadeUp>
 
@@ -108,7 +108,7 @@ export default function AboutUs() {
                 Transport vehicles have moved millions of Nigerians for decades. They run every day, earn every day, and stop for nothing. Yet for the everyday Nigerian, a structured way to profit from them has never existed, until now.
               </p>
               {/*<p className="text-base text-slate-500 leading-relaxed">
-                Ridvest changes that. We built the structure so you can own a stake in a transport vehicle, collect monthly returns for a year, and walk away with your capital intact; without touching a steering wheel.
+                Rydvest changes that. We built the structure so you can own a stake in a transport vehicle, collect monthly returns for a year, and walk away with your capital intact; without touching a steering wheel.
               </p>*/}
             </FadeUp>
 

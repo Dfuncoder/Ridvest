@@ -11,7 +11,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className="ridvest-navbar"
+        className="rydvest-navbar"
         style={{
           display: "flex",
           alignItems: "center",
@@ -35,11 +35,11 @@ export default function Navbar() {
             letterSpacing: -0.5,
           }}
         >
-          Rid<span style={{ color: "#f59e0b" }}>vest</span>
+          Ryd<span style={{ color: "#f59e0b" }}>vest</span>
         </span>
 
         <div
-          className="ridvest-navbar__actions"
+          className="rydvest-navbar__actions"
           style={{
             display: "flex",
             gap: 10,
@@ -101,11 +101,11 @@ export default function Navbar() {
 
       <style>{`
         @media (max-width: 640px) {
-          .ridvest-navbar {
+          .rydvest-navbar {
             justify-content: center;
           }
 
-          .ridvest-navbar__actions {
+          .rydvest-navbar__actions {
             width: 100%;
             margin-left: 0;
             justify-content: center;
@@ -229,7 +229,7 @@ export default function Hero() {
               maxWidth: 480,
             }}
           >
-            Ridvest lets everyday Nigerians co-invest in tricycles and earn consistent
+            Rydvest lets everyday Nigerians co-invest in tricycles and earn consistent
             monthly returns — fully managed, asset-backed, and transparent.
           </p>
 
@@ -1169,7 +1169,7 @@ export function HowItWorks() {
   );
 }
 
-export function WhyRidvest() {
+export function WhyRydvest() {
   return (
     <section style={{ padding: "72px clamp(20px,5vw,40px)", background: "#fff" }}>
       <div style={{ textAlign: "center", marginBottom: 52 }}>
@@ -1490,7 +1490,7 @@ export function CTABanner() {
   return (
     <>
       <section
-        className="ridvest-cta"
+        className="rydvest-cta"
         style={{
           padding: "80px clamp(20px,5vw,40px)",
           background: "linear-gradient(135deg,#0d2137,#1a3a5c)",
@@ -1522,7 +1522,7 @@ export function CTABanner() {
             Start with as little as ₦100,000 today.
           </p>
           <div
-            className="ridvest-cta__actions"
+            className="rydvest-cta__actions"
             style={{
               display: "flex",
               gap: 14,
@@ -1564,11 +1564,11 @@ export function CTABanner() {
 
       <style>{`
         @media (max-width: 560px) {
-          .ridvest-cta__actions {
+          .rydvest-cta__actions {
             flex-direction: column;
           }
 
-          .ridvest-cta__actions button {
+          .rydvest-cta__actions button {
             width: 100%;
           }
         }
@@ -1581,7 +1581,7 @@ export function Footer() {
   return (
     <>
       <footer
-        className="ridvest-footer"
+        className="rydvest-footer"
         style={{
           background: "#060f1a",
           padding: "36px clamp(20px,5vw,40px)",
@@ -1594,17 +1594,17 @@ export function Footer() {
       >
         <div>
           <span style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>
-            Rid<span style={{ color: "#f59e0b" }}>vest</span>
+            Ryd<span style={{ color: "#f59e0b" }}>vest</span>
           </span>
           <div style={{ fontSize: 12, color: "#334155", marginTop: 4 }}>
             Invest. Ride. Earn.
           </div>
         </div>
         <p style={{ fontSize: 12, color: "#334155", margin: 0 }}>
-          © 2025 Ridvest Ltd. Ogidi, Anambra State, Nigeria.
+          © 2025 Rydvest Ltd. Ogidi, Anambra State, Nigeria.
         </p>
         <div
-          className="ridvest-footer__links"
+          className="rydvest-footer__links"
           style={{ display: "flex", gap: 20, flexWrap: "wrap" }}
         >
           {["Privacy", "Terms", "FAQ", "Contact"].map((l) => (
@@ -1621,12 +1621,12 @@ export function Footer() {
 
       <style>{`
         @media (max-width: 640px) {
-          .ridvest-footer {
+          .rydvest-footer {
             flex-direction: column;
             text-align: center;
           }
 
-          .ridvest-footer__links {
+          .rydvest-footer__links {
             justify-content: center;
           }
         }
@@ -2026,7 +2026,7 @@ export default function StatsStrip() {
 '@
   },
   @{
-    Path = "components/WhyRidvest.tsx"
+    Path = "components/WhyRydvest.tsx"
     Content = @'
 const items = [
   { icon: "🔒", title: "Asset-backed security", desc: "Your money is tied to a real, physical keke — not promises." },
@@ -2037,7 +2037,7 @@ const items = [
   { icon: "🚀", title: "Expanding fleet", desc: "Keke is live. Buses and motorcycles coming — early investors first." },
 ];
 
-export default function WhyRidvest() {
+export default function WhyRydvest() {
   return (
     <section style={{ padding: "52px 20px", background: "#fff" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>

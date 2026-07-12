@@ -7,7 +7,7 @@ const items = [
   { icon: "🚀", title: "Expanding fleet", desc: "Keke is live. Buses and motorcycles coming — early investors first." },
 ];
 
-export default function WhyRidvest() {
+export default function WhyRydvest() {
   return (
     <section style={{ padding: "52px 20px", background: "#fff" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>

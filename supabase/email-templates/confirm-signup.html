@@ -1,0 +1,95 @@
+<!--
+  RYDVEST — "Confirm signup" email template for Supabase Auth.
+
+  WHERE TO PASTE:
+    Supabase Dashboard → Authentication → Emails → Templates → Confirm signup
+    → replace the entire message body with this file's contents.
+    Suggested subject line:  Your Rydvest verification code
+
+  NOTES:
+    • {{ .Token }} is replaced by Supabase with the 6-digit code — keep it.
+    • Everything is inline-styled and table-based so it renders correctly in
+      Gmail, Outlook, Apple Mail and co. (email clients ignore <style> blocks
+      and strip SVG, which is why the logo is rebuilt in plain text).
+    • Brand colors: navy #0d2137, card #0f2e52, amber #f59e0b.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0d2137; margin:0; padding:0;">
+  <tr>
+    <td align="center" style="padding: 40px 16px;">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 440px;">
+
+        <!-- ── Logo ── -->
+        <tr>
+          <td align="center" style="padding-bottom: 8px;">
+            <span style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">
+              Ryd<span style="color:#f59e0b;">vest</span>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-bottom: 28px;">
+            <span style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: #64748b;">
+              Invest &nbsp;·&nbsp; Ride &nbsp;·&nbsp; Earn
+            </span>
+          </td>
+        </tr>
+
+        <!-- ── Card ── -->
+        <tr>
+          <td style="background-color:#0f2e52; border:1px solid rgba(255,255,255,0.10); border-radius:16px; padding: 36px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+
+              <tr>
+                <td align="center" style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 800; color: #ffffff; padding-bottom: 10px;">
+                  Confirm your email
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 22px; color: #94a3b8; padding-bottom: 26px;">
+                  Welcome to Rydvest! Enter this code on the verification page to activate your account:
+                </td>
+              </tr>
+
+              <!-- ── The code ── -->
+              <tr>
+                <td align="center" style="padding-bottom: 26px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="center" style="background-color: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.35); border-radius: 12px; padding: 18px 32px;">
+                        <span style="font-family: 'Courier New', Courier, monospace; font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #f59e0b;">{{ .Token }}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 19px; color: #64748b;">
+                  This code expires in <span style="color:#cbd5e1; font-weight:600;">1 hour</span> and can only be used once.
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+
+        <!-- ── Footer ── -->
+        <tr>
+          <td align="center" style="padding-top: 24px; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; line-height: 18px; color: #475569;">
+            Didn't create a Rydvest account? You can safely ignore this email —<br />
+            no account will be activated without this code.
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-top: 14px; font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 11px; color: #334155;">
+            © Rydvest · Invest. Ride. Earn.
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>

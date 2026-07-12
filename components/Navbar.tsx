@@ -44,7 +44,7 @@ export default function Navbar() {
             href="/"
             onClick={close}
             className="flex items-center gap-2.5 hover:opacity-90 transition-opacity focus:outline-none shrink-0"
-            aria-label="Ridvest Home"
+            aria-label="Rydvest Home"
           >
             <svg width="32" height="32" viewBox="0 0 36 36">
               <rect width="36" height="36" rx="8" fill="#1a3a5c" />
@@ -59,7 +59,7 @@ export default function Navbar() {
               <text x="30" y="14" textAnchor="middle" fontSize="6" fontWeight="700" fill="#1a3a5c" fontFamily="system-ui">₦</text>
             </svg>
             <span className="text-white font-extrabold text-xl tracking-tight">
-              Rid<span className="text-amber-400">vest</span>
+              Ryd<span className="text-amber-400">vest</span>
             </span>
           </Link>
 

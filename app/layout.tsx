@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ridvest - Invest in keke, earn consistent returns",
-  description: "Ridvest lets everyday Nigerians co-invest in tricycles and earn consistent monthly returns — fully managed, asset-backed, and transparent.  ",
+  title: "Rydvest - Invest in keke, earn consistent returns",
+  description: "Rydvest lets everyday Nigerians co-invest in tricycles and earn consistent monthly returns — fully managed, asset-backed, and transparent.  ",
   icons: {
     icon: '/favicon.svg',
   },

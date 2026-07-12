@@ -8,19 +8,19 @@ const faqs = [
     category: "Getting started",
     questions: [
       {
-        q: "What is Ridvest?",
-        a: "Ridvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn monthly returns for 12 months. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
+        q: "What is Rydvest?",
+        a: "Rydvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn monthly returns for 12 months. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
       },
       {
-        q: "Who can invest on Ridvest?",
-        a: "Any Nigerian resident aged 18 and above with a valid bank account can invest on Ridvest. You will need to complete a quick identity verification during sign-up using a government-issued ID (NIN, BVN, passport, or driver's licence).",
+        q: "Who can invest on Rydvest?",
+        a: "Any Nigerian resident aged 18 and above with a valid bank account can invest on Rydvest. You will need to complete a quick identity verification during sign-up using a government-issued ID (NIN, BVN, passport, or driver's licence).",
       },
       {
         q: "How do I create an account?",
         a: "Click 'Get started' on the homepage, fill in your details, verify your identity, and link your bank account. The whole process takes less than 5 minutes.",
       },
       {
-        q: "Is Ridvest safe?",
+        q: "Is Rydvest safe?",
         a: "Yes. Every investment is backed by a real, physical vehicle on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the investment term. Your capital is returned in full at the end of 12 months.",
       },
     ],
@@ -42,7 +42,7 @@ const faqs = [
       },
       {
         q: "How long does my money stay invested?",
-        a: "Every investment on Ridvest runs for a fixed 12-month term. You collect monthly returns throughout the year, and your original capital is returned to you at the end of month 12.",
+        a: "Every investment on Rydvest runs for a fixed 12-month term. You collect monthly returns throughout the year, and your original capital is returned to you at the end of month 12.",
       },
       {
         q: "What happens after 12 months?",
@@ -63,11 +63,11 @@ const faqs = [
       },
       {
         q: "How are my returns paid?",
-        a: "Monthly returns are paid directly to the bank account you registered on Ridvest. You do not need to request them — they are processed automatically on your scheduled payout date each month.",
+        a: "Monthly returns are paid directly to the bank account you registered on Rydvest. You do not need to request them — they are processed automatically on your scheduled payout date each month.",
       },
       {
         q: "Can I track my earnings?",
-        a: "Yes. Your Ridvest dashboard shows your investment activity, monthly returns, payout history, and the performance of your vehicle in real time.",
+        a: "Yes. Your Rydvest dashboard shows your investment activity, monthly returns, payout history, and the performance of your vehicle in real time.",
       },
       {
         q: "What if a payout is delayed?",
@@ -80,7 +80,7 @@ const faqs = [
     questions: [
       {
         q: "What is a public pool?",
-        a: "A public pool is an open investment opportunity visible to all Ridvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the vehicle is acquired and deployed.",
+        a: "A public pool is an open investment opportunity visible to all Rydvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the vehicle is acquired and deployed.",
       },
       {
         q: "What is a private pool?",
@@ -105,11 +105,11 @@ const faqs = [
       },
       {
         q: "Who manages the vehicle?",
-        a: "Ridvest manages everything. We acquire the vehicle, vet and onboard a verified driver, handle routine maintenance, cover insurance, and monitor daily operations. You are not involved in any of this.",
+        a: "Rydvest manages everything. We acquire the vehicle, vet and onboard a verified driver, handle routine maintenance, cover insurance, and monitor daily operations. You are not involved in any of this.",
       },
       {
         q: "What if the vehicle breaks down or gets damaged?",
-        a: "All vehicles on the Ridvest platform are insured and covered for maintenance. In the event of damage or a breakdown, we handle repairs and continue operations. This does not affect your scheduled monthly payouts.",
+        a: "All vehicles on the Rydvest platform are insured and covered for maintenance. In the event of damage or a breakdown, we handle repairs and continue operations. This does not affect your scheduled monthly payouts.",
       },
       {
         q: "Can I see which vehicle my money is in?",
@@ -126,15 +126,15 @@ const faqs = [
       },
       {
         q: "Is my personal and financial information safe?",
-        a: "Yes. Ridvest uses industry-standard encryption for all data. We never sell your personal information and we only share data with trusted service providers who help us run the platform. See our Privacy Policy for full details.",
+        a: "Yes. Rydvest uses industry-standard encryption for all data. We never sell your personal information and we only share data with trusted service providers who help us run the platform. See our Privacy Policy for full details.",
       },
       {
         q: "What do I do if I forget my password?",
         a: "Click 'Forgot password' on the login page and follow the steps to reset it via your registered email address.",
       },
       {
-        q: "How do I contact Ridvest for support?",
-        a: "You can reach us by email at hello@ridvest.ng, by phone or WhatsApp on +234 800 000 0000, or visit us at our office in Ogidi, Anambra State. We aim to respond to all enquiries within 24 hours.",
+        q: "How do I contact Rydvest for support?",
+        a: "You can reach us by email at hello@rydvest.ng, by phone or WhatsApp on +234 800 000 0000, or visit us at our office in Ogidi, Anambra State. We aim to respond to all enquiries within 24 hours.",
       },
     ],
   },
@@ -182,7 +182,7 @@ export default function FAQPage() {
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Frequently asked questions</h1>
           <p className="text-slate-400 text-base leading-relaxed max-w-xl">
-            Everything you need to know about investing on Ridvest. Can't find your answer? Reach us on WhatsApp at +234 800 000 0000.
+            Everything you need to know about investing on Rydvest. Can't find your answer? Reach us on WhatsApp at +234 800 000 0000.
           </p>
         </div>
       </div>
@@ -213,7 +213,7 @@ export default function FAQPage() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <a
-              href="mailto:hello@ridvest.ng"
+              href="mailto:hello@rydvest.ng"
               className="inline-flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all duration-150"
             >
               <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -239,7 +239,7 @@ export default function FAQPage() {
       {/* Footer strip */}
       <div className="border-t border-slate-100 py-8 px-6">
         <div className="max-w-3xl mx-auto flex flex-wrap gap-4 justify-between items-center">
-          <span className="text-sm font-black text-slate-900">Rid<span className="text-amber-400">vest</span></span>
+          <span className="text-sm font-black text-slate-900">Ryd<span className="text-amber-400">vest</span></span>
           <div className="flex gap-5">
             <Link href="/terms" className="text-xs text-slate-400 hover:text-slate-700 transition-colors">Terms of Service</Link>
             <Link href="/privacy" className="text-xs text-slate-400 hover:text-slate-700 transition-colors">Privacy Policy</Link>

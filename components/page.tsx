@@ -3,14 +3,14 @@ import Hero from "@/components/Hero";
 import Counters from "@/components/Counters";
 import Plans from "@/components/Plans";
 import VehicleLineup from "@/components/VehicleLineup";
-import { HowItWorks, WhyRidvest } from "@/components/Sections";
+import { HowItWorks, WhyRydvest } from "@/components/Sections";
 import Calculator from "@/components/Calculator";
 import { CTABanner, Footer } from "@/components/Footer";
 
 export const metadata = {
-  title: "Ridvest — Invest in Keke. Earn Monthly.",
+  title: "Rydvest — Invest in Keke. Earn Monthly.",
   description:
-    "Ridvest lets everyday Nigerians co-invest in tricycles and earn consistent returns. Asset-backed, fully managed, starting from ₦100,000.",
+    "Rydvest lets everyday Nigerians co-invest in tricycles and earn consistent returns. Asset-backed, fully managed, starting from ₦100,000.",
 };
 
 export default function Home() {
@@ -23,7 +23,7 @@ export default function Home() {
       <VehicleLineup />
       <HowItWorks />
       <Calculator />
-      <WhyRidvest />
+      <WhyRydvest />
       <CTABanner />
       <Footer />
     </main>

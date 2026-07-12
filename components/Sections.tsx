@@ -42,7 +42,7 @@ export function HowItWorks() {
   );
 }
 
-export function WhyRidvest() {
+export function WhyRydvest() {
   return (
     <section style={{ padding: "clamp(40px, 8vw, 72px) 20px", background: "#fff" }}>
       <div style={{ textAlign: "center", marginBottom: 52 }}>

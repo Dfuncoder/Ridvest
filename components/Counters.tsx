@@ -43,6 +43,8 @@ export default function Counters() {
   const payouts = useCountUp(9_200_000, 2000, started);
   const kekes = useCountUp(87, 1600, started);
 
+
+
   return (
     <>
       {/* Amber strip */}

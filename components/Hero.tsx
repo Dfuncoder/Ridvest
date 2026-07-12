@@ -58,7 +58,7 @@ export default function Hero() {
               maxWidth: 480,
             }}
           >
-            Ridvest lets everyday Nigerians co-invest in transport vehicles and earn consistent
+            Rydvest lets everyday Nigerians co-invest in transport vehicles and earn consistent
             weekly returns — fully managed, asset-backed, and transparent.
           </p>
 

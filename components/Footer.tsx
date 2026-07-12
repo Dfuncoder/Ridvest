@@ -62,10 +62,10 @@ const WhatsApp = () => (
 );
 
 const socials = [
-  { label: "X (Twitter)", href: "https://twitter.com/ridvest", icon: <TwitterX /> },
-  { label: "Instagram", href: "https://instagram.com/ridvest", icon: <Instagram /> },
-  { label: "Facebook", href: "https://facebook.com/ridvest", icon: <Facebook /> },
-  { label: "LinkedIn", href: "https://linkedin.com/company/ridvest", icon: <LinkedIn /> },
+  { label: "X (Twitter)", href: "https://twitter.com/rydvest", icon: <TwitterX /> },
+  { label: "Instagram", href: "https://instagram.com/rydvest", icon: <Instagram /> },
+  { label: "Facebook", href: "https://facebook.com/rydvest", icon: <Facebook /> },
+  { label: "LinkedIn", href: "https://linkedin.com/company/rydvest", icon: <LinkedIn /> },
   { label: "WhatsApp", href: "https://wa.me/2348000000000", icon: <WhatsApp /> },
 ];
 
@@ -91,8 +91,8 @@ const contact = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
       </svg>
     ),
-    label: "hello@ridvest.ng",
-    href: "mailto:hello@ridvest.ng",
+    label: "hello@rydvest.ng",
+    href: "mailto:hello@rydvest.ng",
     external: false,
   },
   {
@@ -141,12 +141,12 @@ export function Footer() {
           <div className="lg:col-span-1">
             <div className="mb-4">
               <span className="text-2xl font-black text-white tracking-tight">
-                Rid<span className="text-amber-400">vest</span>
+                Ryd<span className="text-amber-400">vest</span>
               </span>
               <p className="text-xs text-slate-500 mt-1 tracking-widest uppercase">Invest. Ride. Earn.</p>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              Ridvest lets everyday Nigerians co-invest in transport vehicles and earn consistent monthly returns.
+              Rydvest lets everyday Nigerians co-invest in transport vehicles and earn consistent monthly returns.
             </p>
             <div className="flex gap-3 flex-wrap">
               {socials.map((s) => (
@@ -231,7 +231,7 @@ export function Footer() {
       <div className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-600">
-            © 2026 Ridvest Ltd. Nigeria. All rights reserved.
+            © 2026 Rydvest Ltd. Nigeria. All rights reserved.
           </p>
           <div className="flex gap-5">
             <Link href="/privacy" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">Privacy policy</Link>
