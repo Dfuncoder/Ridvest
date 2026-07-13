@@ -15,6 +15,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { sendEmail, supportFrom, supportEmail } from "@/lib/email";
 import { ERRORS } from "@/lib/errors";
 import { PoolProductSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
@@ -26,7 +27,7 @@ async function audit(actorId: string, action: string, target: string, detail: Re
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POOL PRODUCTS — the investment options (e.g. "Keke Napep", price, months, ROI)
+// POOL PRODUCTS — the investment options (e.g. "Keke Napep", price, weeks, ROI)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function createProduct(_prev: FormState, formData: FormData): Promise<FormState> {
   const { user } = await requireAdmin();
@@ -36,7 +37,7 @@ export async function createProduct(_prev: FormState, formData: FormData): Promi
     description: formData.get("description") ?? "",
     targetAmount: formData.get("targetAmount"),
     minContribution: formData.get("minContribution"),
-    durationMonths: formData.get("durationMonths"),
+    durationWeeks: formData.get("durationWeeks"),
     roiPercent: formData.get("roiPercent"),
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
@@ -52,7 +53,7 @@ export async function createProduct(_prev: FormState, formData: FormData): Promi
       description: parsed.data.description,
       target_amount: parsed.data.targetAmount,
       min_contribution: parsed.data.minContribution,
-      duration_months: parsed.data.durationMonths,
+      duration_weeks: parsed.data.durationWeeks,
       roi_percent: parsed.data.roiPercent,
       created_by: user.id,
     })
@@ -275,6 +276,82 @@ export async function sendUserPasswordReset(formData: FormData): Promise<void> {
 
   await audit(user.id, "user.password_reset_sent", email);
   revalidatePath("/admin/users");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTACT MESSAGES — reply from the dashboard
+// The email goes out FROM the support inbox (support@rydvest.com) TO the
+// address the visitor typed into the form; reply-to is also the support
+// inbox, so if the customer answers, it lands in Zoho alongside everything
+// else. The reply text is stored for the audit trail.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function replyToMessage(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user, profile } = await requireAdmin();
+
+  const messageId = String(formData.get("messageId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!messageId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+  if (body.length < 2 || body.length > 5000) {
+    return { errors: { body: "Please write a reply (up to 5000 characters)." } };
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: msg } = await admin
+    .from("contact_messages")
+    .select("id, name, email, message")
+    .eq("id", messageId)
+    .single();
+  if (!msg) return { message: ERRORS.ADMIN_ACTION_FAILED };
+
+  // Send the actual email. If Resend rejects it, surface that to the admin
+  // instead of pretending it went out.
+  const result = await sendEmail({
+    from: supportFrom(),          // "Rydvest Support <support@rydvest.com>"
+    to: msg.email,                // the address the visitor gave in the form
+    replyTo: supportEmail(),      // their answer comes back to the support inbox
+    subject: `Re: your message to Rydvest`,
+    text: [
+      `Hi ${msg.name},`,
+      ``,
+      body,
+      ``,
+      `— ${profile.full_name}, Rydvest Support`,
+      ``,
+      `-----------------------------------------`,
+      `You wrote:`,
+      msg.message,
+    ].join("\n"),
+  });
+
+  if (!result.ok) {
+    return { message: "Email could not be sent — check the server logs (Resend rejected it)." };
+  }
+
+  // Record the reply and close the message.
+  await admin.from("contact_replies").insert({
+    message_id: msg.id,
+    admin_id: user.id,
+    body,
+  });
+  await admin.from("contact_messages").update({ handled: true }).eq("id", msg.id);
+  await audit(user.id, "contact.reply", msg.id, { to: msg.email });
+
+  revalidatePath("/admin/messages");
+  return { success: true, message: `Reply sent to ${msg.email}.` };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTACT MESSAGES — mark a "Talk to us" message as handled
+// ─────────────────────────────────────────────────────────────────────────────
+export async function markMessageHandled(formData: FormData): Promise<void> {
+  const { user } = await requireAdmin();
+  const messageId = String(formData.get("messageId") ?? "");
+  if (!messageId) return;
+
+  const admin = createSupabaseAdminClient();
+  await admin.from("contact_messages").update({ handled: true }).eq("id", messageId);
+  await audit(user.id, "contact.mark_handled", messageId);
+  revalidatePath("/admin/messages");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

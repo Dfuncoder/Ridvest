@@ -22,8 +22,8 @@ export type OverviewData = {
     amount: number;
     earned: number;
     totalExpected: number;
-    monthsTotal: number;
-    monthsDone: number;
+    weeksTotal: number;
+    weeksDone: number;
     fillPct: number;
     startedAt: string | null;
     endsAt: string | null;
@@ -56,9 +56,10 @@ export default function Overview({ data }: { data: OverviewData }) {
 
       {/* ── BALANCE HERO CARD ── */}
       <div className="bg-[#0d2137] rounded-2xl p-5 sm:p-6 relative overflow-hidden">
-        {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts. */}
-        <div className="absolute top-0 right-0 w-96 h-96 translate-x-1/3 -translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 65%)" }} />
-        <div className="absolute bottom-0 left-0 w-72 h-72 -translate-x-1/3 translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 65%)" }} />
+        {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts.
+            Hidden on phones: old WebViews glitch on extra composited layers. */}
+        <div className="hidden md:block absolute top-0 right-0 w-96 h-96 translate-x-1/3 -translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 65%)" }} />
+        <div className="hidden md:block absolute bottom-0 left-0 w-72 h-72 -translate-x-1/3 translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 65%)" }} />
 
         <div className="relative z-10">
           <div className="flex items-start justify-between gap-3 mb-5">
@@ -153,7 +154,7 @@ export default function Overview({ data }: { data: OverviewData }) {
               // Filling pools show fill %, running pools show payout progress.
               const pct = isFilling
                 ? inv.fillPct
-                : Math.round((inv.monthsDone / Math.max(1, inv.monthsTotal)) * 100);
+                : Math.round((inv.weeksDone / Math.max(1, inv.weeksTotal)) * 100);
               return (
                 <Link key={inv.id} href={`/dashboard/pools/${inv.poolId}`} className={`rounded-2xl p-4 sm:p-5 transition-colors duration-300 block hover:opacity-90 ${card}`}>
                   <div className="flex items-start justify-between gap-2 mb-4">
@@ -193,7 +194,7 @@ export default function Overview({ data }: { data: OverviewData }) {
                       <span>
                         {isFilling
                           ? `Pool ${pct}% filled`
-                          : `Month ${inv.monthsDone} of ${inv.monthsTotal}`}
+                          : `Week ${inv.weeksDone} of ${inv.weeksTotal}`}
                       </span>
                       <span className={`font-semibold ${h2}`}>{pct}%</span>
                     </div>

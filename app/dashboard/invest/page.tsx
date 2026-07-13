@@ -16,12 +16,12 @@ export default async function InvestPage() {
   const [{ data: products }, { data: pools }] = await Promise.all([
     supabase
       .from("pool_products")
-      .select("id, name, description, target_amount, min_contribution, duration_months, roi_percent")
+      .select("id, name, description, target_amount, min_contribution, duration_weeks, roi_percent")
       .eq("active", true)
       .order("target_amount", { ascending: true }),
     supabase
       .from("pools")
-      .select("id, name, status, amount_raised, is_private, product:pool_products(id, name, target_amount, min_contribution, duration_months, roi_percent, active)")
+      .select("id, name, status, amount_raised, is_private, product:pool_products(id, name, target_amount, min_contribution, duration_weeks, roi_percent, active)")
       .eq("status", "open")
       .order("created_at", { ascending: false }),
   ]);
@@ -52,7 +52,7 @@ export default async function InvestPage() {
         {openPools.map((pool) => {
           const product = pool.product as unknown as {
             id: string; name: string; target_amount: number; min_contribution: number;
-            duration_months: number; roi_percent: number;
+            duration_weeks: number; roi_percent: number;
           };
           const raised = Number(pool.amount_raised);
           const target = Number(product.target_amount);
@@ -77,7 +77,7 @@ export default async function InvestPage() {
                 </div>
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5">
                   <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Duration</p>
-                  <p className="text-sm font-extrabold text-slate-900">{product.duration_months} mo</p>
+                  <p className="text-sm font-extrabold text-slate-900">{product.duration_weeks} wks</p>
                 </div>
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5">
                   <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Min</p>
@@ -112,7 +112,7 @@ export default async function InvestPage() {
           <CreatePoolForm
             products={(products ?? []).map((p) => ({
               id: p.id,
-              name: `${p.name} · ${Number(p.roi_percent)}% · ${p.duration_months} months`,
+              name: `${p.name} · ${Number(p.roi_percent)}% · ${p.duration_weeks} weeks`,
               target_amount: Number(p.target_amount),
             }))}
           />

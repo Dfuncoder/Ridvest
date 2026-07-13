@@ -42,7 +42,7 @@ export default async function PoolsPage() {
   const { data: pools } = poolIds.length
     ? await supabase
         .from("pools")
-        .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, duration_months, roi_percent)")
+        .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, duration_weeks, roi_percent)")
         .in("id", poolIds)
         .order("created_at", { ascending: false })
     : { data: [] };
@@ -70,7 +70,7 @@ export default async function PoolsPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {(pools ?? []).map((pool) => {
             const product = pool.product as unknown as {
-              name: string; target_amount: number; duration_months: number; roi_percent: number;
+              name: string; target_amount: number; duration_weeks: number; roi_percent: number;
             };
             const pct = poolProgressPct(Number(pool.amount_raised), Number(product.target_amount));
             const mine = myAmounts.get(pool.id) ?? 0;
@@ -80,7 +80,7 @@ export default async function PoolsPage() {
                   <div className="min-w-0">
                     <h2 className="text-sm font-extrabold text-slate-900 truncate">{pool.name}</h2>
                     <p className="text-xs text-slate-500">
-                      {product.name} · {Number(product.roi_percent)}% over {product.duration_months} months
+                      {product.name} · {Number(product.roi_percent)}% over {product.duration_weeks} weeks
                     </p>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 capitalize ${STATUS_BADGE[pool.status] ?? ""}`}>

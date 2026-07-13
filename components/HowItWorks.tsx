@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 function useIntersection(threshold = 0.1) {
   const ref = useRef<HTMLDivElement>(null);
@@ -219,7 +220,7 @@ export default function HowItWorks() {
             </div>
 
             <div className="bg-[#0d2137] rounded-2xl p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400 opacity-[0.05] blur-3xl rounded-full pointer-events-none" />
+              <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.07) 0%, transparent 65%)" }} />
 
               <h3 className="text-lg font-extrabold text-white mb-2">The 78 Weeks cycle</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-8">Every investment — pool or full ownership — runs for exactly 1.5 years.</p>
@@ -240,12 +241,12 @@ export default function HowItWorks() {
                 ))}
               </div>
 
-              <button
-                onClick={() => document.getElementById("invest")?.scrollIntoView({ behavior: "smooth" })}
-                className="mt-4 w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200"
+              <Link
+                href="/register"
+                className="mt-4 block text-center w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200"
               >
                 Start investing →
-              </button>
+              </Link>
             </div>
 
           </div>

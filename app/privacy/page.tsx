@@ -8,7 +8,7 @@ export const metadata = {
 const sections = [
   {
     title: "1. Who We Are", 
-    content: `Rydvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Rydvest platform, which allows individuals to invest in commercial vehicles and earn monthly returns.
+    content: `Rydvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Rydvest platform, which allows individuals to invest in commercial vehicles and earn weekly returns.
 
 This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@rydvest.ng.`,
   },
@@ -34,7 +34,7 @@ Communications — Records of messages, emails, or support conversations you hav
 
 — Create and manage your Rydvest account
 — Verify your identity in compliance with Nigerian financial regulations
-— Process your investments, monthly payouts, and capital returns
+— Process your investments, weekly payouts, and capital returns
 — Send you important account updates, payout notifications, and platform announcements
 — Detect, prevent, and investigate fraud or suspicious activity
 — Improve the Rydvest platform and user experience

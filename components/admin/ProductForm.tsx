@@ -56,9 +56,9 @@ export default function ProductForm() {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="pp-months" className={label}>Duration (months)</label>
-          <input id="pp-months" name="durationMonths" type="number" min={1} max={120} required placeholder="12" className={input} />
-          <FieldErr msg={state?.errors?.durationMonths} />
+          <label htmlFor="pp-weeks" className={label}>Duration (weeks)</label>
+          <input id="pp-weeks" name="durationWeeks" type="number" min={1} max={520} required placeholder="52" className={input} />
+          <FieldErr msg={state?.errors?.durationWeeks} />
         </div>
         <div>
           <label htmlFor="pp-roi" className={label}>Total ROI (%)</label>

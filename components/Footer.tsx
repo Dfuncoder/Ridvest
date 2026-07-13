@@ -20,12 +20,12 @@ export function CTABanner() {
           Join early investors earning from Nigeria's busiest transport sector. Start with as little as ₦100,000 today.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
-          <button className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20">
+          <Link href="/register" className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20">
             Create free account →
-          </button>
-          <button className="bg-white/5 hover:bg-white/10 border border-white/15 text-white font-semibold text-sm px-8 py-4 rounded-xl transition-all duration-200">
+          </Link>
+          <Link href="/contact" className="bg-white/5 hover:bg-white/10 border border-white/15 text-white font-semibold text-sm px-8 py-4 rounded-xl transition-all duration-200">
             Talk to us first
-          </button>
+          </Link>
         </div>
       </div>
     </section>
@@ -73,9 +73,10 @@ const socials = [
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "How it works", href: "/how-it-works" },
-  { label: "Invest now", href: "/#invest" },
+  { label: "Invest now", href: "/register" },
   { label: "Returns calculator", href: "/#calc" },
   { label: "About us", href: "/about" },
+  { label: "Talk to us", href: "/contact" },
 ];
 
 const resources = [
@@ -92,8 +93,8 @@ const contact = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
       </svg>
     ),
-    label: "hello@rydvest.ng",
-    href: "mailto:hello@rydvest.ng",
+    label: "support@rydvest.com",
+    href: "mailto:support@rydvest.com",
     external: false,
   },
   {
@@ -147,7 +148,7 @@ export function Footer() {
               <p className="text-xs text-slate-500 mt-1 tracking-widest uppercase">Invest. Ride. Earn.</p>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              Rydvest lets everyday Nigerians co-invest in transport vehicles and earn consistent monthly returns.
+              Rydvest lets everyday Nigerians co-invest in transport vehicles and earn consistent weekly returns.
             </p>
             <div className="flex gap-3 flex-wrap">
               {socials.map((s) => (

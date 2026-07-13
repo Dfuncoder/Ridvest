@@ -1,5 +1,5 @@
 /**
- * ADMIN → PAYOUTS — the monthly schedule generated when pools fill.
+ * ADMIN → PAYOUTS — the weekly schedule generated when pools fill.
  * "Mark paid" credits the investor's withdrawable balance (and the ledger);
  * due payouts are listed first.
  */

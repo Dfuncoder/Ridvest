@@ -1,6 +1,6 @@
 /**
  * ADMIN → POOL OPTIONS — create the investment products users can pool into
- * (e.g. "Keke Napep" at ₦2.5m, 12 months, 50% ROI) and enable/disable them.
+ * (e.g. "Keke Napep" at ₦2.5m, 52 weeks, 50% ROI) and enable/disable them.
  */
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -14,7 +14,7 @@ export default async function AdminProductsPage() {
 
   const { data: products } = await admin
     .from("pool_products")
-    .select("id, name, description, target_amount, min_contribution, duration_months, roi_percent, active, created_at")
+    .select("id, name, description, target_amount, min_contribution, duration_weeks, roi_percent, active, created_at")
     .order("created_at", { ascending: false });
 
   return (
@@ -60,7 +60,7 @@ export default async function AdminProductsPage() {
                 {[
                   { label: "Price", value: fmtNaira(p.target_amount) },
                   { label: "Min", value: fmtNaira(p.min_contribution) },
-                  { label: "Duration", value: `${p.duration_months} mo` },
+                  { label: "Duration", value: `${p.duration_weeks} wks` },
                   { label: "ROI", value: `${Number(p.roi_percent)}%` },
                 ].map((s) => (
                   <div key={s.label} className="bg-slate-50 border border-slate-100 rounded-xl p-2.5">

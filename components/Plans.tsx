@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const plans = [
   {
     name: "STARTER",
@@ -6,12 +8,13 @@ const plans = [
     roi: "20–22% ROI/yr",
     features: [
       "Partial keke ownership stake",
-      "Monthly payout to your bank",
+      "Weekly payout to your bank",
       "Online dashboard access",
       "Verified driver management",
     ],
     featured: false,
     cta: "Invest now →",
+    href: "/register",
   },
   {
     name: "GROWTH",
@@ -20,13 +23,14 @@ const plans = [
     roi: "25–28% ROI/yr",
     features: [
       "Full keke co-ownership",
-      "Weekly or monthly payout",
+      "Weekly payout",
       "Priority customer support",
       "Maintenance fully covered",
       "Real-time earnings tracker",
     ],
     featured: true,
     cta: "Invest now →",
+    href: "/register",
   },
   {
     name: "FLEET",
@@ -42,6 +46,7 @@ const plans = [
     ],
     featured: false,
     cta: "Talk to us →",
+    href: "/contact",   // big-ticket plan → human conversation first
   },
 ];
 
@@ -51,7 +56,7 @@ export default function Plans() {
       <div style={{ textAlign: "center", marginBottom: 52 }}>
         <div style={{ fontSize: 12, color: "#2563a8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>Investment plans</div>
         <h2 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Choose your stake</h2>
-        <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>All plans include full asset management, verified drivers, and monthly payouts.</p>
+        <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>All plans include full asset management, verified drivers, and weekly payouts.</p>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
@@ -113,8 +118,12 @@ export default function Plans() {
               ))}
             </ul>
 
-            <button
+            <Link
+              href={plan.href}
               style={{
+                display: "block",
+                textAlign: "center",
+                textDecoration: "none",
                 width: "100%",
                 padding: 13,
                 borderRadius: 10,
@@ -128,7 +137,7 @@ export default function Plans() {
               }}
             >
               {plan.cta}
-            </button>
+            </Link>
           </div>
         ))}
       </div>

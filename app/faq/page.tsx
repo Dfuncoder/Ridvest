@@ -9,19 +9,19 @@ const faqs = [
     questions: [
       {
         q: "What is Rydvest?",
-        a: "Rydvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn monthly returns for 12 months. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
+        a: "Rydvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn weekly returns for the duration of your investment pool. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
       },
       {
         q: "Who can invest on Rydvest?",
-        a: "Any Nigerian resident aged 18 and above with a valid bank account can invest on Rydvest. You will need to complete a quick identity verification during sign-up using a government-issued ID (NIN, BVN, passport, or driver's licence).",
+        a: "Any Nigerian resident aged 18 and above with a valid bank account can invest on Rydvest. Sign-up takes a few minutes — you provide your personal details and confirm your email with a verification code.",
       },
       {
         q: "How do I create an account?",
-        a: "Click 'Get started' on the homepage, fill in your details, verify your identity, and link your bank account. The whole process takes less than 5 minutes.",
+        a: "Click 'Get started' on the homepage, fill in your details, and verify your email with the code we send you. To receive withdrawals, add a bank account in your dashboard profile — it must be in the same name as your Rydvest account.",
       },
       {
         q: "Is Rydvest safe?",
-        a: "Yes. Every investment is backed by a real, physical vehicle on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the investment term. Your capital is returned in full at the end of 12 months.",
+        a: "Yes. Every investment is backed by a real, physical vehicle on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the pool's duration. Your capital plus your full return are paid back to you through your weekly payouts across the life of the pool.",
       },
     ],
   },
@@ -30,23 +30,23 @@ const faqs = [
     questions: [
       {
         q: "What is the minimum amount I can invest?",
-        a: "The minimum investment to join a public or private pool is ₦100,000. If you want to own a full vehicle outright by yourself, the amount depends on the current cost of the vehicle, which is shown on the investment page.",
+        a: "Each pool sets its own minimum contribution, shown clearly on the pool card before you invest. You can also fund an entire pool by yourself if you want full ownership — the target amount is the full cost shown on the pool.",
       },
       {
         q: "What are my investment options?",
-        a: "You have three options:\n\n1. Full Ownership — you fund the entire cost of a vehicle and own it alone for the year.\n\n2. Public Pool — you join an open pool with other investors on the platform. Once the pool hits its target, the vehicle is deployed.\n\n3. Private Pool — you create or join a pool with people you invite, like family, friends, or your cooperative.",
+        a: "You have three options:\n\n1. Full Ownership — you fund the entire target of a pool and own it alone.\n\n2. Public Pool — you join an open pool with other investors on the platform. Once the pool hits its target, the vehicle is deployed.\n\n3. Private Pool — you create a pool and share its invite code with people you choose, like family, friends, or your cooperative.",
       },
       {
-        q: "What is the interest rate?",
-        a: "The current rate is 25% per annum. This means if you invest ₦200,000, you earn ₦50,000 in interest over 12 months — paid out monthly at roughly ₦4,167 per month. The rate that applies to your investment is locked in at the time you fund it.",
+        q: "What is the return on my investment?",
+        a: "Every pool displays its total return (ROI) and duration upfront before you invest — for example, a pool might offer a 50% total return over 78 weeks. The rate that applies to your investment is locked in at the time you fund it, and your dashboard shows exactly how much you'll receive in total.",
       },
       {
         q: "How long does my money stay invested?",
-        a: "Every investment on Rydvest runs for a fixed 12-month term. You collect monthly returns throughout the year, and your original capital is returned to you at the end of month 12.",
+        a: "Each pool runs for its own fixed duration, shown on the pool before you invest. The clock starts the moment the pool is fully funded, and you collect weekly returns for the entire duration.",
       },
       {
-        q: "What happens after 12 months?",
-        a: "Your capital is returned in full to your bank account. After that, it is entirely your choice — you can reinvest in a new cycle, join another pool, or walk away.",
+        q: "What happens when my pool's duration ends?",
+        a: "By the end of the pool's duration, you will have received your capital plus your full return through your weekly payouts. After that, it is entirely your choice — reinvest in a new pool, start your own, or withdraw everything and walk away.",
       },
       {
         q: "Can I invest more than once?",
@@ -59,19 +59,19 @@ const faqs = [
     questions: [
       {
         q: "When do I start receiving returns?",
-        a: "Returns begin from the month after your investment is confirmed and the vehicle is deployed. For pool investments, the clock starts once the pool is fully funded and the vehicle is on the road.",
+        a: "Your weekly payout schedule is created the moment your pool is fully funded, with the first payout due one week after the pool starts. Until a pool fills, your money is simply held in the pool — the earning clock only starts at 100% funding.",
       },
       {
         q: "How are my returns paid?",
-        a: "Monthly returns are paid directly to the bank account you registered on Rydvest. You do not need to request them — they are processed automatically on your scheduled payout date each month.",
+        a: "Returns are paid weekly. Each payout is credited to your Rydvest balance, which you can withdraw at any time to the verified bank account on your profile. The account name must match your Rydvest account name — this protects your money from being diverted to someone else.",
       },
       {
         q: "Can I track my earnings?",
-        a: "Yes. Your Rydvest dashboard shows your investment activity, monthly returns, payout history, and the performance of your vehicle in real time.",
+        a: "Yes. Your Rydvest dashboard shows your investment activity, weekly returns, payout schedule, payout history, and pool progress in real time.",
       },
       {
         q: "What if a payout is delayed?",
-        a: "Payouts are processed on schedule every month. If there is ever a delay due to a banking issue or any operational matter, we will notify you immediately by email and WhatsApp and resolve it as quickly as possible.",
+        a: "Payouts are processed on schedule every week. If there is ever a delay due to a banking issue or any operational matter, we will notify you immediately by email and WhatsApp and resolve it as quickly as possible.",
       },
     ],
   },
@@ -84,7 +84,7 @@ const faqs = [
       },
       {
         q: "What is a private pool?",
-        a: "A private pool is invitation-only. You create the pool and share a link with specific people — family, friends, or a cooperative. Only people with your link can join. Once the pool is fully funded, it works exactly the same as a public pool.",
+        a: "A private pool is invitation-only. You create the pool and share its invite code with specific people — family, friends, or a cooperative. Only people with the code can join. Once the pool is fully funded, it works exactly the same as a public pool.",
       },
       {
         q: "How long does it take for a pool to fill?",
@@ -92,7 +92,7 @@ const faqs = [
       },
       {
         q: "What happens if a pool does not fill up?",
-        a: "If a pool does not reach its funding target within the specified window, all contributions are returned to investors in full with no deductions.",
+        a: "Your money never starts a countdown until the pool is 100% funded. If a pool is closed without reaching its target, all contributions are returned to investors in full with no deductions.",
       },
     ],
   },
@@ -109,7 +109,7 @@ const faqs = [
       },
       {
         q: "What if the vehicle breaks down or gets damaged?",
-        a: "All vehicles on the Rydvest platform are insured and covered for maintenance. In the event of damage or a breakdown, we handle repairs and continue operations. This does not affect your scheduled monthly payouts.",
+        a: "All vehicles on the Rydvest platform are insured and covered for maintenance. In the event of damage or a breakdown, we handle repairs and continue operations. This does not affect your scheduled weekly payouts.",
       },
       {
         q: "Can I see which vehicle my money is in?",
@@ -121,8 +121,8 @@ const faqs = [
     category: "Account and security",
     questions: [
       {
-        q: "How do I withdraw my capital before 12 months?",
-        a: "Investments are designed to run for the full 12-month term. Early withdrawal requests can be submitted through your dashboard and are handled on a case-by-case basis. Processing timelines and conditions will be communicated at the time of your request.",
+        q: "Can I withdraw my capital before the pool ends?",
+        a: "Investments are designed to run for the pool's full duration. Early withdrawal requests can be submitted through your dashboard and are handled on a case-by-case basis. Processing timelines and conditions will be communicated at the time of your request.",
       },
       {
         q: "Is my personal and financial information safe?",
@@ -134,7 +134,7 @@ const faqs = [
       },
       {
         q: "How do I contact Rydvest for support?",
-        a: "You can reach us by email at hello@rydvest.ng, by phone or WhatsApp on +234 800 000 0000, or visit us at our office in Ogidi, Anambra State. We aim to respond to all enquiries within 24 hours.",
+        a: "You can reach us by email at support@rydvest.com, by phone or WhatsApp on +234 800 000 0000, or through the contact form on our website. We aim to respond to all enquiries within 24 hours.",
       },
     ],
   },
@@ -177,9 +177,7 @@ export default function FAQPage() {
             </svg>
             Back to home
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 mb-5">
-            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Support</span>
-          </div>
+         
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Frequently asked questions</h1>
           <p className="text-slate-400 text-base leading-relaxed max-w-xl">
             Everything you need to know about investing on Rydvest. Can't find your answer? Reach us on WhatsApp at +234 800 000 0000.
@@ -213,7 +211,7 @@ export default function FAQPage() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <a
-              href="mailto:hello@rydvest.ng"
+              href="mailto:support@rydvest.com"
               className="inline-flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all duration-150"
             >
               <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

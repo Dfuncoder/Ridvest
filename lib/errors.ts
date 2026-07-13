@@ -85,6 +85,12 @@ export const ERRORS = {
   ADMIN_ACTION_FAILED: "That action failed. Please try again.",
   ADMIN_USER_NOT_FOUND: "User not found.",
 
+  // ── Contact form ──────────────────────────────────────────────────────────
+  CONTACT_NAME_REQUIRED: "Please enter your name.",
+  CONTACT_EMAIL_INVALID: "Please enter a valid email so we can reply to you.",
+  CONTACT_MESSAGE_REQUIRED: "Please write a message (at least 10 characters).",
+  CONTACT_FAILED: "Couldn't send your message right now. Please try again in a moment.",
+
   // ── Generic ───────────────────────────────────────────────────────────────
   GENERIC: "Something went wrong. Please try again.",
 } as const;

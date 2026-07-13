@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -65,8 +66,9 @@ export default function Hero() {
           </p>
 
           <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button
-              onClick={() => document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" })}
+            {/* Straight to signup — this is the primary conversion action. */}
+            <Link
+              href="/register"
               style={{
                 background: "#f59e0b",
                 color: "#0d2137",
@@ -80,10 +82,11 @@ export default function Hero() {
                 alignItems: "center",
                 gap: 8,
                 transition: "all 0.2s",
+                textDecoration: "none",
               }}
             >
               Start investing →
-            </button>
+            </Link>
             <button
               onClick={() => document.getElementById("calc")?.scrollIntoView({ behavior: "smooth" })}
               style={{

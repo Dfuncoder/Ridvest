@@ -2,7 +2,7 @@ const steps = [
   { icon: "👤", title: "Create account", desc: "Sign up in minutes. Verify identity and link your bank securely." },
   { icon: "💳", title: "Pick a plan", desc: "Choose from ₦100k starter up to full fleet. Fund via bank transfer." },
   { icon: "🛺", title: "We deploy", desc: "We assign vetted drivers, handle maintenance and daily operations." },
-  { icon: "💸", title: "You earn", desc: "Payouts land in your bank monthly. Track live on your dashboard." },
+  { icon: "💸", title: "You earn", desc: "Payouts land in your account weekly. Track live on your dashboard." },
 ];
 
 const whys = [

@@ -17,6 +17,7 @@ const navItems = [
   { label: "Payouts", href: "/admin/payouts" },
   { label: "Withdrawals", href: "/admin/withdrawals" },
   { label: "Users", href: "/admin/users" },
+  { label: "Messages", href: "/admin/messages" },
 ];
 
 function NavLink({ item, onClick }: { item: typeof navItems[0]; onClick?: () => void }) {

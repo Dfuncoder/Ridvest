@@ -29,7 +29,7 @@ export default async function PoolDetailPage({
   const admin = createSupabaseAdminClient();
   const { data: pool } = await admin
     .from("pools")
-    .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, min_contribution, duration_months, roi_percent)")
+    .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, min_contribution, duration_weeks, roi_percent)")
     .eq("id", id)
     .single();
 
@@ -63,7 +63,7 @@ export default async function PoolDetailPage({
 
   const product = pool.product as unknown as {
     name: string; target_amount: number; min_contribution: number;
-    duration_months: number; roi_percent: number;
+    duration_weeks: number; roi_percent: number;
   };
   const raised = Number(pool.amount_raised);
   const target = Number(product.target_amount);
@@ -82,7 +82,7 @@ export default async function PoolDetailPage({
           <div>
             <h1 className="text-lg font-extrabold text-slate-900">{pool.name}</h1>
             <p className="text-sm text-slate-500">
-              {product.name} · {Number(product.roi_percent)}% total return over {product.duration_months} months
+              {product.name} · {Number(product.roi_percent)}% total return over {product.duration_weeks} weeks
             </p>
           </div>
           <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 capitalize ${

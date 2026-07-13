@@ -22,7 +22,7 @@ export default async function PortfolioPage() {
   const [{ data: investments }, { data: payouts }] = await Promise.all([
     supabase
       .from("investments")
-      .select("id, amount, status, paid_at, created_at, pool:pools(id, name, status, product:pool_products(name, roi_percent, duration_months))")
+      .select("id, amount, status, paid_at, created_at, pool:pools(id, name, status, product:pool_products(name, roi_percent, duration_weeks))")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -56,7 +56,7 @@ export default async function PortfolioPage() {
           {(investments ?? []).map((inv) => {
             const pool = inv.pool as unknown as {
               id: string; name: string; status: string;
-              product: { name: string; roi_percent: number; duration_months: number };
+              product: { name: string; roi_percent: number; duration_weeks: number };
             };
             const roi = Number(pool.product.roi_percent);
             const expected = Math.round(Number(inv.amount) * (1 + roi / 100) * 100) / 100;
@@ -66,7 +66,7 @@ export default async function PortfolioPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-extrabold text-slate-900 truncate">{pool.name}</p>
                   <p className="text-xs text-slate-400">
-                    {pool.product.name} · {roi}% / {pool.product.duration_months} mo · {fmtDate(inv.paid_at ?? inv.created_at)}
+                    {pool.product.name} · {roi}% / {pool.product.duration_weeks} wks · {fmtDate(inv.paid_at ?? inv.created_at)}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-6">

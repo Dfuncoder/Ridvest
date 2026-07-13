@@ -131,8 +131,8 @@ export default function AboutUs() {
           <div className="lg:col-span-5 lg:sticky lg:top-24">
             <FadeUp delay={300}>
               <div className="rounded-[28px] bg-[#0d2137] p-8 sm:p-10 overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400 opacity-[0.06] blur-3xl rounded-full pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 opacity-[0.06] blur-3xl rounded-full pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 65%)" }} />
+                <div className="absolute bottom-0 left-0 w-52 h-52 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 65%)" }} />
 
                 <h3 className="text-2xl font-extrabold text-white mb-3">
                   We remove every <span className="text-amber-400">barrier.</span>

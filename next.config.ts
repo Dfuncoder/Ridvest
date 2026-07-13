@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      // Belt-and-braces on top of robots.txt: private areas must never be
+      // indexed, even if a link to them leaks somewhere crawlable.
+      {
+        source: "/(dashboard|admin|verify-otp|reset-password)(.*)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
     ];
   },
 };

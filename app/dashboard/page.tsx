@@ -17,7 +17,7 @@ export default async function DashboardPage() {
     supabase
       .from("investments")
       .select(
-        "id, amount, status, paid_at, pool:pools(id, name, status, amount_raised, started_at, ends_at, product:pool_products(name, target_amount, duration_months, roi_percent))"
+        "id, amount, status, paid_at, pool:pools(id, name, status, amount_raised, started_at, ends_at, product:pool_products(name, target_amount, duration_weeks, roi_percent))"
       )
       .eq("user_id", user.id)
       .eq("status", "paid")
@@ -54,7 +54,7 @@ export default async function DashboardPage() {
       const pool = inv.pool as unknown as {
         id: string; name: string; status: string; amount_raised: number;
         started_at: string | null; ends_at: string | null;
-        product: { name: string; target_amount: number; duration_months: number; roi_percent: number };
+        product: { name: string; target_amount: number; duration_weeks: number; roi_percent: number };
       };
       const roi = Number(pool.product.roi_percent);
       const invPayouts = allPayouts.filter((p) => p.investment_id === inv.id);
@@ -66,8 +66,8 @@ export default async function DashboardPage() {
         amount: Number(inv.amount),
         earned: earnedByInvestment.get(inv.id) ?? 0,
         totalExpected: Math.round(Number(inv.amount) * (1 + roi / 100) * 100) / 100,
-        monthsTotal: pool.product.duration_months,
-        monthsDone: invPayouts.filter((p) => p.status === "paid").length,
+        weeksTotal: pool.product.duration_weeks,
+        weeksDone: invPayouts.filter((p) => p.status === "paid").length,
         // For pools still filling, show fill progress instead of time progress.
         fillPct: pool.product.target_amount
           ? Math.min(100, Math.round((Number(pool.amount_raised) / Number(pool.product.target_amount)) * 100))

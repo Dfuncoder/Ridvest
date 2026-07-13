@@ -142,8 +142,16 @@ export const PoolProductSchema = z.object({
   description: z.string().trim().max(500).optional().default(""),
   targetAmount: z.coerce.number().positive({ error: ERRORS.ADMIN_PRODUCT_INVALID }).max(10_000_000_000),
   minContribution: z.coerce.number().positive({ error: ERRORS.ADMIN_PRODUCT_INVALID }),
-  durationMonths: z.coerce.number().int().min(1).max(120, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
+  durationWeeks: z.coerce.number().int().min(1).max(520, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
   roiPercent: z.coerce.number().min(0).max(1000, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
+});
+
+// ── Contact form ────────────────────────────────────────────────────────────
+export const ContactSchema = z.object({
+  name: z.string().trim().min(2, { error: ERRORS.CONTACT_NAME_REQUIRED }).max(120),
+  email: z.email({ error: ERRORS.CONTACT_EMAIL_INVALID }).trim().toLowerCase(),
+  phone: z.string().trim().max(20).optional().default(""),
+  message: z.string().trim().min(10, { error: ERRORS.CONTACT_MESSAGE_REQUIRED }).max(3000),
 });
 
 /**

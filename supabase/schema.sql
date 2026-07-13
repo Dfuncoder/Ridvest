@@ -71,7 +71,7 @@ create table if not exists public.withdrawal_accounts (
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. POOL PRODUCTS — the investment "options" the admin creates.
---    e.g. name: "Keke Napep", target 2,500,000, 12 months, 50% ROI.
+--    e.g. name: "Keke Napep", target 2,500,000, 52 weeks, 50% ROI.
 --    Users (or the admin) then open POOLS based on a product.
 -- ─────────────────────────────────────────────────────────────────────────────
 create table if not exists public.pool_products (
@@ -80,7 +80,7 @@ create table if not exists public.pool_products (
   description      text,
   target_amount    numeric(14,2) not null check (target_amount > 0),      -- ₦ price to fill one pool
   min_contribution numeric(14,2) not null check (min_contribution > 0),   -- ₦ smallest slice a user may buy
-  duration_months  integer not null check (duration_months between 1 and 120),
+  duration_weeks  integer not null check (duration_weeks between 1 and 520),
   roi_percent      numeric(6,2) not null check (roi_percent >= 0),        -- e.g. 50 = 50% total return
   active           boolean not null default true,    -- inactive products can no longer be invested in
   created_by       uuid references public.profiles (id),
@@ -139,9 +139,9 @@ create index if not exists investments_user_idx on public.investments (user_id);
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 6. PAYOUTS — the monthly return schedule, generated the moment a pool fills.
+-- 6. PAYOUTS — the weekly return schedule, generated the moment a pool fills.
 --    total return  = amount × (1 + roi/100)
---    monthly       = total / duration_months (last month absorbs rounding)
+--    weekly        = total / duration_weeks (last week absorbs rounding)
 --    status: scheduled → paid (admin marks paid; this credits the user's
 --    withdrawable balance).
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -380,7 +380,7 @@ create trigger on_auth_user_created
 --      refund_pending instead — the admin refunds it from the Paystack
 --      dashboard and marks it refunded.
 --   5. If the pool just reached its target: sets it active, stamps
---      started_at / ends_at, and generates the full monthly payout schedule
+--      started_at / ends_at, and generates the full weekly payout schedule
 --      for every paid investment in the pool.
 create or replace function public.apply_paid_investment(
   p_reference   text,
@@ -456,11 +456,11 @@ begin
     update public.pools
     set status     = 'active',
         started_at = now(),
-        ends_at    = now() + make_interval(months => v_product.duration_months)
+        ends_at    = now() + make_interval(weeks => v_product.duration_weeks)
     where id = v_pool.id;
 
-    -- Generate the monthly payout schedule for every paid investment.
-    -- monthly = trunc(total_return / months, 2); the LAST month absorbs the
+    -- Generate the weekly payout schedule for every paid investment.
+    -- weekly = trunc(total_return / weeks, 2); the LAST week absorbs the
     -- rounding remainder so each investor receives exactly amount × (1+roi).
     insert into public.payouts (investment_id, user_id, pool_id, amount, due_date)
     select
@@ -468,17 +468,17 @@ begin
       i.user_id,
       i.pool_id,
       case
-        when gs.n = v_product.duration_months then
+        when gs.n = v_product.duration_weeks then
           round(i.amount * (1 + v_product.roi_percent / 100.0), 2)
           - trunc(round(i.amount * (1 + v_product.roi_percent / 100.0), 2)
-                  / v_product.duration_months, 2) * (v_product.duration_months - 1)
+                  / v_product.duration_weeks, 2) * (v_product.duration_weeks - 1)
         else
           trunc(round(i.amount * (1 + v_product.roi_percent / 100.0), 2)
-                / v_product.duration_months, 2)
+                / v_product.duration_weeks, 2)
       end,
-      (now() + make_interval(months => gs.n))::date
+      (now() + make_interval(weeks => gs.n))::date
     from public.investments i
-    cross join generate_series(1, v_product.duration_months) as gs(n)
+    cross join generate_series(1, v_product.duration_weeks) as gs(n)
     where i.pool_id = v_pool.id and i.status = 'paid';
   end if;
 
@@ -670,3 +670,51 @@ create policy "settings: public read" on public.app_settings
 --   2. Configure the "Confirm signup" email template to send a 6-digit code
 --      ({{ .Token }}) instead of a link.
 -- ════════════════════════════════════════════════════════════════════════════
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 11. CONTACT MESSAGES — submissions from the public "Talk to us" form.
+--     Written by the server only (secret key); admins read them in the
+--     dashboard under /admin/messages. Also emailed to CONTACT_EMAIL when
+--     Resend is configured (see app/actions/contact.ts).
+--     If you already ran this file before this table existed, just run this
+--     section by itself in the SQL editor.
+-- ─────────────────────────────────────────────────────────────────────────────
+create table if not exists public.contact_messages (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  email      text not null,
+  phone      text,
+  message    text not null,
+  handled    boolean not null default false,   -- flipped by admin when dealt with
+  created_at timestamptz not null default now()
+);
+
+alter table public.contact_messages enable row level security;
+
+drop policy if exists "contact: admin read" on public.contact_messages;
+create policy "contact: admin read" on public.contact_messages
+  for select to authenticated
+  using (public.is_admin());
+
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 12. CONTACT REPLIES — replies sent from the admin dashboard to a contact
+--     message. Stored for the audit trail (who replied, what was said, when).
+--     The actual email goes out from the support inbox via Resend.
+--     If you already ran this file, run this section by itself.
+-- ─────────────────────────────────────────────────────────────────────────────
+create table if not exists public.contact_replies (
+  id         uuid primary key default gen_random_uuid(),
+  message_id uuid not null references public.contact_messages (id) on delete cascade,
+  admin_id   uuid references public.profiles (id),
+  body       text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.contact_replies enable row level security;
+
+drop policy if exists "contact replies: admin read" on public.contact_replies;
+create policy "contact replies: admin read" on public.contact_replies
+  for select to authenticated
+  using (public.is_admin());
