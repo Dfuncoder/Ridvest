@@ -94,7 +94,10 @@ export default async function AdminOverviewPage() {
         <Link href="/admin/withdrawals" className="bg-white border border-slate-200 rounded-2xl p-5 hover:shadow-md transition-shadow">
           <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Pending withdrawals</p>
           <p className="text-xl font-extrabold text-amber-500 tabular-nums">
-            {pendingWithdrawals.length} · {fmtNaira(pendingWithdrawalTotal)}
+            {fmtNaira(pendingWithdrawalTotal)}
+            <span className="text-sm font-bold text-slate-400">
+              {" "}· {pendingWithdrawals.length} request{pendingWithdrawals.length === 1 ? "" : "s"}
+            </span>
           </p>
           <p className="text-[11px] text-slate-400 mt-1.5">Review and pay →</p>
         </Link>
@@ -115,7 +118,7 @@ export default async function AdminOverviewPage() {
           {(["open", "active", "completed", "cancelled"] as const).map((st) => (
             <div key={st} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
               <p className="text-lg font-extrabold text-slate-900">{poolCounts[st] ?? 0}</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider capitalize">{st === "open" ? "Filling" : st}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider">{st === "open" ? "Filling" : st}</p>
             </div>
           ))}
         </div>
