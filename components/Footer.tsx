@@ -4,8 +4,9 @@ import Link from "next/link";
 export function CTABanner() {
   return (
     <section className="relative bg-[#0d2137] py-24 px-6 overflow-hidden">
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-10 pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-amber-400 rounded-full blur-[100px] opacity-10 pointer-events-none" />
+      {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts. */}
+      <div className="absolute top-0 left-1/4 w-125 h-125 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 65%)" }} />
+      <div className="absolute bottom-0 right-1/4 w-110 h-110 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.10) 0%, transparent 65%)" }} />
 
       <div className="relative max-w-3xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 mb-6">

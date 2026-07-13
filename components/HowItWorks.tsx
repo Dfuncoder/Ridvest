@@ -134,7 +134,8 @@ const timeline = [
 export default function HowItWorks() {
   return (
     <section id="hiw" className="relative bg-[#f8faff] py-24 sm:py-32 overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-50 rounded-full blur-[140px] opacity-40 pointer-events-none" />
+      {/* Radial gradient instead of filter:blur — avoids mobile GPU artifacts. */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(239,246,255,0.7) 0%, transparent 65%)" }} />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
 

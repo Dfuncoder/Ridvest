@@ -56,8 +56,9 @@ export default function Overview({ data }: { data: OverviewData }) {
 
       {/* ── BALANCE HERO CARD ── */}
       <div className="bg-[#0d2137] rounded-2xl p-5 sm:p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full blur-[100px] opacity-10 translate-x-1/3 -translate-y-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-400 rounded-full blur-[80px] opacity-8 -translate-x-1/3 translate-y-1/3 pointer-events-none" />
+        {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts. */}
+        <div className="absolute top-0 right-0 w-96 h-96 translate-x-1/3 -translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 65%)" }} />
+        <div className="absolute bottom-0 left-0 w-72 h-72 -translate-x-1/3 translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 65%)" }} />
 
         <div className="relative z-10">
           <div className="flex items-start justify-between gap-3 mb-5">

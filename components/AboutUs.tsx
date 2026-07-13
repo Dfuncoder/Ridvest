@@ -85,8 +85,9 @@ const operations = [
 export default function AboutUs() {
   return (
     <section id="about" className="relative bg-white py-24 sm:py-32 overflow-hidden">
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-50 rounded-full blur-[120px] opacity-50 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-amber-50 rounded-full blur-[100px] opacity-60 translate-x-1/3 translate-y-1/3 pointer-events-none" />
+      {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts. */}
+      <div className="absolute top-0 left-0 w-125 h-125 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(239,246,255,0.9) 0%, transparent 65%)" }} />
+      <div className="absolute bottom-0 right-0 w-100 h-100 translate-x-1/3 translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(255,251,235,0.95) 0%, transparent 65%)" }} />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
         <FadeUp>
@@ -105,7 +106,7 @@ export default function AboutUs() {
                 your street.
               </h2>
               <p className="text-lg sm:text-xl text-slate-600 leading-relaxed font-medium mb-5">
-                Transport vehicles have moved millions of Nigerians for decades. They run every day, earn every day, and stop for nothing. Yet for the everyday Nigerian, a structured way to profit from them has never existed, until now.
+                Transport vehicles have moved millions of Nigerians for decades. They run everyday, earn everyday, and stop for nothing. Yet for the everyday Nigerian, a structured way to profit from them has never existed, until now.
               </p>
               {/*<p className="text-base text-slate-500 leading-relaxed">
                 Rydvest changes that. We built the structure so you can own a stake in a transport vehicle, collect monthly returns for a year, and walk away with your capital intact; without touching a steering wheel.

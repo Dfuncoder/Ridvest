@@ -7,6 +7,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+// Cache the response for 5 minutes — the landing page doesn't need a fresh
+// database read on every visit, and this keeps it fast under load.
+export const revalidate = 300;
+
 export async function GET() {
   let percent = 50;
 

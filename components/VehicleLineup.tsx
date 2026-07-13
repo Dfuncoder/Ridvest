@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const vehicles = [
   {
     name: "🛺 Keke Napep",
@@ -34,9 +36,14 @@ export default function VehicleLineup() {
             key={v.name}
             style={{ borderRadius: 18, overflow: "hidden", position: "relative", cursor: "pointer" }}
           >
-            <img
+            {/* next/image: optimized + lazy-loaded (these are below the fold),
+                so the 1.5 MB source PNGs never reach the browser. */}
+            <Image
               src={v.img}
               alt={v.name}
+              width={500}
+              height={220}
+              sizes="(max-width: 640px) 100vw, 340px"
               style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }}
             />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(13,33,55,0.92) 0%,rgba(13,33,55,0.2) 60%,transparent 100%)" }} />

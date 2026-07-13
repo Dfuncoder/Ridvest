@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 export default function Hero() {
   return (
     <section
@@ -104,14 +106,21 @@ export default function Hero() {
         {/* Right: card with keke image + floating stats */}
         <div className="hero-visual" style={{ position: "relative", width: "100%" }}>
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <img
+            {/* next/image serves an optimized, responsive WebP/AVIF instead of
+                the raw PNG; priority = preload, since this is the hero (LCP). */}
+            <Image
               src="/header_image-2.png"
               alt="Keke Napep"
-              style={{ 
-                width: "100%", 
-                maxHeight: "450px", 
-                objectFit: "contain", 
-                display: "block" 
+              width={900}
+              height={450}
+              priority
+              sizes="(max-width: 900px) 100vw, 50vw"
+              style={{
+                width: "100%",
+                height: "auto",
+                maxHeight: "450px",
+                objectFit: "contain",
+                display: "block",
               }}
             />
           </div>

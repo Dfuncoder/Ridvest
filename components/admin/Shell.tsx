@@ -82,7 +82,7 @@ export default function AdminShell({ name, children }: { name: string; children:
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
           <aside className="relative flex flex-col w-72 bg-[#0d2137] h-full z-50">
             <div className="px-5 h-16 flex items-center justify-between border-b border-white/8">
               <span className="text-lg font-extrabold text-white">
@@ -98,7 +98,8 @@ export default function AdminShell({ name, children }: { name: string; children:
 
       {/* Main content */}
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-5 lg:px-8 h-16 flex items-center gap-3">
+        {/* Solid background — backdrop-filter blurs are costly on mobile GPUs. */}
+        <header className="sticky top-0 z-20 bg-white border-b border-slate-200 px-5 lg:px-8 h-16 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500"

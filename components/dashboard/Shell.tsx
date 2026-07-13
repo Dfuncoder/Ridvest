@@ -174,7 +174,8 @@ export default function DashboardShell({
   const isDark = theme === "dark";
 
   const pageBg = isDark ? "bg-[#060f1a]" : "bg-slate-100";
-  const topbarBg = isDark ? "bg-[#0d2137]/95 border-white/8" : "bg-white/90 border-slate-200";
+  // Solid (not translucent) topbar backgrounds since backdrop-blur is gone.
+  const topbarBg = isDark ? "bg-[#0d2137] border-white/8" : "bg-white border-slate-200";
   const topbarText = isDark ? "text-white" : "text-slate-900";
   const topbarSub = isDark ? "text-slate-400" : "text-slate-400";
   const topbarBtn = isDark ? "hover:bg-white/8 text-slate-400" : "hover:bg-slate-100 text-slate-500";
@@ -195,7 +196,7 @@ export default function DashboardShell({
         {/* ── MOBILE SIDEBAR OVERLAY ── */}
         {sidebarOpen && (
           <div className="lg:hidden fixed inset-0 z-50 flex">
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+            <div className="fixed inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
             <aside className="relative flex flex-col w-72 bg-[#0d2137] h-full z-50">
               <div className="px-5 h-16 flex items-center justify-between border-b border-white/8">
                 <Logo />
@@ -212,7 +213,8 @@ export default function DashboardShell({
         <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
 
           {/* Topbar */}
-          <header className={`sticky top-0 z-20 backdrop-blur-md border-b px-5 lg:px-8 h-16 flex items-center justify-between gap-4 transition-colors duration-300 ${topbarBg}`}>
+          {/* Solid background — backdrop-filter blurs are costly on mobile GPUs. */}
+          <header className={`sticky top-0 z-20 border-b px-5 lg:px-8 h-16 flex items-center justify-between gap-4 transition-colors duration-300 ${topbarBg}`}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}

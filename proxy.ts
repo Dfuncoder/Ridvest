@@ -65,6 +65,16 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and images.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // Only run where a session matters: protected areas + auth pages.
+  // Public pages (landing, about, FAQ, ...) skip the proxy entirely, which
+  // keeps their time-to-first-byte as fast as possible.
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-otp",
+  ],
 };

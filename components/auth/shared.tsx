@@ -135,8 +135,10 @@ export function FieldError({ message }: { message?: string }) {
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-screen bg-[#0d2137] flex flex-col items-center justify-center px-5 py-12 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-80 h-80 bg-blue-600 rounded-full blur-[120px] opacity-10 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-amber-400 rounded-full blur-[100px] opacity-8 translate-x-1/3 translate-y-1/3 pointer-events-none" />
+      {/* Decorative glows as radial gradients — NOT filter:blur, which causes
+          severe paint artifacts (ghosting/black bands) on low-end mobile GPUs. */}
+      <div className="absolute top-0 left-0 w-125 h-125 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 65%)" }} />
+      <div className="absolute bottom-0 right-0 w-110 h-110 translate-x-1/3 translate-y-1/3 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.08) 0%, transparent 65%)" }} />
       <div className="relative w-full max-w-sm">
         <Logo />
         {children}

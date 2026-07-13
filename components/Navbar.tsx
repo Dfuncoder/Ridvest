@@ -34,7 +34,7 @@ export default function Navbar() {
     <>
       <nav
         className={`sticky top-0 z-50 w-full transition-all duration-300 border-b border-white/8 ${
-          scrolled ? "bg-[#0d2137]/98 backdrop-blur-md shadow-lg shadow-black/20" : "bg-[#0d2137]"
+          scrolled ? "bg-[#0d2137] shadow-lg shadow-black/20" : "bg-[#0d2137]"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
