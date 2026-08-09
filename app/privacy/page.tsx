@@ -10,7 +10,7 @@ const sections = [
     title: "1. Who We Are", 
     content: `Rydvest Ltd is a transport co-investment platform based in Ogidi, Anambra State, Nigeria. We operate the Rydvest platform, which allows individuals to invest in commercial vehicles and earn weekly returns.
 
-This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@rydvest.ng.`,
+This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@rydvest.com.`,
   },
   {
     title: "2. Information We Collect",
@@ -76,7 +76,7 @@ Investment records may be retained for up to 7 years in compliance with Nigerian
 — Withdraw consent for optional data uses at any time
 — Lodge a complaint with the relevant data protection authority in Nigeria
 
-To exercise any of these rights, contact us at hello@rydvest.ng. We will respond within 14 business days.`,
+To exercise any of these rights, contact us at hello@rydvest.com. We will respond within 14 business days.`,
   },
   {
     title: "8. Cookies",
@@ -94,8 +94,9 @@ To exercise any of these rights, contact us at hello@rydvest.ng. We will respond
     title: "11. Contact Us",
     content: `For any privacy-related questions or requests, reach us at:
 
-Email: hello@rydvest.ng
-Phone/WhatsApp: +234 800 000 0000
+Email: hello@rydvest.com
+Phone: +234 707 092 1140
+WhatsApp: +234 706 528 4100
 Address: Ogidi, Anambra State, Nigeria`,
   },
 ];

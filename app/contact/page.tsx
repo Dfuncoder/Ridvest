@@ -16,8 +16,8 @@ export const metadata = {
 const contactPoints = [
   {
     title: "Email us directly",
-    value: "support@rydvest.com",
-    href: "mailto:support@rydvest.com",
+    value: "hello@rydvest.com",
+    href: "mailto:hello@rydvest.com",
   },
   {
     title: "Response time",

@@ -99,7 +99,7 @@ Rydvest is not a bank or a licensed financial institution. This platform is stru
   },
   {
     title: "12. Contact",
-    content: `If you have questions about these Terms, please contact us at hello@rydvest.ng or reach us on WhatsApp at +234 800 000 0000. We are also available at our office in Ogidi, Anambra State, Nigeria.`,
+    content: `If you have questions about these Terms, please contact us at hello@rydvest.com or reach us on WhatsApp at +234 706 528 4100. We are also available at our office in Ogidi, Anambra State, Nigeria.`,
   },
 ];
 

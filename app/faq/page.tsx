@@ -134,7 +134,7 @@ const faqs = [
       },
       {
         q: "How do I contact Rydvest for support?",
-        a: "You can reach us by email at support@rydvest.com, by phone or WhatsApp on +234 800 000 0000, or through the contact form on our website. We aim to respond to all enquiries within 24 hours.",
+        a: "You can reach us by email at hello@rydvest.com, by phone on +234 707 092 1140 or WhatsApp on +234 706 528 4100, or through the contact form on our website. We aim to respond to all enquiries within 24 hours.",
       },
     ],
   },
@@ -180,7 +180,7 @@ export default function FAQPage() {
          
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Frequently asked questions</h1>
           <p className="text-slate-400 text-base leading-relaxed max-w-xl">
-            Everything you need to know about investing on Rydvest. Can't find your answer? Reach us on WhatsApp at +234 800 000 0000.
+            Everything you need to know about investing on Rydvest. Can't find your answer? Reach us on WhatsApp at +234 706 528 4100.
           </p>
         </div>
       </div>
@@ -211,7 +211,7 @@ export default function FAQPage() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <a
-              href="mailto:support@rydvest.com"
+              href="mailto:hello@rydvest.com"
               className="inline-flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all duration-150"
             >
               <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -220,7 +220,7 @@ export default function FAQPage() {
               Email us
             </a>
             <a
-              href="https://wa.me/2348000000000"
+              href="https://wa.me/2347065284100"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-[#0d2137] text-sm font-extrabold px-5 py-3 rounded-xl transition-all duration-150"

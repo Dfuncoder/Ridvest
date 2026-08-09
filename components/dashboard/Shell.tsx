@@ -29,7 +29,6 @@ const Logo = () => (
       <circle cx="27" cy="27" r="4" fill="#0d2137" stroke="#f59e0b" strokeWidth="1.5" />
       <circle cx="27" cy="27" r="1.5" fill="#f59e0b" />
       <circle cx="30" cy="11" r="5" fill="#f59e0b" />
-      <text x="30" y="14" textAnchor="middle" fontSize="6" fontWeight="700" fill="#1a3a5c" fontFamily="system-ui">₦</text>
     </svg>
     <span className="text-lg font-extrabold text-white tracking-tight">
       Ryd<span className="text-amber-400">vest</span>
