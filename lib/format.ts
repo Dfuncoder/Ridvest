@@ -23,3 +23,4 @@ export function poolProgressPct(raised: number | string, target: number | string
   if (!t) return 0;
   return Math.min(100, Math.round((Number(raised) / t) * 100));
 }
+//built by me
