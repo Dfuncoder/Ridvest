@@ -52,7 +52,7 @@ export default async function InvestPage() {
           <p className="text-xl font-extrabold text-slate-900 tabular-nums">{fmtNaira(walletBalance)}</p>
         </div>
         <Link
-          href="/dashboard/wallet"
+          href="/dashboard/deposit"
           className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-150 shadow-lg shadow-amber-400/20"
         >
           Fund account

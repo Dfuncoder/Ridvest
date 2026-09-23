@@ -8,6 +8,7 @@
  */
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
+import { getPaymentSettings } from "@/lib/settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DepositActions } from "@/components/admin/DepositActions";
 import { fmtDate } from "@/lib/format";
@@ -110,10 +111,13 @@ export default async function ConfirmDepositPage({
     phone: string | null;
   } | null;
 
-  const { data: accounts } = await admin
-    .from("withdrawal_accounts")
-    .select("bank_name, account_number, account_name")
-    .eq("user_id", deposit.user_id);
+  const [{ data: accounts }, settings] = await Promise.all([
+    admin
+      .from("withdrawal_accounts")
+      .select("bank_name, account_number, account_name")
+      .eq("user_id", deposit.user_id),
+    getPaymentSettings(),
+  ]);
 
   return (
     <Frame>
@@ -169,7 +173,12 @@ export default async function ConfirmDepositPage({
         </p>
       </div>
 
-      <DepositActions depositId={deposit.id} size="full" />
+      <DepositActions
+        depositId={deposit.id}
+        defaultDestination={`${settings.accountNumber} · ${settings.accountName} · ${settings.bankName}`}
+        defaultInitiator={depositor?.full_name ?? ""}
+        size="full"
+      />
 
       <Link
         href="/admin/deposits"

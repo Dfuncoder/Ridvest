@@ -94,6 +94,7 @@ export const ERRORS = {
   // ── Admin ─────────────────────────────────────────────────────────────────
   ADMIN_PRODUCT_INVALID: "Please fill in all product fields with valid values.",
   ADMIN_ACTION_FAILED: "That action failed. Please try again.",
+  DEPOSIT_NARRATION_REQUIRED: "Add the narration from the bank alert — it goes on the user's receipt.",
   ADMIN_USER_NOT_FOUND: "User not found.",
 
   // ── Contact form ──────────────────────────────────────────────────────────

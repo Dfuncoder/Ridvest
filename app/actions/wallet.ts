@@ -75,7 +75,7 @@ export async function startKorapayDeposit(
     name: profile?.full_name || user.email,
     amountKobo: amount * 100,
     reference,
-    redirectUrl: `${siteUrl()}/dashboard/wallet/callback`,
+    redirectUrl: `${siteUrl()}/dashboard/deposit/callback`,
     notificationUrl: `${siteUrl()}/api/webhooks/korapay`,
     narration: "Rydvest wallet funding",
   });
@@ -147,7 +147,7 @@ export async function declareManualTransfer(
     });
   });
 
-  revalidatePath("/dashboard/wallet");
+  revalidatePath("/dashboard/deposit");
   return {
     success: true,
     message: "Transfer submitted. We are confirming it now.",

@@ -43,8 +43,12 @@ const navItems = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>,
   },
   {
-    label: "Fund", href: "/dashboard/wallet",
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>,
+    label: "Deposit", href: "/dashboard/deposit",
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6-6m-6 6l-6-6M3 21h18" /></svg>,
+  },
+  {
+    label: "History", href: "/dashboard/history",
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
   {
     label: "Invest", href: "/dashboard/invest",
@@ -67,6 +71,14 @@ const navItems = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>,
   },
 ];
+
+// The five slots on the mobile bottom bar, named rather than sliced.
+const BOTTOM_NAV = ["/dashboard", "/dashboard/deposit", "/dashboard/invest", "/dashboard/pools", "/dashboard/portfolio"];
+const bottomNavItems = BOTTOM_NAV.map((href) => navItems.find((i) => i.href === href)!);
+
+// Sidebar grouping.
+const MAIN_NAV = navItems.slice(0, 6);
+const ACCOUNT_NAV = navItems.slice(6);
 
 // ── Theme toggle button ────────────────────────────────────
 function ThemeToggle() {
@@ -128,9 +140,9 @@ function SidebarContent({
     <>
       <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">Main</p>
-        {navItems.slice(0, 5).map((item) => <NavLink key={item.href} item={item} onClick={onClose} />)}
+        {MAIN_NAV.map((item) => <NavLink key={item.href} item={item} onClick={onClose} />)}
         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2 mt-5">Account</p>
-        {navItems.slice(5).map((item) => <NavLink key={item.href} item={item} onClick={onClose} />)}
+        {ACCOUNT_NAV.map((item) => <NavLink key={item.href} item={item} onClick={onClose} />)}
         {isAdmin && (
           <>
             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2 mt-5">Switch</p>
@@ -272,7 +284,7 @@ export default function DashboardShell({
 
         {/* ── MOBILE BOTTOM NAV ── */}
         <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t grid grid-cols-5 transition-colors duration-300 ${bottomNavBg}`}>
-          {navItems.slice(0, 5).map((item) => (
+          {bottomNavItems.map((item) => (
             <BottomNavLink key={item.href} item={item} />
           ))}
         </nav>

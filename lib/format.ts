@@ -17,6 +17,21 @@ export function fmtDate(d: string | Date | null | undefined): string {
   return date.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
 }
 
+/** "12 Jul 2026, 2:45 pm" — used on receipts where the time matters. */
+export function fmtDateTime(d: string | Date | null | undefined): string {
+  if (!d) return "—";
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 /** 0–100 progress percentage of a pool. */
 export function poolProgressPct(raised: number | string, target: number | string): number {
   const t = Number(target);

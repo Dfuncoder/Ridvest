@@ -77,9 +77,17 @@ create table if not exists public.deposits (
   confirm_token     text unique,
   confirmed_by      uuid references public.profiles (id),
   admin_note        text,
+  -- Receipt details, filled by the admin at confirmation.
+  destination_account text,
+  initiator           text,
+  narration           text,
   credited_at       timestamptz,
   created_at        timestamptz not null default now()
 );
+
+alter table public.deposits add column if not exists destination_account text;
+alter table public.deposits add column if not exists initiator           text;
+alter table public.deposits add column if not exists narration           text;
 
 create index if not exists deposits_user_idx   on public.deposits (user_id, created_at desc);
 create index if not exists deposits_status_idx on public.deposits (status, created_at desc);
@@ -207,6 +215,7 @@ $$;
 -- create or replace would otherwise leave a stale overload behind.
 drop function if exists public.declare_manual_deposit(numeric, text, text);
 drop function if exists public.confirm_manual_deposit(uuid, uuid, numeric);
+drop function if exists public.confirm_manual_deposit(uuid, uuid, numeric, text, text, text);
 
 create or replace function public.declare_manual_deposit(
   p_reference text,
@@ -249,9 +258,12 @@ $$;
 --    from what the user typed.
 -- ─────────────────────────────────────────────────────────────────────────────
 create or replace function public.confirm_manual_deposit(
-  p_deposit_id    uuid,
-  p_admin_id      uuid,
-  p_actual_amount numeric
+  p_deposit_id          uuid,
+  p_admin_id            uuid,
+  p_actual_amount       numeric,
+  p_destination_account text default null,
+  p_initiator           text default null,
+  p_narration           text default null
 )
 returns jsonb
 language plpgsql
@@ -284,19 +296,28 @@ begin
   end if;
 
   update public.deposits
-  set status          = 'credited',
-      amount          = coalesce(amount, v_amount),
-      credited_amount = v_amount,
-      confirmed_by    = p_admin_id,
-      confirm_token   = null,
-      credited_at     = now()
+  set status              = 'credited',
+      amount              = coalesce(amount, v_amount),
+      credited_amount     = v_amount,
+      confirmed_by        = p_admin_id,
+      confirm_token       = null,
+      destination_account = nullif(btrim(coalesce(p_destination_account, '')), ''),
+      initiator           = nullif(btrim(coalesce(p_initiator, '')), ''),
+      narration           = nullif(btrim(coalesce(p_narration, '')), ''),
+      credited_at         = now()
   where id = v_dep.id;
 
   insert into public.transactions (user_id, type, amount, reference, status, metadata)
   values (v_dep.user_id, 'deposit', v_amount, v_dep.reference, 'success',
           jsonb_build_object('method', 'manual', 'confirmed_by', p_admin_id));
 
-  return jsonb_build_object('ok', true, 'amount', v_amount, 'user_id', v_dep.user_id);
+  return jsonb_build_object(
+    'ok', true,
+    'amount', v_amount,
+    'user_id', v_dep.user_id,
+    'reference', v_dep.reference,
+    'initiated_at', v_dep.created_at
+  );
 end;
 $$;
 
@@ -474,11 +495,11 @@ create policy "deposits: owner reads" on public.deposits
 -- logged-in user cannot call these directly, then hand execute back to the
 -- service role that the webhook and admin actions run as.
 revoke all on function public.apply_paid_deposit(text, bigint) from public, anon, authenticated;
-revoke all on function public.confirm_manual_deposit(uuid, uuid, numeric) from public, anon, authenticated;
+revoke all on function public.confirm_manual_deposit(uuid, uuid, numeric, text, text, text) from public, anon, authenticated;
 revoke all on function public.reject_manual_deposit(uuid, uuid, text) from public, anon, authenticated;
 
 grant execute on function public.apply_paid_deposit(text, bigint) to service_role;
-grant execute on function public.confirm_manual_deposit(uuid, uuid, numeric) to service_role;
+grant execute on function public.confirm_manual_deposit(uuid, uuid, numeric, text, text, text) to service_role;
 grant execute on function public.reject_manual_deposit(uuid, uuid, text) to service_role;
 
 -- These two read auth.uid(), so users call them with their own session.

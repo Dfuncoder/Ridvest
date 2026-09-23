@@ -61,7 +61,7 @@ export function InvestForm({
       <div className="mt-3">
         <Banner state={state} />
         <Link
-          href="/dashboard/wallet"
+          href="/dashboard/deposit"
           className={`block text-center px-5 py-2.5 ${primaryBtn}`}
         >
           Add money to invest

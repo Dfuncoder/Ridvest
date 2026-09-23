@@ -18,6 +18,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail } from "@/lib/email";
 import { parseEmailList } from "@/lib/settings";
 import { fmtNaira } from "@/lib/format";
+import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { PoolProductSchema, PaymentSettingsSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
@@ -392,11 +393,23 @@ export async function confirmDeposit(_prev: FormState, formData: FormData): Prom
     return { errors: { actualAmount: ERRORS.DEPOSIT_INVALID_AMOUNT } };
   }
 
+  const field = (name: string, max: number) =>
+    String(formData.get(name) ?? "").trim().slice(0, max);
+
+  const destinationAccount = field("destinationAccount", 120);
+  const initiator = field("initiator", 120);
+  const narration = field("narration", 200);
+
+  if (!narration) return { errors: { narration: ERRORS.DEPOSIT_NARRATION_REQUIRED } };
+
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin.rpc("confirm_manual_deposit", {
     p_deposit_id: depositId,
     p_admin_id: user.id,
     p_actual_amount: actualAmount,
+    p_destination_account: destinationAccount || null,
+    p_initiator: initiator || null,
+    p_narration: narration,
   });
 
   if (error) {
@@ -404,13 +417,21 @@ export async function confirmDeposit(_prev: FormState, formData: FormData): Prom
     return { message: ERRORS.ADMIN_ACTION_FAILED };
   }
 
-  const result = data as { ok?: boolean; reason?: string; amount?: number; user_id?: string } | null;
+  const result = data as {
+    ok?: boolean;
+    reason?: string;
+    amount?: number;
+    user_id?: string;
+    reference?: string;
+    initiated_at?: string;
+  } | null;
   if (!result?.ok) {
     return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
   }
 
-  await audit(user.id, "deposit.confirm", depositId, { amount: result.amount });
+  await audit(user.id, "deposit.confirm", depositId, { amount: result.amount, narration });
 
+  // Receipt goes out once, on the confirmation that actually credited.
   if (result.reason !== "already_processed" && result.user_id) {
     const { data: profile } = await admin
       .from("profiles")
@@ -419,15 +440,24 @@ export async function confirmDeposit(_prev: FormState, formData: FormData): Prom
       .single();
 
     if (profile?.email) {
+      const receipt: Receipt = {
+        recipientName: profile.full_name ?? "",
+        amount: Number(result.amount ?? 0),
+        reference: result.reference ?? "",
+        destinationAccount,
+        initiator: initiator || (profile.full_name ?? ""),
+        narration,
+        initiatedAt: result.initiated_at ?? null,
+        completedAt: new Date(),
+      };
+
       await sendEmail({
         from: supportFrom(),
         to: profile.email,
-        subject: `Your Rydvest balance has been credited — ${fmtNaira(result.amount ?? 0)}`,
-        text:
-          `Hi ${profile.full_name || "there"},\n\n` +
-          `We've confirmed your transfer and added ${fmtNaira(result.amount ?? 0)} to your Rydvest balance.\n\n` +
-          `You can now join a pool from your dashboard.\n\n` +
-          `— The Rydvest team`,
+        replyTo: supportEmail(),
+        subject: receiptSubject(receipt),
+        text: receiptText(receipt),
+        html: receiptHtml(receipt),
       });
     }
   }
@@ -528,6 +558,6 @@ export async function updatePaymentSettings(_prev: FormState, formData: FormData
   await audit(user.id, "settings.payment", parsed.data.method, { notifyEmails: emails });
 
   revalidatePath("/admin/settings");
-  revalidatePath("/dashboard/wallet");
+  revalidatePath("/dashboard/deposit");
   return { success: true, message: "Payment settings saved." };
 }

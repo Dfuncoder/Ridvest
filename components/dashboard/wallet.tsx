@@ -91,19 +91,6 @@ function ProcessingCard({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** Compact reminder that transfers are in flight, shown above the form. */
-function PendingNotice({ count }: { count: number }) {
-  if (count < 1) return null;
-  return (
-    <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mt-1.5 shrink-0" />
-      <p className="text-xs text-amber-900 leading-relaxed">
-        {count === 1 ? "A transfer is" : `${count} transfers are`} still being confirmed.
-      </p>
-    </div>
-  );
-}
-
 function AmountField({ error }: { error?: string }) {
   const [amount, setAmount] = useState("");
 
@@ -238,13 +225,11 @@ export function ManualTransferPanel({
   accountName,
   accountNumber,
   profileName,
-  pendingCount,
 }: {
   bankName: string;
   accountName: string;
   accountNumber: string;
   profileName: string;
-  pendingCount: number;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     declareManualTransfer,
@@ -273,7 +258,6 @@ export function ManualTransferPanel({
     return (
       <>
         <div className="flex flex-col gap-4">
-          <PendingNotice count={pendingCount} />
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <h2 className="text-base font-extrabold text-slate-900 mb-1">Fund your account</h2>
             <p className="text-sm text-slate-500 mb-5">
@@ -301,7 +285,6 @@ export function ManualTransferPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <PendingNotice count={pendingCount} />
       <div className="bg-[#0d2137] rounded-2xl p-6 shadow-xl shadow-[#0d2137]/20">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />

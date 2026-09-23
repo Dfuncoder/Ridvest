@@ -3,6 +3,7 @@
  * checked against the company account, plus a record of everything settled.
  */
 import { requireAdmin } from "@/lib/auth";
+import { getPaymentSettings } from "@/lib/settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DepositActions } from "@/components/admin/DepositActions";
 import { fmtNaira, fmtDate } from "@/lib/format";
@@ -39,6 +40,8 @@ function settledAmount(d: DepositRow): number | null {
 export default async function AdminDepositsPage() {
   await requireAdmin();
   const admin = createSupabaseAdminClient();
+  const settings = await getPaymentSettings();
+  const rydvestAccount = `${settings.accountNumber} · ${settings.accountName} · ${settings.bankName}`;
 
   // deposits has TWO foreign keys to profiles (user_id and confirmed_by), so
   // the embed must name which one — an unqualified profiles(...) is ambiguous
@@ -136,7 +139,11 @@ export default async function AdminDepositsPage() {
                   <p className="text-[11px] text-slate-400 mt-2.5 font-mono break-all">{d.reference}</p>
                   <p className="text-[11px] text-slate-400">Declared {fmtDate(d.created_at)}</p>
                 </div>
-                <DepositActions depositId={d.id} />
+                <DepositActions
+                  depositId={d.id}
+                  defaultDestination={rydvestAccount}
+                  defaultInitiator={d.profile?.full_name ?? ""}
+                />
               </div>
             ))}
           </div>

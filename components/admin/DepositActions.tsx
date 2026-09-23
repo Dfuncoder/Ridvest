@@ -6,6 +6,8 @@ import type { FormState } from "@/app/actions/auth";
 
 const input =
   "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-amber-400 transition-colors";
+const fieldLabel =
+  "text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1";
 
 function Banner({ state }: { state: FormState }) {
   if (!state?.message) return null;
@@ -29,9 +31,15 @@ function Banner({ state }: { state: FormState }) {
  */
 export function DepositActions({
   depositId,
+  defaultDestination,
+  defaultInitiator,
   size = "compact",
 }: {
   depositId: string;
+  /** The Rydvest account configured in settings. */
+  defaultDestination: string;
+  /** The depositor's profile name — overwrite if the bank shows another. */
+  defaultInitiator: string;
   size?: "compact" | "full";
 }) {
   const [confirmState, confirmAction, confirming] = useActionState<FormState, FormData>(
@@ -69,13 +77,10 @@ export function DepositActions({
 
       {!showReject ? (
         <>
-          <form action={confirmAction} className="flex flex-col gap-2">
+          <form action={confirmAction} className="flex flex-col gap-3">
             <input type="hidden" name="depositId" value={depositId} />
             <div>
-              <label
-                htmlFor={`amt-${depositId}`}
-                className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1"
-              >
+              <label htmlFor={`amt-${depositId}`} className={fieldLabel}>
                 Amount received
               </label>
               <input
@@ -96,6 +101,56 @@ export function DepositActions({
                 Type exactly what landed in the Rydvest account.
               </p>
             </div>
+
+            <div>
+              <label htmlFor={`dest-${depositId}`} className={fieldLabel}>
+                Destination account
+              </label>
+              <input
+                id={`dest-${depositId}`}
+                name="destinationAccount"
+                type="text"
+                maxLength={120}
+                defaultValue={defaultDestination}
+                className={input}
+              />
+            </div>
+
+            <div>
+              <label htmlFor={`init-${depositId}`} className={fieldLabel}>
+                Initiated by
+              </label>
+              <input
+                id={`init-${depositId}`}
+                name="initiator"
+                type="text"
+                maxLength={120}
+                defaultValue={defaultInitiator}
+                className={input}
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Change this if the bank shows a different sender.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor={`narr-${depositId}`} className={fieldLabel}>
+                Narration
+              </label>
+              <input
+                id={`narr-${depositId}`}
+                name="narration"
+                type="text"
+                maxLength={200}
+                required
+                placeholder="As it appears on the bank alert"
+                className={input}
+              />
+              {confirmState?.errors?.narration && (
+                <p className="text-xs text-red-600 mt-1">{confirmState.errors.narration}</p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={busy}
@@ -103,6 +158,9 @@ export function DepositActions({
             >
               {confirming ? "Crediting..." : "Money received — credit it"}
             </button>
+            <p className="text-[11px] text-slate-400 text-center">
+              These details go on the receipt emailed to the user.
+            </p>
           </form>
 
           <button
@@ -118,10 +176,7 @@ export function DepositActions({
         <form action={rejectAction} className="flex flex-col gap-2">
           <input type="hidden" name="depositId" value={depositId} />
           <div>
-            <label
-              htmlFor={`note-${depositId}`}
-              className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1"
-            >
+            <label htmlFor={`note-${depositId}`} className={fieldLabel}>
               Reason (sent to the user)
             </label>
             <input
