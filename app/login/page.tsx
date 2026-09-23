@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Suspense, useState, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { login, type FormState } from "@/app/actions/auth";
+import { safeNextPath } from "@/lib/redirects";
 import {
   AuthShell, FieldIcon, icons, inputClass, labelClass,
   EyeToggle, ErrorBanner, SuccessBanner,
@@ -19,6 +20,7 @@ function LoginForm() {
   const [state, formAction, pending] = useActionState<FormState, FormData>(login, undefined);
   const searchParams = useSearchParams();
   const justReset = searchParams.get("reset") === "1";
+  const next = safeNextPath(searchParams.get("next"));
 
   return (
     <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
@@ -29,6 +31,7 @@ function LoginForm() {
       <ErrorBanner message={state?.message} />
 
       <form action={formAction} className="flex flex-col gap-4">
+        {next && <input type="hidden" name="next" value={next} />}
         <div>
           <label htmlFor="email" className={labelClass}>Email address</label>
           <div className="relative">

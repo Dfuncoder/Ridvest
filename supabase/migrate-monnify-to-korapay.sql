@@ -200,6 +200,8 @@ $$;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 7. MANUAL TRANSFER — the user declares they've sent money to the company
 --    account. Nothing is credited here; it only opens a request for an admin.
+--    Several can be open at once — each is an independent transfer the admin
+--    matches against a separate credit in the bank.
 -- ─────────────────────────────────────────────────────────────────────────────
 -- If an earlier draft of this migration was applied, drop its signatures —
 -- create or replace would otherwise leave a stale overload behind.
@@ -223,12 +225,14 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'not_authenticated');
   end if;
 
-  -- One open declaration at a time, so the admin queue can't be flooded.
-  if exists (
-    select 1 from public.deposits
+  -- A user may legitimately send a second transfer before the first is
+  -- confirmed, so waiting on one does not block the next. The cap only stops
+  -- someone hammering the button and flooding the admin queue.
+  if (
+    select count(*) from public.deposits
     where user_id = v_uid and status = 'awaiting_confirmation'
-  ) then
-    return jsonb_build_object('ok', false, 'reason', 'pending_deposit_exists');
+  ) >= 5 then
+    return jsonb_build_object('ok', false, 'reason', 'too_many_pending_deposits');
   end if;
 
   insert into public.deposits (user_id, method, status, reference, confirm_token)

@@ -36,9 +36,13 @@ export function generateDepositReference(): string {
   return `RYDV-DEP-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 }
 
-/** Unguessable single-use token for the "Received" link emailed to admins. */
+/**
+ * Unguessable single-use token for the "Received" link emailed to admins.
+ * base64url keeps it to 24 characters (144 bits of entropy) — short enough
+ * that mail clients do not wrap the confirmation URL onto a second line.
+ */
 export function generateConfirmToken(): string {
-  return crypto.randomBytes(32).toString("hex");
+  return crypto.randomBytes(18).toString("base64url");
 }
 
 type InitializeParams = {

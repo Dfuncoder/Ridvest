@@ -21,6 +21,10 @@ export async function sendEmail(params: {
   replyTo?: string;
   subject: string;
   text: string;
+  /** Optional HTML body. Clients that can render it get this instead of
+   *  `text`, which matters for long links: a bare URL in a plain-text mail
+   *  gets wrapped at ~78 characters by some clients and stops working. */
+  html?: string;
 }): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -41,6 +45,7 @@ export async function sendEmail(params: {
         reply_to: params.replyTo,
         subject: params.subject,
         text: params.text,
+        ...(params.html ? { html: params.html } : {}),
       }),
     });
 

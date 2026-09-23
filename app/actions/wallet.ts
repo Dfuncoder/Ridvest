@@ -190,7 +190,63 @@ async function notifyAdminsOfTransfer(params: {
       to,
       subject: `Transfer to confirm — ${who}`,
       text: body,
+      html: notifyHtml({ ...params, link, who }),
     });
     if (!res.ok) console.error("[wallet] notify failed for", to, res.body);
   }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * The confirmation URL is long. In a plain-text email some clients wrap it at
+ * ~78 characters and only linkify the first half, which lands the reader on a
+ * truncated path. A real anchor keeps the href intact however the client
+ * renders it, so the HTML body is the one that matters here.
+ */
+function notifyHtml(params: {
+  link: string;
+  who: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  reference: string;
+  accounts: string[];
+}): string {
+  const row = (k: string, v: string) =>
+    `<tr><td style="padding:6px 0;color:#64748b;font-size:14px">${k}</td>` +
+    `<td style="padding:6px 0;color:#0f172a;font-size:14px;font-weight:600;text-align:right">${escapeHtml(v)}</td></tr>`;
+
+  const accountList =
+    params.accounts.length > 0
+      ? `<p style="margin:0 0 6px;color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700">Sender must match</p>` +
+        params.accounts
+          .map(
+            (a) =>
+              `<p style="margin:0 0 6px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;color:#0f172a;font-size:13px">${escapeHtml(a)}</p>`
+          )
+          .join("")
+      : `<p style="margin:0;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;color:#92400e;font-size:13px">No bank account on file for this user — match on the name above.</p>`;
+
+  return `<!doctype html><html><body style="margin:0;padding:24px;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0">
+<tr><td>
+<p style="margin:0 0 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:700">Transfer to confirm</p>
+<h1 style="margin:0 0 20px;color:#0f172a;font-size:22px;font-weight:800">${escapeHtml(params.who)}</h1>
+<table role="presentation" width="100%" style="border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;margin-bottom:20px" cellpadding="0" cellspacing="0">
+${row("Email", params.userEmail)}${row("Phone", params.userPhone || "—")}${row("Reference", params.reference)}
+</table>
+<div style="margin-bottom:22px">${accountList}</div>
+<a href="${params.link}" style="display:block;text-align:center;padding:14px 20px;background:#facc15;color:#0d2137;font-size:15px;font-weight:800;text-decoration:none;border-radius:12px">Check the account, then confirm</a>
+<p style="margin:18px 0 0;color:#64748b;font-size:13px;line-height:1.6">Nothing is credited until someone opens that link and enters the amount that actually landed.</p>
+</td></tr></table>
+</td></tr></table>
+</body></html>`;
 }

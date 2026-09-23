@@ -20,6 +20,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ERRORS } from "@/lib/errors";
+import { safeNextPath } from "@/lib/redirects";
 import {
   SignupSchema,
   LoginSchema,
@@ -138,6 +139,10 @@ export async function resendOtp(_prev: FormState, formData: FormData): Promise<F
 // LOGIN — redirects admins to /admin, everyone else to /dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
+  // Where the user was headed before the login wall (e.g. a transfer
+  // confirmation link). Validated, never trusted verbatim.
+  const next = safeNextPath(String(formData.get("next") ?? ""));
+
   const parsed = LoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -169,6 +174,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     .eq("id", claims?.claims?.sub ?? "")
     .single();
 
+  if (next) redirect(next);
   redirect(profile?.role === "admin" ? "/admin" : "/dashboard");
 }
 

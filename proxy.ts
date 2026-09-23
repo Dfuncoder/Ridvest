@@ -12,6 +12,7 @@
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNextPath } from "@/lib/redirects";
 
 // Pages a logged-in user shouldn't see again.
 const AUTH_PAGES = ["/login", "/register", "/forgot-password"];
@@ -47,17 +48,30 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Anonymous visitor trying to open a protected area → send to login.
+  // Anonymous visitor trying to open a protected area → send to login,
+  // remembering where they were going so the login can return them there.
+  // Without this, a one-time link (e.g. a transfer confirmation) is lost the
+  // moment the session cookie is missing.
   if (!isLoggedIn && (path.startsWith("/dashboard") || path.startsWith("/admin"))) {
     const url = request.nextUrl.clone();
+    const intended = safeNextPath(path + request.nextUrl.search);
     url.pathname = "/login";
+    url.search = intended ? `?next=${encodeURIComponent(intended)}` : "";
     return NextResponse.redirect(url);
   }
 
-  // Logged-in user on an auth page → send to their dashboard.
+  // Logged-in user on an auth page → on to wherever they were headed.
   if (isLoggedIn && AUTH_PAGES.some((p) => path === p)) {
+    const intended = safeNextPath(request.nextUrl.searchParams.get("next"));
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.search = "";
+    if (intended) {
+      const target = new URL(intended, request.nextUrl.origin);
+      url.pathname = target.pathname;
+      url.search = target.search;
+    } else {
+      url.pathname = "/dashboard";
+    }
     return NextResponse.redirect(url);
   }
 

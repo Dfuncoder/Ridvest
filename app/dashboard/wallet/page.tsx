@@ -43,7 +43,7 @@ export default async function WalletPage() {
   ]);
 
   const history = deposits ?? [];
-  const awaiting = history.find((d) => d.status === "awaiting_confirmation");
+  const pendingCount = history.filter((d) => d.status === "awaiting_confirmation").length;
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-6">
@@ -69,7 +69,7 @@ export default async function WalletPage() {
           accountName={settings.accountName}
           accountNumber={settings.accountNumber}
           profileName={profile?.full_name ?? ""}
-          hasPending={Boolean(awaiting)}
+          pendingCount={pendingCount}
         />
       ) : (
         <KorapayPanel />

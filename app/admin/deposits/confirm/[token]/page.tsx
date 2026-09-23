@@ -38,11 +38,11 @@ export default async function ConfirmDepositPage({
       <Frame>
         <h1 className="text-lg font-extrabold text-slate-900 mb-2">Sign in to continue</h1>
         <p className="text-sm text-slate-500 leading-relaxed mb-5">
-          You need to be signed in as a Rydvest admin to confirm a transfer. Sign in, then open this
-          link again.
+          You need to be signed in as a Rydvest admin to confirm a transfer. Signing in brings you
+          straight back here.
         </p>
         <Link
-          href="/login"
+          href={`/login?next=${encodeURIComponent(`/admin/deposits/confirm/${token}`)}`}
           className="block text-center py-3 bg-[#0d2137] text-white text-sm font-bold rounded-xl hover:bg-[#16365a] transition-colors"
         >
           Sign in

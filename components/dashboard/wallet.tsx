@@ -50,10 +50,11 @@ function CopyRow({ labelText, value }: { labelText: string; value: string }) {
 }
 
 /**
- * Shown after the user says they've sent a transfer, and for any transfer that
- * is still waiting on an admin.
+ * The moment right after a user says they've sent a transfer. It confirms the
+ * action, then gets out of the way — the transfer lives on in the history list
+ * below, and sending another one is never blocked by it.
  */
-export function ProcessingCard() {
+function ProcessingCard({ onDone }: { onDone: () => void }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
       <div className="relative w-16 h-16 mx-auto mb-5">
@@ -69,7 +70,7 @@ export function ProcessingCard() {
         confirmed — you don&apos;t need to stay on this page.
       </p>
 
-      <div className="flex items-center justify-center gap-2 mt-5">
+      <div className="flex items-center justify-center gap-2 mt-5 mb-6">
         {[0, 1, 2].map((i) => (
           <span
             key={i}
@@ -78,6 +79,29 @@ export function ProcessingCard() {
           />
         ))}
       </div>
+
+      <button
+        type="button"
+        onClick={onDone}
+        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
+      >
+        Send another transfer
+      </button>
+    </div>
+  );
+}
+
+/** Compact reminder that transfers are in flight, shown above the form. */
+function PendingNotice({ count }: { count: number }) {
+  if (count < 1) return null;
+  return (
+    <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mt-1.5 shrink-0" />
+      <p className="text-xs text-amber-900 leading-relaxed">
+        {count === 1 ? "A transfer is" : `${count} transfers are`} still being confirmed. You can
+        still send another — each one is checked separately, and they all show in your funding
+        history below.
+      </p>
     </div>
   );
 }
@@ -218,13 +242,13 @@ export function ManualTransferPanel({
   accountName,
   accountNumber,
   profileName,
-  hasPending,
+  pendingCount,
 }: {
   bankName: string;
   accountName: string;
   accountNumber: string;
   profileName: string;
-  hasPending: boolean;
+  pendingCount: number;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     declareManualTransfer,
@@ -232,22 +256,37 @@ export function ManualTransferPanel({
   );
   const [revealed, setRevealed] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [justSent, setJustSent] = useState(false);
 
-  if (hasPending || state?.success) {
-    return <ProcessingCard />;
+  // A fresh success shows the confirmation card once; dismissing it returns to
+  // the form so another transfer is always one click away.
+  const showProcessing = Boolean(state?.success) && !justSent;
+
+  if (showProcessing) {
+    return (
+      <ProcessingCard
+        onDone={() => {
+          setJustSent(true);
+          setRevealed(true);
+        }}
+      />
+    );
   }
 
   if (!revealed) {
     return (
       <>
-        <div className="bg-white border border-slate-200 rounded-2xl p-6">
-          <h2 className="text-base font-extrabold text-slate-900 mb-1">Fund your account</h2>
-          <p className="text-sm text-slate-500 mb-5">
-            Send a bank transfer to Rydvest and we&apos;ll credit your balance once it lands.
-          </p>
-          <button onClick={() => setDialogOpen(true)} className={`w-full py-3.5 ${primaryBtn}`}>
-            Fund account
-          </button>
+        <div className="flex flex-col gap-4">
+          <PendingNotice count={pendingCount} />
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <h2 className="text-base font-extrabold text-slate-900 mb-1">Fund your account</h2>
+            <p className="text-sm text-slate-500 mb-5">
+              Send a bank transfer to Rydvest and we&apos;ll credit your balance once it lands.
+            </p>
+            <button onClick={() => setDialogOpen(true)} className={`w-full py-3.5 ${primaryBtn}`}>
+              Fund account
+            </button>
+          </div>
         </div>
 
         {dialogOpen && (
@@ -266,6 +305,7 @@ export function ManualTransferPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      <PendingNotice count={pendingCount} />
       <div className="bg-[#0d2137] rounded-2xl p-6 shadow-xl shadow-[#0d2137]/20">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
