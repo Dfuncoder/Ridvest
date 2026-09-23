@@ -77,7 +77,7 @@ export const ERRORS = {
   DEPOSIT_INVALID_AMOUNT: "Please enter a valid amount to add.",
   DEPOSIT_TOO_SMALL: "The minimum you can add at once is ₦100.",
   DEPOSIT_TOO_MANY_PENDING:
-    "You have several transfers still being confirmed. Give us a moment to clear those first.",
+    "You have too many transfers waiting. Please try again shortly.",
   DEPOSIT_DECLARE_FAILED: "Couldn't record your transfer. Please try again.",
   DEPOSIT_NOT_CONFIRMED:
     "We haven't confirmed this payment yet. If you were charged, it will reflect within a few minutes.",

@@ -40,13 +40,18 @@ export default async function AdminDepositsPage() {
   await requireAdmin();
   const admin = createSupabaseAdminClient();
 
-  const { data } = await admin
+  // deposits has TWO foreign keys to profiles (user_id and confirmed_by), so
+  // the embed must name which one — an unqualified profiles(...) is ambiguous
+  // and PostgREST rejects the whole query.
+  const { data, error } = await admin
     .from("deposits")
     .select(
-      "id, amount, credited_amount, method, status, reference, admin_note, created_at, credited_at, user_id, profile:profiles(full_name, email, phone)"
+      "id, amount, credited_amount, method, status, reference, admin_note, created_at, credited_at, user_id, profile:profiles!deposits_user_id_fkey(full_name, email, phone)"
     )
     .order("created_at", { ascending: false })
     .limit(100);
+
+  if (error) console.error("[admin] deposits query failed", error);
 
   const rows = (data ?? []) as unknown as DepositRow[];
   const awaiting = rows.filter((d) => d.status === "awaiting_confirmation");

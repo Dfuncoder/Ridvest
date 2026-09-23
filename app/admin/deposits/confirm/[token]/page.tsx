@@ -74,13 +74,17 @@ export default async function ConfirmDepositPage({
     );
   }
 
-  const { data: deposit } = await admin
+  // Name the foreign key: deposits points at profiles twice (user_id and
+  // confirmed_by), and an unqualified embed fails.
+  const { data: deposit, error: depositError } = await admin
     .from("deposits")
     .select(
-      "id, status, reference, created_at, user_id, profile:profiles(full_name, email, phone)"
+      "id, status, reference, created_at, user_id, profile:profiles!deposits_user_id_fkey(full_name, email, phone)"
     )
     .eq("confirm_token", token)
     .maybeSingle();
+
+  if (depositError) console.error("[admin] confirm lookup failed", depositError);
 
   if (!deposit) {
     return (

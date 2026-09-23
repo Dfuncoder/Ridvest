@@ -66,8 +66,8 @@ function ProcessingCard({ onDone }: { onDone: () => void }) {
 
       <h2 className="text-base font-extrabold text-slate-900 mb-1.5">Confirming your transfer</h2>
       <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
-        We&apos;re checking our account for your money. Your balance updates the moment it&apos;s
-        confirmed — you don&apos;t need to stay on this page.
+        Transfers usually take a few minutes. Your balance updates automatically — you don&apos;t
+        need to wait here. If nothing has changed after 30 minutes, contact us.
       </p>
 
       <div className="flex items-center justify-center gap-2 mt-5 mb-6">
@@ -98,9 +98,7 @@ function PendingNotice({ count }: { count: number }) {
     <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse mt-1.5 shrink-0" />
       <p className="text-xs text-amber-900 leading-relaxed">
-        {count === 1 ? "A transfer is" : `${count} transfers are`} still being confirmed. You can
-        still send another — each one is checked separately, and they all show in your funding
-        history below.
+        {count === 1 ? "A transfer is" : `${count} transfers are`} still being confirmed.
       </p>
     </div>
   );
@@ -201,9 +199,7 @@ function NameMatchDialog({
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6">
           <p className="text-xs text-amber-900 leading-relaxed">
-            This is how we know the money is yours. A transfer sent from an account in a different
-            name cannot be matched to you and will not be credited. This protects your balance from
-            being funded — or claimed — by someone else.
+            A transfer from an account in a different name will not be credited.
           </p>
         </div>
 
@@ -329,9 +325,8 @@ export function ManualTransferPanel({
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
           <p className="text-xs text-amber-900 leading-relaxed">
-            Send any amount from your{" "}
-            <span className="font-bold">{profileName || "own"}</span> account, then press the button
-            below. We check every transfer by hand and credit exactly what arrives.
+            Send from your <span className="font-bold">{profileName || "own"}</span> account, then
+            press the button below.
           </p>
         </div>
 
