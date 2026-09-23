@@ -2,6 +2,7 @@
  * INVEST — browse open pools and put money in, create a new pool (public or
  * private for friends), or join a private pool with an invite code.
  */
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { InvestForm, CreatePoolForm, JoinByInviteForm } from "@/components/dashboard/forms";
@@ -13,7 +14,7 @@ export default async function InvestPage() {
 
   // RLS: active products; open PUBLIC pools (private ones stay hidden unless
   // the user is already a member).
-  const [{ data: products }, { data: pools }] = await Promise.all([
+  const [{ data: products }, { data: pools }, { data: balance }] = await Promise.all([
     supabase
       .from("pool_products")
       .select("id, name, description, target_amount, min_contribution, duration_weeks, roi_percent")
@@ -24,7 +25,10 @@ export default async function InvestPage() {
       .select("id, name, status, amount_raised, is_private, product:pool_products(id, name, target_amount, min_contribution, duration_weeks, roi_percent, active)")
       .eq("status", "open")
       .order("created_at", { ascending: false }),
+    supabase.rpc("my_available_balance"),
   ]);
+
+  const walletBalance = Number(balance ?? 0);
 
   const openPools = (pools ?? []).filter((p) => {
     const product = p.product as unknown as { active: boolean } | null;
@@ -38,6 +42,21 @@ export default async function InvestPage() {
         <p className="text-sm text-slate-500">
           Join an open pool below — the pool starts earning the moment it's fully funded.
         </p>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl px-5 py-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+            Your balance
+          </p>
+          <p className="text-xl font-extrabold text-slate-900 tabular-nums">{fmtNaira(walletBalance)}</p>
+        </div>
+        <Link
+          href="/dashboard/wallet"
+          className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-150 shadow-lg shadow-amber-400/20"
+        >
+          Fund account
+        </Link>
       </div>
 
       {/* ── OPEN POOLS ── */}
@@ -96,7 +115,7 @@ export default async function InvestPage() {
                 </div>
               </div>
 
-              <InvestForm poolId={pool.id} minContribution={Number(product.min_contribution)} remaining={remaining} />
+              <InvestForm poolId={pool.id} minContribution={Number(product.min_contribution)} remaining={remaining} balance={walletBalance} />
             </div>
           );
         })}

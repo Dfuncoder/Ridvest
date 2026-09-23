@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { InvestForm } from "@/components/dashboard/forms";
 import { fmtNaira, fmtDate, poolProgressPct } from "@/lib/format";
 
@@ -25,6 +26,10 @@ export default async function PoolDetailPage({
   const user = await requireUser();
   const { id } = await params;
   const { code } = await searchParams;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: balance } = await supabase.rpc("my_available_balance");
+  const walletBalance = Number(balance ?? 0);
 
   const admin = createSupabaseAdminClient();
   const { data: pool } = await admin
@@ -138,7 +143,7 @@ export default async function PoolDetailPage({
         {pool.status === "open" && remaining > 0 && (
           <div className="mt-5 border-t border-slate-100 pt-4">
             <h2 className="text-sm font-extrabold text-slate-900 mb-1">Add money to this pool</h2>
-            <InvestForm poolId={pool.id} minContribution={Number(product.min_contribution)} remaining={remaining} />
+            <InvestForm poolId={pool.id} minContribution={Number(product.min_contribution)} remaining={remaining} balance={walletBalance} />
           </div>
         )}
       </div>

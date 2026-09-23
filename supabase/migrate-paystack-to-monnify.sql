@@ -1,28 +1,35 @@
 -- ════════════════════════════════════════════════════════════════════════════
--- MIGRATION: pool duration from MONTHS → WEEKS (payouts become weekly)
+-- MIGRATION: payment provider Paystack → MONNIFY
 --
 -- Run this ONCE in the Supabase SQL editor if your database was created with
--- the older schema that had pool_products.duration_months.
+-- the older schema that had investments.paystack_reference.
 -- (Fresh installs of supabase/schema.sql don't need this file.)
 --
--- ⚠ This file still refers to investments.paystack_reference, the column name
---   used at the time. Run it BEFORE supabase/migrate-paystack-to-monnify.sql,
---   which renames that column to payment_reference and recreates the function
---   below against the new name.
+-- ⚠ ORDER: if you also still need supabase/migrate-months-to-weeks.sql, run
+--   that one FIRST — it recreates apply_paid_investment() using the old
+--   paystack_reference column name, which this file then supersedes.
+--
+-- Nothing about the money logic changes here. The column simply becomes
+-- provider-neutral, so switching processors again never needs a rename.
+-- Safe to re-run: the rename is guarded and the function is CREATE OR REPLACE.
 -- ════════════════════════════════════════════════════════════════════════════
 
--- 1. Rename the column and widen its range (weeks go up to 520 ≈ 10 years).
-alter table public.pool_products rename column duration_months to duration_weeks;
-alter table public.pool_products drop constraint if exists pool_products_duration_months_check;
-alter table public.pool_products drop constraint if exists pool_products_duration_weeks_check;
-alter table public.pool_products add constraint pool_products_duration_weeks_check
-  check (duration_weeks between 1 and 520);
+-- 1. Rename the reference column (no-op if it has already been renamed).
+do $migrate$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name   = 'investments'
+      and column_name  = 'paystack_reference'
+  ) then
+    alter table public.investments rename column paystack_reference to payment_reference;
+  end if;
+end
+$migrate$;
 
--- ⚠ If you already created products while durations meant MONTHS, convert
--- their values (uncomment):
--- update public.pool_products set duration_weeks = duration_weeks * 4;
-
--- 2. Replace the payment-confirmation function with the weekly version.
+-- 2. Replace the payment-confirmation function so it reads the new column.
+--    Body is otherwise identical to supabase/schema.sql.
 create or replace function public.apply_paid_investment(
   p_reference   text,
   p_amount_kobo bigint
@@ -41,7 +48,7 @@ begin
   -- Lock the investment row so a duplicate webhook can't race us.
   select * into v_inv
   from public.investments
-  where paystack_reference = p_reference
+  where payment_reference = p_reference
   for update;
 
   if not found then
@@ -57,7 +64,7 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'unexpected_status', 'status', v_inv.status);
   end if;
 
-  -- The amount Paystack says was paid must match what we asked for, to the kobo.
+  -- The amount Monnify says was paid must match what we asked for, to the kobo.
   if p_amount_kobo <> (v_inv.amount * 100)::bigint then
     update public.investments set status = 'amount_mismatch' where id = v_inv.id;
     return jsonb_build_object('ok', false, 'reason', 'amount_mismatch');

@@ -1,19 +1,18 @@
 "use server";
 
 /**
- * ═══════════════════════════════════════════════════════════════════════════
  * INVESTING & POOLS — server actions.
  *
  * Money-flow security:
  *   • The user id ALWAYS comes from the verified session (requireUser),
  *     never from a form field.
- *   • Amounts are validated here against the pool's live state, and then
- *     re-verified to the kobo when Paystack confirms payment (webhook →
- *     apply_paid_investment in SQL). Nothing counts until Paystack + the
- *     database agree.
+ *   • Joining a pool spends the user's Rydvest balance. Everything that
+ *     matters — the balance, the pool's remaining room, the minimum, private
+ *     pool access — is re-checked inside join_pool_from_balance() in SQL,
+ *     under a row lock, so two concurrent joins can never overspend or
+ *     overfill.
  *   • Financial writes use the admin client AFTER the checks — users have no
  *     direct write access to these tables (see supabase/schema.sql).
- * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import { redirect } from "next/navigation";
@@ -21,18 +20,18 @@ import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { paystackInitialize, generatePaymentReference } from "@/lib/paystack";
-import { ERRORS } from "@/lib/errors";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { InvestSchema, CreatePoolSchema, JoinByInviteSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// START AN INVESTMENT → creates a pending investment and sends the user to
-// Paystack's hosted checkout. The investment only counts once the webhook
-// confirms the charge.
+// JOIN A POOL — debits the balance and confirms the investment immediately.
+// No payment is in flight, so a pool that fills first fails cleanly instead of
+// leaving money stranded.
 // ─────────────────────────────────────────────────────────────────────────────
-export async function startInvestment(_prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser();
+export async function joinPool(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireUser();
 
   const parsed = InvestSchema.safeParse({
     poolId: formData.get("poolId"),
@@ -40,62 +39,41 @@ export async function startInvestment(_prev: FormState, formData: FormData): Pro
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
-  const { poolId, amount } = parsed.data;
-  const admin = createSupabaseAdminClient();
-
-  // Load the pool and its product. Admin client: an invited friend may not
-  // pass the RLS member check yet — access is validated explicitly below.
-  const { data: pool } = await admin
-    .from("pools")
-    .select("id, status, amount_raised, is_private, product:pool_products(id, active, target_amount, min_contribution)")
-    .eq("id", poolId)
-    .single();
-
-  const product = pool?.product as unknown as {
-    id: string; active: boolean; target_amount: number; min_contribution: number;
-  } | null;
-
-  if (!pool || !product) return { message: ERRORS.POOL_NOT_FOUND };
-  if (pool.status !== "open") return { message: ERRORS.POOL_NOT_OPEN };
-  if (!product.active) return { message: ERRORS.POOL_PRODUCT_INACTIVE };
-
-  const remaining = Number(product.target_amount) - Number(pool.amount_raised);
-  if (amount > remaining) return { errors: { amount: ERRORS.POOL_AMOUNT_TOO_LARGE } };
-  // Minimum applies unless the user is topping off the last slice of the pool.
-  if (amount < Number(product.min_contribution) && amount !== remaining) {
-    return { errors: { amount: ERRORS.POOL_AMOUNT_TOO_SMALL } };
-  }
-
-  // Create the pending investment with our unique Paystack reference.
-  const reference = generatePaymentReference();
-  const { error: insertError } = await admin.from("investments").insert({
-    pool_id: poolId,
-    user_id: user.id,
-    amount,
-    status: "pending_payment",
-    paystack_reference: reference,
-  });
-  if (insertError) {
-    console.error("[invest] insert failed", insertError);
-    return { message: ERRORS.PAYMENT_INIT_FAILED };
-  }
-
-  // Hand off to Paystack. Amount is in KOBO.
-  const init = await paystackInitialize({
-    email: user.email,
-    amountKobo: amount * 100,
-    reference,
-    callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/invest/callback`,
-    metadata: { pool_id: poolId, user_id: user.id },
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("join_pool_from_balance", {
+    p_pool_id: parsed.data.poolId,
+    p_amount: parsed.data.amount,
   });
 
-  if (!init.ok || !init.authorizationUrl) {
-    // Clean up the orphaned pending row so it doesn't clutter anything.
-    await admin.from("investments").delete().eq("paystack_reference", reference);
-    return { message: ERRORS.PAYMENT_INIT_FAILED };
+  if (error) {
+    console.error("[invest] join_pool_from_balance failed", error);
+    return { message: ERRORS.GENERIC };
   }
 
-  redirect(init.authorizationUrl);
+  const result = data as { ok?: boolean; reason?: string; pool_status?: string } | null;
+
+  if (!result?.ok) {
+    if (result?.reason === "insufficient_balance") {
+      return { errors: { amount: ERRORS.INSUFFICIENT_BALANCE } };
+    }
+    if (result?.reason === "amount_too_large" || result?.reason === "amount_too_small") {
+      return { errors: { amount: DB_REASON_TO_ERROR[result.reason] } };
+    }
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.GENERIC };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/invest");
+  revalidatePath("/dashboard/portfolio");
+  revalidatePath("/dashboard/wallet");
+
+  return {
+    success: true,
+    message:
+      result.pool_status === "active"
+        ? "You're in — and that filled the pool. Your investment starts earning now."
+        : "You're in. We'll let you know the moment this pool fills up.",
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

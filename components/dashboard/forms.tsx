@@ -6,7 +6,8 @@
  * these components are presentation + optimistic UX only.
  */
 import { useActionState } from "react";
-import { startInvestment, createPool, joinByInvite } from "@/app/actions/invest";
+import Link from "next/link";
+import { joinPool, createPool, joinByInvite } from "@/app/actions/invest";
 import { updateProfile, addWithdrawalAccount, requestWithdrawal } from "@/app/actions/account";
 import type { FormState } from "@/app/actions/auth";
 import { NIGERIAN_STATES } from "@/lib/validation";
@@ -38,18 +39,39 @@ function FieldErr({ msg }: { msg?: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// INVEST IN A POOL — amount input + pay button (redirects to Paystack).
+// JOIN A POOL — spends the Rydvest balance, no payment redirect.
 // ─────────────────────────────────────────────────────────────────────────────
 export function InvestForm({
   poolId,
   minContribution,
   remaining,
+  balance,
 }: {
   poolId: string;
   minContribution: number;
   remaining: number;
+  balance: number;
 }) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(startInvestment, undefined);
+  const [state, formAction, pending] = useActionState<FormState, FormData>(joinPool, undefined);
+
+  const minimum = Math.min(minContribution, remaining);
+
+  if (balance < minimum) {
+    return (
+      <div className="mt-3">
+        <Banner state={state} />
+        <Link
+          href="/dashboard/wallet"
+          className={`block text-center px-5 py-2.5 ${primaryBtn}`}
+        >
+          Add money to invest
+        </Link>
+        <p className="text-[11px] text-slate-400 mt-1.5">
+          You have {fmtNaira(balance)}. This pool needs at least {fmtNaira(minimum)}.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="mt-3">
@@ -60,21 +82,21 @@ export function InvestForm({
           <input
             type="number"
             name="amount"
-            min={Math.min(minContribution, remaining)}
-            max={remaining}
+            min={minimum}
+            max={Math.min(remaining, balance)}
             step={1}
             required
-            placeholder={`Min ${fmtNaira(Math.min(minContribution, remaining))}`}
+            placeholder={`Min ${fmtNaira(minimum)}`}
             className={input}
           />
         </div>
         <button type="submit" disabled={pending} className={`px-5 py-2.5 ${primaryBtn}`}>
-          {pending ? "Starting..." : "Invest"}
+          {pending ? "Joining..." : "Invest"}
         </button>
       </div>
       <FieldErr msg={state?.errors?.amount} />
       <p className="text-[11px] text-slate-400 mt-1.5">
-        You'll pay securely via Paystack. {fmtNaira(remaining)} left to fill this pool.
+        Paid from your {fmtNaira(balance)} balance. {fmtNaira(remaining)} left to fill this pool.
       </p>
     </form>
   );

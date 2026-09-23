@@ -14,7 +14,7 @@ verified name.
 | Framework | [Next.js 16](https://nextjs.org) (App Router, Server Actions, Proxy) + React 19 |
 | Styling | Tailwind CSS 4 |
 | Database & Auth | [Supabase](https://supabase.com) (Postgres + Row Level Security, email OTP auth, modern publishable/secret API keys) |
-| Payments | [Paystack](https://paystack.com) (hosted checkout + signature-verified webhooks) |
+| Payments | Wallet balance funded by [Korapay](https://korapay.com) checkout **or** manual bank transfer confirmed by an admin |
 | Validation | Zod (server-side, on every input) |
 | Hosting | [Vercel](https://vercel.com) |
 
@@ -22,7 +22,7 @@ verified name.
 
 **For investors**
 - Signup with email OTP verification (name, DOB 18+, phone, address & state of residence)
-- Browse open pools, invest via Paystack, watch live fill progress
+- Fund your balance by bank transfer or card, then join pools straight from it
 - Create private pools and invite friends with an 8-character code
 - Dashboard: balance, total invested/earned, payout schedule, portfolio
 - Withdrawals to a bank account whose name **must match** the profile name
@@ -31,7 +31,7 @@ verified name.
 **For admins** (`/admin`)
 - Business overview: total invested vs. promised vs. paid out, projected margin
 - Create pool options (asset name, pool price, min contribution, duration, ROI %)
-- Open/cancel pools, reconcile investments by Paystack reference
+- Open/cancel pools, confirm incoming bank transfers, switch the payment method
 - Mark payouts paid, review withdrawals (with name-match indicator), reset user access
 - Every admin action recorded in an audit log
 
@@ -43,10 +43,10 @@ verified name.
    npm install
    ```
 
-2. **Set up Supabase + Paystack** — follow [SETUP.md](SETUP.md) step by step
+2. **Set up Supabase** — follow [SETUP.md](SETUP.md) step by step
    (creates the project, runs [supabase/schema.sql](supabase/schema.sql), installs the
-   branded email templates from [supabase/email-templates/](supabase/email-templates/),
-   configures the Paystack webhook).
+   branded email templates from [supabase/email-templates/](supabase/email-templates/)).
+   Korapay is optional: the app ships set to manual bank transfer.
 
 3. **Configure environment**
 
@@ -75,7 +75,7 @@ app/
   dashboard/          User dashboard (auth-gated server-side)
   api/
     interest-rate/    Public headline-rate endpoint (reads app_settings)
-    webhooks/paystack Webhook — the ONLY place money is credited
+    webhooks/korapay  Webhook — the ONLY place a Korapay top-up is credited
   auth/confirm/       Email-link handler (password reset)
   login|register|verify-otp|forgot-password|reset-password/
 components/
@@ -87,7 +87,8 @@ lib/
   validation.ts       Zod schemas (password rules, NG phone, 18+, states)
   supabase/           Server client (RLS) + admin client (secret key)
   auth.ts             requireUser / requireAdmin guards
-  paystack.ts         Initialize/verify/HMAC helpers (server-only)
+  korapay.ts          Initialize/verify/HMAC helpers (server-only)
+  settings.ts         Admin-configurable payment method + bank details
 supabase/
   schema.sql          Full DB schema, RLS policies, atomic money functions
   email-templates/    Branded Supabase auth emails (confirm signup, reset password)
@@ -103,9 +104,12 @@ SETUP.md              Full step-by-step setup & deployment guide
 - **Atomic money functions in SQL** — payment confirmation, pool filling, and withdrawal
   requests run inside Postgres functions with row locks, so races can't overfill a pool or
   double-credit a payment. Webhook processing is idempotent.
-- **Paystack defense in depth** — HMAC-SHA512 signature check, independent verify API call,
-  and a kobo-exact amount check before anything is credited. The browser redirect after
-  payment is never trusted.
+- **Korapay defense in depth** — HMAC-SHA256 signature check on the payload's `data`
+  object, then an independent verify call to Korapay before anything is credited. The
+  browser redirect after payment is never trusted.
+- **Manual transfers are credited by a human** — a user saying they have paid credits
+  nothing. An admin opens a tokenised link, checks the company account, and presses the
+  confirm button; the token is single-use and only works for a signed-in admin.
 - **No self-promotion** — the `role` column is not writable by users (column-level grants);
   admin checks happen server-side on every request.
 - **Secrets stay on the server** — enforced by the `server-only` package; security headers
@@ -114,8 +118,8 @@ SETUP.md              Full step-by-step setup & deployment guide
 ## Deploying to Vercel
 
 1. Push to GitHub and import the repo in Vercel.
-2. Add the five environment variables from [.env.example](.env.example)
+2. Add every environment variable from [.env.example](.env.example)
    (set `NEXT_PUBLIC_SITE_URL` to the deployed URL, no trailing slash).
-3. Point the Paystack webhook at `https://YOUR-DOMAIN/api/webhooks/paystack` and set the
-   Supabase Site URL / redirect URLs to the deployed domain.
+3. If you use Korapay, point its webhook at `https://YOUR-DOMAIN/api/webhooks/korapay`.
+   Set the Supabase Site URL / redirect URLs to the deployed domain either way.
 4. Deploy. Run through the first-run checklist at the bottom of [SETUP.md](SETUP.md).

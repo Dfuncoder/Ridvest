@@ -43,6 +43,10 @@ const navItems = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>,
   },
   {
+    label: "Fund", href: "/dashboard/wallet",
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>,
+  },
+  {
     label: "Invest", href: "/dashboard/invest",
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>,
   },
@@ -108,7 +112,17 @@ function NavLink({ item, onClick }: { item: typeof navItems[0]; onClick?: () => 
 }
 
 // ── Sidebar content (shared between desktop + mobile) ─────
-function SidebarContent({ name, email, onClose }: { name: string; email: string; onClose?: () => void }) {
+function SidebarContent({
+  name,
+  email,
+  isAdmin,
+  onClose,
+}: {
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  onClose?: () => void;
+}) {
   const initial = (name || email || "R").charAt(0).toUpperCase();
   return (
     <>
@@ -117,6 +131,18 @@ function SidebarContent({ name, email, onClose }: { name: string; email: string;
         {navItems.slice(0, 5).map((item) => <NavLink key={item.href} item={item} onClick={onClose} />)}
         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2 mt-5">Account</p>
         {navItems.slice(5).map((item) => <NavLink key={item.href} item={item} onClick={onClose} />)}
+        {isAdmin && (
+          <>
+            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2 mt-5">Switch</p>
+            <Link
+              href="/admin"
+              onClick={onClose}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 border border-transparent transition-all"
+            >
+              → Admin dashboard
+            </Link>
+          </>
+        )}
       </nav>
       <div className="px-3 py-4 border-t border-white/8">
         <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5 mb-1">
@@ -160,10 +186,12 @@ function BottomNavLink({ item }: { item: typeof navItems[0] }) {
 export default function DashboardShell({
   name,
   email,
+  isAdmin = false,
   children,
 }: {
   name: string;
   email: string;
+  isAdmin?: boolean;
   children: React.ReactNode;
 }) {
   const [theme, setTheme] = useState<Theme>("light");
@@ -189,7 +217,7 @@ export default function DashboardShell({
           <div className="px-5 h-16 flex items-center border-b border-white/8">
             <Logo />
           </div>
-          <SidebarContent name={name} email={email} />
+          <SidebarContent name={name} email={email} isAdmin={isAdmin} />
         </aside>
 
         {/* ── MOBILE SIDEBAR OVERLAY ── */}
@@ -203,7 +231,7 @@ export default function DashboardShell({
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-              <SidebarContent name={name} email={email} onClose={() => setSidebarOpen(false)} />
+              <SidebarContent name={name} email={email} isAdmin={isAdmin} onClose={() => setSidebarOpen(false)} />
             </aside>
           </div>
         )}

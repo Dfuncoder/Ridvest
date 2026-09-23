@@ -3,7 +3,7 @@
  * RYDVEST — SERVER-SIDE INPUT VALIDATION (Zod schemas)
  *
  * Every value that reaches the backend is validated HERE, on the server,
- * before it touches Supabase or Paystack. Client-side checks are only a UX
+ * before it touches Supabase or Korapay. Client-side checks are only a UX
  * nicety — these schemas are the real gate, so a crafted request that skips
  * the UI still can't submit bad data.
  *
@@ -124,6 +124,23 @@ export const InvestSchema = z.object({
   poolId: z.uuid({ error: ERRORS.POOL_NOT_FOUND }),
   // Whole naira only; server re-checks against pool min/remaining.
   amount: z.coerce.number().int({ error: ERRORS.POOL_INVALID_AMOUNT }).positive({ error: ERRORS.POOL_INVALID_AMOUNT }).max(1_000_000_000),
+});
+
+export const FundWalletSchema = z.object({
+  amount: z.coerce
+    .number()
+    .int({ error: ERRORS.DEPOSIT_INVALID_AMOUNT })
+    .positive({ error: ERRORS.DEPOSIT_INVALID_AMOUNT })
+    .min(100, { error: ERRORS.DEPOSIT_TOO_SMALL })
+    .max(1_000_000_000, { error: ERRORS.DEPOSIT_INVALID_AMOUNT }),
+});
+
+export const PaymentSettingsSchema = z.object({
+  method: z.enum(["korapay", "manual"]),
+  bankName: z.string().trim().min(2).max(60),
+  accountName: z.string().trim().min(2).max(80),
+  accountNumber: z.string().trim().regex(/^d{10}$/, { error: ERRORS.ACCOUNT_NUMBER_INVALID }),
+  notifyEmails: z.string().trim().max(1000),
 });
 
 export const CreatePoolSchema = z.object({

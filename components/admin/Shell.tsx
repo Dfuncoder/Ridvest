@@ -15,9 +15,11 @@ const navItems = [
   { label: "Pools", href: "/admin/pools" },
   { label: "Investments", href: "/admin/investments" },
   { label: "Payouts", href: "/admin/payouts" },
+  { label: "Deposits", href: "/admin/deposits" },
   { label: "Withdrawals", href: "/admin/withdrawals" },
   { label: "Users", href: "/admin/users" },
   { label: "Messages", href: "/admin/messages" },
+  { label: "Settings", href: "/admin/settings" },
 ];
 
 function NavLink({ item, onClick }: { item: typeof navItems[0]; onClick?: () => void }) {

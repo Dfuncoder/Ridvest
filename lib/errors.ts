@@ -73,6 +73,17 @@ export const ERRORS = {
   PAYMENT_NOT_CONFIRMED:
     "We haven't confirmed your payment yet. If you were charged, it will reflect within a few minutes.",
 
+  // ── Funding your balance ──────────────────────────────────────────────────
+  DEPOSIT_INVALID_AMOUNT: "Please enter a valid amount to add.",
+  DEPOSIT_TOO_SMALL: "The minimum you can add at once is ₦100.",
+  DEPOSIT_PENDING_EXISTS:
+    "You already have a transfer waiting to be confirmed. We'll credit it as soon as it's checked.",
+  DEPOSIT_DECLARE_FAILED: "Couldn't record your transfer. Please try again.",
+  DEPOSIT_NOT_CONFIRMED:
+    "We haven't confirmed this payment yet. If you were charged, it will reflect within a few minutes.",
+  INSUFFICIENT_BALANCE:
+    "You don't have enough in your balance for that. Add money to your account first.",
+
   // ── Withdrawals ───────────────────────────────────────────────────────────
   WITHDRAW_NO_ACCOUNT: "Add a withdrawal bank account first (Profile → Withdrawal details).",
   WITHDRAW_INVALID_AMOUNT: "Please enter a valid withdrawal amount.",
@@ -110,4 +121,12 @@ export const DB_REASON_TO_ERROR: Record<string, string> = {
   pending_request_exists: ERRORS.WITHDRAW_PENDING_EXISTS,
   insufficient_balance: ERRORS.WITHDRAW_INSUFFICIENT,
   pool_full_refund_pending: ERRORS.POOL_AMOUNT_TOO_LARGE,
+  pending_deposit_exists: ERRORS.DEPOSIT_PENDING_EXISTS,
+  pool_not_found: ERRORS.POOL_NOT_FOUND,
+  pool_not_open: ERRORS.POOL_NOT_OPEN,
+  product_inactive: ERRORS.POOL_PRODUCT_INACTIVE,
+  amount_too_large: ERRORS.POOL_AMOUNT_TOO_LARGE,
+  amount_too_small: ERRORS.POOL_AMOUNT_TOO_SMALL,
+  deposit_not_found: ERRORS.ADMIN_ACTION_FAILED,
+  unexpected_status: ERRORS.ADMIN_ACTION_FAILED,
 };

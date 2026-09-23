@@ -118,9 +118,9 @@ create index if not exists pools_product_idx on public.pools (product_id);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 5. INVESTMENTS — a user's paid (or pending) contribution to a pool.
---    Lifecycle: pending_payment → paid            (normal, via Paystack webhook)
+--    Lifecycle: pending_payment → paid            (normal, via gateway webhook)
 --               pending_payment → refund_pending  (pool filled first / amount mismatch)
---               refund_pending  → refunded        (admin refunds via Paystack, marks here)
+--               refund_pending  → refunded        (admin refunds in the gateway, marks here)
 -- ─────────────────────────────────────────────────────────────────────────────
 create table if not exists public.investments (
   id                 uuid primary key default gen_random_uuid(),
@@ -129,7 +129,7 @@ create table if not exists public.investments (
   amount             numeric(14,2) not null check (amount > 0),
   status             text not null default 'pending_payment'
                      check (status in ('pending_payment', 'paid', 'refund_pending', 'refunded', 'amount_mismatch')),
-  paystack_reference text not null unique,           -- our reference, sent to Paystack; idempotency key
+  payment_reference  text not null unique,          -- our reference, sent to the gateway; idempotency key
   paid_at            timestamptz,
   created_at         timestamptz not null default now()
 );
@@ -367,17 +367,17 @@ create trigger on_auth_user_created
 -- MONEY-CRITICAL ATOMIC FUNCTIONS
 -- ═════════════════════════════════════════════════════════════════════════════
 
--- Called by the Paystack webhook handler (server, secret key) after the
--- webhook signature AND the transaction have been verified with Paystack.
+-- Called by the gateway webhook handler (server, secret key) after the
+-- webhook signature AND the transaction have both been verified.
 --
 -- Atomically (single transaction, row locks):
---   1. Finds the investment by our Paystack reference. Idempotent: calling it
+--   1. Finds the investment by our payment reference. Idempotent: calling it
 --      twice for the same reference is harmless.
 --   2. Verifies the paid amount (in kobo) matches what we expected.
 --   3. Marks the investment paid, logs a ledger transaction.
 --   4. Adds the amount to the pool. If the pool would OVERFILL (someone else
 --      filled it while this user was paying), the investment is flagged
---      refund_pending instead — the admin refunds it from the Paystack
+--      refund_pending instead — the admin refunds it from the gateway
 --      dashboard and marks it refunded.
 --   5. If the pool just reached its target: sets it active, stamps
 --      started_at / ends_at, and generates the full weekly payout schedule
@@ -400,7 +400,7 @@ begin
   -- Lock the investment row so a duplicate webhook can't race us.
   select * into v_inv
   from public.investments
-  where paystack_reference = p_reference
+  where payment_reference = p_reference
   for update;
 
   if not found then
@@ -416,7 +416,7 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'unexpected_status', 'status', v_inv.status);
   end if;
 
-  -- The amount Paystack says was paid must match what we asked for, to the kobo.
+  -- The amount the gateway says was paid must match what we asked for, to the kobo.
   if p_amount_kobo <> (v_inv.amount * 100)::bigint then
     update public.investments set status = 'amount_mismatch' where id = v_inv.id;
     return jsonb_build_object('ok', false, 'reason', 'amount_mismatch');

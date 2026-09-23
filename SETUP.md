@@ -31,9 +31,31 @@ Go to **Project Settings → API Keys**:
 1. Dashboard → **SQL Editor** → **New query**.
 2. Paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql).
 3. Click **Run**. You should see "Success. No rows returned".
+4. New query again, and run
+   [`supabase/migrate-monnify-to-korapay.sql`](supabase/migrate-monnify-to-korapay.sql).
+   This is what adds the wallet: the `deposits` table, the balance that spends
+   as well as earns, and `join_pool_from_balance()`. **The app does not work
+   without it.**
 
-This creates every table, all Row Level Security policies, and the atomic
-money functions.
+Together these create every table, all Row Level Security policies, and the
+atomic money functions.
+
+> **Already have a live database?** Don't re-run `schema.sql`. Run only
+> [`supabase/migrate-monnify-to-korapay.sql`](supabase/migrate-monnify-to-korapay.sql).
+> It supersedes `migrate-months-to-weeks.sql` and
+> `migrate-paystack-to-monnify.sql` — it renames those columns itself if they
+> are still outstanding, so it works whichever of the older migrations you did
+> or didn't run, and is safe to re-run. It then adds the `deposits` table,
+> teaches `available_balance()` to spend as well as earn, and adds
+> `join_pool_from_balance()`. Investments paid through the old gateway are
+> tagged `funding = 'gateway'` and are left out of the balance, so existing
+> books stay correct.
+>
+> ⚠ If your database still had `duration_months`, the rename keeps the
+> **number**: a product that meant 12 months now reads 12 weeks. Check
+> `pool_products` afterwards and multiply by 4 if you have real products
+> priced in months — there is a commented-out `update` at the top of the
+> migration for exactly this.
 
 ### 1c. Configure auth emails (6-digit OTP for signup)
 
@@ -65,16 +87,33 @@ money functions.
 
 ---
 
-## 2. Create the Paystack account / keys
+## 2. Choose how users pay
 
-1. <https://dashboard.paystack.com> → **Settings → API Keys & Webhooks**.
-2. Copy the **Secret key** (`sk_test_...` while testing) → `PAYSTACK_SECRET_KEY`.
-3. Set the **Webhook URL** to:
-   - Production: `https://YOUR-DOMAIN/api/webhooks/paystack`
-   - Local testing: Paystack can't reach `localhost` — the payment callback
-     page also confirms payments, so local test payments still work; the
-     webhook is the belt-and-braces path for production.
-4. When you go live, swap to the `sk_live_...` key and set the live webhook URL.
+The app ships set to **manual bank transfer**, which needs no payment provider
+at all. You can switch to Korapay later at `/admin/settings` without touching code.
+
+### Option A — manual bank transfer (default)
+
+1. Log in as an admin and open **/admin/settings**.
+2. Set the account number, account name and bank users should transfer to.
+3. List the emails that should be told when someone declares a transfer
+   (comma-separated). Everyone on that list gets a link to confirm it.
+
+Nothing is credited until someone opens that link and presses **Money
+received**, so keep the list to people who can actually see the bank account.
+Email delivery needs `RESEND_API_KEY` (see step 3) — without it the transfer
+still appears at **/admin/deposits**, you just won't be emailed about it.
+
+### Option B — Korapay
+
+1. Sign up at <https://korapay.com> → **Settings → API Keys**.
+2. Copy the **secret key** (`sk_test_...` in test mode, `sk_live_...` live) into
+   `KORAPAY_SECRET_KEY`. The same key signs webhooks, so a wrong value here
+   means every webhook is rejected and no top-up is ever credited.
+3. Set the webhook URL to `https://YOUR-DOMAIN/api/webhooks/korapay`.
+   Korapay can't reach `localhost` — the callback page also confirms top-ups,
+   so local test payments still work; the webhook is the production path.
+4. Switch the method to **Korapay** at **/admin/settings**.
 
 ---
 
@@ -85,7 +124,7 @@ money functions.
 cp .env.example .env.local
 ```
 
-On **Vercel**: Project → Settings → Environment Variables → add the same five
+On **Vercel**: Project → Settings → Environment Variables → add the same
 variables (set `NEXT_PUBLIC_SITE_URL` to your real deployed URL, no trailing
 slash), then redeploy.
 
@@ -111,10 +150,11 @@ slash), then redeploy.
 - [ ] `/admin/products` → create a pool option (e.g. Keke Napep, ₦2,500,000,
       min ₦50,000, 12 months, 50% ROI)
 - [ ] `/admin/pools` → open an official pool
-- [ ] `/dashboard/invest` → invest with a
-      [Paystack test card](https://paystack.com/docs/payments/test-payments)
-      (e.g. `4084 0840 8408 4081`, any future expiry, CVV `408`)
-- [ ] Payment confirms → pool progress moves
+- [ ] `/dashboard/wallet` → fund the account (bank transfer, or a Korapay test
+      card if you switched the method)
+- [ ] Manual method: the transfer shows as **Processing**, the notification
+      email arrives, and pressing **Money received** credits the balance
+- [ ] `/dashboard/invest` → join a pool from that balance → pool progress moves
 - [ ] Fill a small test pool completely → pool flips to **active**, payout
       schedule appears under `/dashboard/payouts` and `/admin/payouts`
 - [ ] `/dashboard/profile` → add a bank account (name must match profile)
@@ -135,7 +175,9 @@ slash), then redeploy.
 | Investing & pools | [`app/actions/invest.ts`](app/actions/invest.ts) |
 | Profile / bank accounts / withdrawals | [`app/actions/account.ts`](app/actions/account.ts) |
 | Admin operations | [`app/actions/admin.ts`](app/actions/admin.ts) |
-| Paystack webhook (credits money) | [`app/api/webhooks/paystack/route.ts`](app/api/webhooks/paystack/route.ts) |
+| Funding the balance | [`app/actions/wallet.ts`](app/actions/wallet.ts) |
+| Korapay webhook (credits top-ups) | [`app/api/webhooks/korapay/route.ts`](app/api/webhooks/korapay/route.ts) |
+| Payment method + bank details | [`lib/settings.ts`](lib/settings.ts) |
 | Route protection (proxy) | [`proxy.ts`](proxy.ts) |
 | Security headers | [`next.config.ts`](next.config.ts) |
 
@@ -147,8 +189,10 @@ cannot write to any financial table at all — all money writes go through
 server actions that verify the session first, and the payment/pool/withdrawal
 state machines live in atomic SQL functions that re-check every invariant
 (amount to the kobo, pool capacity, name match, balance) inside the database.
-Money is only ever credited by the Paystack webhook/callback after an HMAC
-signature check **and** an independent verify call to Paystack. Secrets never
+A Korapay top-up is only ever credited by the webhook/callback after an HMAC
+signature check **and** an independent verify call to Korapay; a manual
+transfer is only ever credited by a signed-in admin pressing the confirm
+button behind a single-use link. Secrets never
 reach the browser (`server-only` guards), admins are checked server-side on
 every request, users cannot promote themselves (the `role` column is not
 writable by users), and every admin action is written to `audit_log`.

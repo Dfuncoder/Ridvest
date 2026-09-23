@@ -16,8 +16,10 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail } from "@/lib/email";
-import { ERRORS } from "@/lib/errors";
-import { PoolProductSchema, fieldErrors } from "@/lib/validation";
+import { parseEmailList } from "@/lib/settings";
+import { fmtNaira } from "@/lib/format";
+import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
+import { PoolProductSchema, PaymentSettingsSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
 /** Writes one audit trail row for an admin action. */
@@ -232,7 +234,7 @@ export async function rejectWithdrawal(formData: FormData): Promise<void> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INVESTMENT REFUNDS — for payments that arrived after a pool filled.
-// The actual refund is issued from the Paystack dashboard; this records it.
+// The actual refund is issued from the Korapay dashboard; this records it.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function markInvestmentRefunded(formData: FormData): Promise<void> {
   const { user } = await requireAdmin();
@@ -245,7 +247,7 @@ export async function markInvestmentRefunded(formData: FormData): Promise<void> 
     .update({ status: "refunded" })
     .eq("id", investmentId)
     .eq("status", "refund_pending")
-    .select("id, paystack_reference")
+    .select("id, payment_reference")
     .single();
 
   if (!updated) return;
@@ -253,7 +255,7 @@ export async function markInvestmentRefunded(formData: FormData): Promise<void> 
   await admin
     .from("transactions")
     .update({ status: "success" })
-    .eq("reference", updated.paystack_reference)
+    .eq("reference", updated.payment_reference)
     .eq("type", "refund");
 
   await audit(user.id, "investment.mark_refunded", investmentId);
@@ -369,4 +371,163 @@ export async function updateInterestRate(formData: FormData): Promise<void> {
 
   await audit(user.id, "settings.interest_rate", String(value));
   revalidatePath("/admin");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEPOSITS — confirm or reject a manual bank transfer.
+//
+// Crediting happens in SQL under a row lock, so a double-click or two admins
+// opening the same email link can only ever credit once.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function confirmDeposit(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const depositId = String(formData.get("depositId") ?? "");
+  if (!depositId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+
+  // The user never states an amount, so this is the only figure in play: what
+  // the admin actually sees in the bank account.
+  const actualAmount = Number(formData.get("actualAmount"));
+  if (!Number.isFinite(actualAmount) || actualAmount <= 0) {
+    return { errors: { actualAmount: ERRORS.DEPOSIT_INVALID_AMOUNT } };
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("confirm_manual_deposit", {
+    p_deposit_id: depositId,
+    p_admin_id: user.id,
+    p_actual_amount: actualAmount,
+  });
+
+  if (error) {
+    console.error("[admin] confirm_manual_deposit failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as { ok?: boolean; reason?: string; amount?: number; user_id?: string } | null;
+  if (!result?.ok) {
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "deposit.confirm", depositId, { amount: result.amount });
+
+  if (result.reason !== "already_processed" && result.user_id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", result.user_id)
+      .single();
+
+    if (profile?.email) {
+      await sendEmail({
+        from: supportFrom(),
+        to: profile.email,
+        subject: `Your Rydvest balance has been credited — ${fmtNaira(result.amount ?? 0)}`,
+        text:
+          `Hi ${profile.full_name || "there"},\n\n` +
+          `We've confirmed your transfer and added ${fmtNaira(result.amount ?? 0)} to your Rydvest balance.\n\n` +
+          `You can now join a pool from your dashboard.\n\n` +
+          `— The Rydvest team`,
+      });
+    }
+  }
+
+  revalidatePath("/admin/deposits");
+  revalidatePath("/admin");
+  return { success: true, message: `Credited ${fmtNaira(result.amount ?? 0)}.` };
+}
+
+export async function rejectDeposit(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const depositId = String(formData.get("depositId") ?? "");
+  if (!depositId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500);
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("reject_manual_deposit", {
+    p_deposit_id: depositId,
+    p_admin_id: user.id,
+    p_note: note || null,
+  });
+
+  if (error) {
+    console.error("[admin] reject_manual_deposit failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as { ok?: boolean; reason?: string; user_id?: string } | null;
+  if (!result?.ok) {
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "deposit.reject", depositId, { note });
+
+  if (result.user_id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", result.user_id)
+      .single();
+
+    if (profile?.email) {
+      await sendEmail({
+        from: supportFrom(),
+        to: profile.email,
+        replyTo: supportEmail(),
+        subject: "We couldn't confirm your transfer",
+        text:
+          `Hi ${profile.full_name || "there"},\n\n` +
+          `We couldn't match your recent bank transfer to money arriving in our account, so your balance hasn't been credited.\n\n` +
+          (note ? `Note from our team: ${note}\n\n` : "") +
+          `If you believe this is a mistake, reply to this email with your transfer receipt and we'll sort it out.\n\n` +
+          `— The Rydvest team`,
+      });
+    }
+  }
+
+  revalidatePath("/admin/deposits");
+  return { success: true, message: "Transfer rejected and the user notified." };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS — how users fund their balance, and who gets told about transfers
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updatePaymentSettings(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const parsed = PaymentSettingsSchema.safeParse({
+    method: formData.get("method"),
+    bankName: formData.get("bankName"),
+    accountName: formData.get("accountName"),
+    accountNumber: formData.get("accountNumber"),
+    notifyEmails: formData.get("notifyEmails") ?? "",
+  });
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+
+  const emails = parseEmailList(parsed.data.notifyEmails);
+  if (emails.length === 0) {
+    return { errors: { notifyEmails: "Add at least one valid email address." } };
+  }
+
+  const now = new Date().toISOString();
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.from("app_settings").upsert([
+    { key: "payment_method", value: parsed.data.method, updated_at: now },
+    { key: "bank_name", value: parsed.data.bankName, updated_at: now },
+    { key: "bank_account_name", value: parsed.data.accountName, updated_at: now },
+    { key: "bank_account_number", value: parsed.data.accountNumber, updated_at: now },
+    { key: "deposit_notify_emails", value: emails.join(", "), updated_at: now },
+  ]);
+
+  if (error) {
+    console.error("[admin] updatePaymentSettings failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "settings.payment", parsed.data.method, { notifyEmails: emails });
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/dashboard/wallet");
+  return { success: true, message: "Payment settings saved." };
 }

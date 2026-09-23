@@ -1,7 +1,7 @@
 /**
- * ADMIN → INVESTMENTS — every payment with its Paystack reference so the
- * books can be reconciled against the Paystack dashboard line by line.
- * Refund-pending rows (paid after a pool filled) are actioned here.
+ * ADMIN → INVESTMENTS — every contribution with its reference, so the books
+ * can be reconciled line by line. Refund-pending rows only exist for legacy
+ * gateway-paid investments; balance-funded ones can never strand money.
  */
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -22,7 +22,7 @@ export default async function AdminInvestmentsPage() {
 
   const { data: investments } = await admin
     .from("investments")
-    .select("id, amount, status, paystack_reference, paid_at, created_at, user:profiles(full_name, email), pool:pools(name)")
+    .select("id, amount, status, payment_reference, paid_at, created_at, user:profiles(full_name, email), pool:pools(name)")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -36,7 +36,8 @@ export default async function AdminInvestmentsPage() {
         <div>
           <h1 className="text-lg font-extrabold text-slate-900">Investments</h1>
           <p className="text-sm text-slate-500">
-            Match the Paystack reference against your Paystack dashboard to reconcile.
+            Balance-funded contributions settle instantly. Gateway references can be matched
+            against your Korapay dashboard.
           </p>
         </div>
         <p className="text-sm text-slate-500">
@@ -51,7 +52,7 @@ export default async function AdminInvestmentsPage() {
               <th className="px-5 py-3 font-bold">Investor</th>
               <th className="px-5 py-3 font-bold">Pool</th>
               <th className="px-5 py-3 font-bold">Amount</th>
-              <th className="px-5 py-3 font-bold">Paystack ref</th>
+              <th className="px-5 py-3 font-bold">Reference</th>
               <th className="px-5 py-3 font-bold">Date</th>
               <th className="px-5 py-3 font-bold">Status</th>
               <th className="px-5 py-3 font-bold"></th>
@@ -69,7 +70,7 @@ export default async function AdminInvestmentsPage() {
                   </td>
                   <td className="px-5 py-3 text-slate-600">{pool?.name}</td>
                   <td className="px-5 py-3 font-extrabold text-slate-900 tabular-nums">{fmtNaira(inv.amount)}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-slate-500">{inv.paystack_reference}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-slate-500">{inv.payment_reference}</td>
                   <td className="px-5 py-3 text-xs text-slate-500">{fmtDate(inv.paid_at ?? inv.created_at)}</td>
                   <td className="px-5 py-3">
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize whitespace-nowrap ${STATUS_STYLE[inv.status] ?? ""}`}>
@@ -78,7 +79,7 @@ export default async function AdminInvestmentsPage() {
                   </td>
                   <td className="px-5 py-3">
                     {inv.status === "refund_pending" && (
-                      // Refund the charge in the Paystack dashboard first,
+                      // Refund the charge in the payment dashboard first,
                       // then record it here.
                       <form action={markInvestmentRefunded}>
                         <input type="hidden" name="investmentId" value={inv.id} />
