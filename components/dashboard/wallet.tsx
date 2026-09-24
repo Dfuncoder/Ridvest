@@ -32,16 +32,16 @@ function CopyRow({ labelText, value }: { labelText: string; value: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 py-3 border-b border-white/10 last:border-0">
+    <div className="flex items-center justify-between gap-3 py-2 border-b border-white/10 last:border-0">
       <div className="min-w-0">
-        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">{labelText}</p>
-        <p className="text-sm font-extrabold text-white truncate tabular-nums">{value}</p>
+        <p className="text-[9px] font-bold text-white/40 uppercase tracking-[0.14em]">{labelText}</p>
+        <p className="text-sm font-extrabold text-white truncate tabular-nums leading-snug">{value}</p>
       </div>
       <button
         type="button"
         onClick={copy}
         aria-label={`Copy ${labelText}`}
-        className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+        className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
       >
         {copied ? "Copied" : "Copy"}
       </button>
@@ -284,40 +284,39 @@ export function ManualTransferPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-[#0d2137] rounded-2xl p-6 shadow-xl shadow-[#0d2137]/20">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
+    <form
+      action={formAction}
+      className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm"
+    >
+      <div className="bg-[#0d2137] px-5 pt-4 pb-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.14em]">
             Transfer to this account
           </p>
         </div>
-        <div className="mt-3">
-          <CopyRow labelText="Account number" value={accountNumber} />
-          <CopyRow labelText="Account name" value={accountName} />
-          <CopyRow labelText="Bank" value={bankName} />
-        </div>
+        <CopyRow labelText="Account number" value={accountNumber} />
+        <CopyRow labelText="Account name" value={accountName} />
+        <CopyRow labelText="Bank" value={bankName} />
       </div>
 
-      <form action={formAction} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4">
+      <div className="p-5 flex flex-col gap-3">
         {state?.message && !state.success && (
           <p className="text-xs rounded-xl px-3.5 py-2.5 border text-red-600 bg-red-50 border-red-200">
             {state.message}
           </p>
         )}
 
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
-          <p className="text-xs text-amber-900 leading-relaxed">
-            Send from your <span className="font-bold">{profileName || "own"}</span> account, then
-            press the button below.
-          </p>
-        </div>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Send from your <span className="font-bold text-slate-700">{profileName || "own"}</span>{" "}
+          account, then press the button below.
+        </p>
 
         <button type="submit" disabled={pending} className={`py-3.5 ${primaryBtn}`}>
-          {pending ? "Submitting..." : "I've sent the money"}
+          {pending ? "Submitting..." : "I’ve sent the money"}
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
 

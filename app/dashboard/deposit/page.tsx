@@ -18,38 +18,41 @@ export default async function DepositPage() {
   ]);
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Deposit</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Add money to your Rydvest balance, then use it to join any pool.
-        </p>
+    <div className="max-w-2xl mx-auto flex flex-col gap-4">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Deposit</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Add money, then use it to join any pool.
+          </p>
+        </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#0d2137] via-[#122c4b] to-[#16365a] p-6 sm:p-7 shadow-xl shadow-[#0d2137]/25">
+      {/* Deliberately compact: the action below it has to stay above the fold. */}
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-[#0d2137] via-[#122c4b] to-[#16365a] px-5 py-4 shadow-lg shadow-[#0d2137]/20">
         <div
-          className="hidden sm:block absolute -top-16 -right-16 w-64 h-64 pointer-events-none"
+          className="hidden sm:block absolute -top-12 -right-12 w-48 h-48 pointer-events-none"
           style={{ background: "radial-gradient(circle, rgba(250,204,21,0.14) 0%, transparent 68%)" }}
         />
-        <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-          <div>
-            <p className="text-[11px] font-semibold text-white/45 uppercase tracking-[0.18em] mb-2">
+        <div className="relative flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-white/45 uppercase tracking-[0.16em] mb-1">
               Available balance
             </p>
-            <p className="text-4xl sm:text-5xl leading-none font-extrabold text-white tabular-nums tracking-[-0.03em]">
+            <p className="text-2xl sm:text-3xl leading-none font-extrabold text-white tabular-nums tracking-[-0.02em]">
               {fmtNaira(Number(balance ?? 0))}
             </p>
           </div>
           <Link
-            href="#deposit"
-            className="shrink-0 text-center px-6 py-3.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-2xl transition-all duration-150 shadow-lg shadow-amber-400/25"
+            href="/dashboard/history"
+            className="shrink-0 text-[11px] font-bold text-white/55 hover:text-white transition-colors whitespace-nowrap"
           >
-            Deposit
+            History →
           </Link>
         </div>
       </div>
 
-      <div id="deposit" className="scroll-mt-24">
+      <div>
         {settings.method === "manual" ? (
           <ManualTransferPanel
             bankName={settings.bankName}
@@ -61,21 +64,6 @@ export default async function DepositPage() {
           <KorapayPanel />
         )}
       </div>
-
-      <Link
-        href="/dashboard/history"
-        className="group flex items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl px-5 py-4 hover:border-slate-300 transition-colors"
-      >
-        <div>
-          <p className="text-sm font-bold text-slate-900">Transaction history</p>
-          <p className="text-xs text-slate-500 mt-0.5">Every deposit, investment and payout</p>
-        </div>
-        <span className="text-slate-300 group-hover:text-amber-500 transition-colors" aria-hidden>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </span>
-      </Link>
     </div>
   );
 }

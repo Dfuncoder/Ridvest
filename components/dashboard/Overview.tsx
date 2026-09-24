@@ -227,7 +227,7 @@ export default function Overview({ data }: { data: OverviewData }) {
           { label: "Deposit", href: "/dashboard/deposit", d: ICONS.deposit },
           { label: "Invest", href: "/dashboard/invest", d: ICONS.invest },
           { label: "Pools", href: "/dashboard/pools", d: ICONS.pools },
-          { label: "Payouts", href: "/dashboard/payouts", d: ICONS.payouts },
+          { label: "Withdraw", href: "/dashboard/payouts", d: ICONS.payouts },
         ].map((a) => (
           <Link
             key={a.label}

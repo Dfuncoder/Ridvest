@@ -43,9 +43,9 @@ export default async function PayoutsPage() {
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-extrabold text-slate-900">Payouts & withdrawals</h1>
-        <p className="text-sm text-slate-500">
-          Paid payouts build your balance; withdraw it to your verified bank account.
+        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Withdraw</h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Move your balance to a bank account in your name.
         </p>
       </div>
 

@@ -7,6 +7,7 @@
  */
 import "server-only";
 import { fmtNaira, fmtDateTime } from "./format";
+import { supportEmail } from "./email";
 
 export type Receipt = {
   recipientName: string;
@@ -53,6 +54,9 @@ export function receiptText(r: Receipt): string {
     ``,
     `You can now join a pool from your dashboard.`,
     ``,
+    `If you did not make this transfer, or anything above looks wrong, reply to this`,
+    `email or contact ${supportEmail()} straight away.`,
+    ``,
     `— Rydvest`,
   ].join("\n");
 }
@@ -92,8 +96,11 @@ ${detail}
 </table>
 </td></tr>
 
-<tr><td style="padding:20px 28px 28px">
-<p style="margin:0;color:#64748b;font-size:13px;line-height:1.6">Keep this receipt for your records.</p>
+<tr><td style="padding:20px 28px 28px;border-top:1px solid #f1f5f9">
+<p style="margin:0;color:#64748b;font-size:13px;line-height:1.6">
+If you did not make this transfer, or anything above looks wrong, reply to this email or contact
+<a href="mailto:${esc(supportEmail())}" style="color:#0f172a;font-weight:600;text-decoration:none">${esc(supportEmail())}</a> straight away.
+</p>
 </td></tr>
 
 </table>
