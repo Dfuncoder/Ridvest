@@ -157,7 +157,7 @@ export default function Overview({ data }: { data: OverviewData }) {
                 {data.firstName ? `${data.firstName}'s balance` : "Available balance"}
               </p>
               <div className="flex items-center gap-3">
-                <h1 className="text-[2.5rem] sm:text-6xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
+                <h1 className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
                   {balanceVisible ? fmtNaira(data.balance) : "₦ ••••••"}
                 </h1>
                 <button

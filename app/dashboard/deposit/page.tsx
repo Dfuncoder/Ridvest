@@ -36,7 +36,7 @@ export default async function DepositPage() {
             <p className="text-[11px] font-semibold text-white/45 uppercase tracking-[0.18em] mb-2">
               Available balance
             </p>
-            <p className="text-4xl sm:text-[2.75rem] leading-none font-extrabold text-white tabular-nums tracking-tight">
+            <p className="text-4xl sm:text-5xl leading-none font-extrabold text-white tabular-nums tracking-[-0.03em]">
               {fmtNaira(Number(balance ?? 0))}
             </p>
           </div>

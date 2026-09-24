@@ -15,7 +15,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { sendEmail, supportFrom, supportEmail } from "@/lib/email";
+import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
 import { parseEmailList } from "@/lib/settings";
 import { fmtNaira } from "@/lib/format";
 import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
@@ -452,7 +452,7 @@ export async function confirmDeposit(_prev: FormState, formData: FormData): Prom
       };
 
       await sendEmail({
-        from: supportFrom(),
+        from: noReplyFrom(),
         to: profile.email,
         replyTo: supportEmail(),
         subject: receiptSubject(receipt),

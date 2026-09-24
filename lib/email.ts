@@ -2,8 +2,10 @@
  * Email sending via Resend's REST API — SERVER ONLY.
  *
  * Address roles (all configurable in .env):
- *   CONTACT_FROM  — the no-reply sender used for internal notifications
- *                   (e.g. "new contact message" alerts to the support inbox).
+ *   CONTACT_FROM  — the no-reply sender for automated mail: internal alerts
+ *                   and transactional messages that need no answer, such as a
+ *                   deposit receipt. Those still carry Reply-To: CONTACT_EMAIL
+ *                   so anyone who does reply reaches a person.
  *   CONTACT_EMAIL — the support inbox. Notifications are delivered TO it,
  *                   and admin replies to customers are sent FROM it, so
  *                   customer follow-ups come back to the same inbox.
@@ -67,9 +69,9 @@ export function supportEmail(): string {
   return process.env.CONTACT_EMAIL || "support@rydvest.com";
 }
 
-/** The no-reply sender used for internal notifications. */
+/** The no-reply sender for automated mail (alerts, receipts). */
 export function noReplyFrom(): string {
-  return process.env.CONTACT_FROM || "Rydvest Contact <onboarding@resend.dev>";
+  return process.env.CONTACT_FROM || "Rydvest <no-reply@rydvest.com>";
 }
 
 /** The sender identity for replies to customers — the support inbox itself. */
