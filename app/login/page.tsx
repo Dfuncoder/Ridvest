@@ -12,7 +12,7 @@ import { login, type FormState } from "@/app/actions/auth";
 import { safeNextPath } from "@/lib/redirects";
 import {
   AuthShell, FieldIcon, icons, inputClass, labelClass,
-  EyeToggle, ErrorBanner, SuccessBanner,
+  EyeToggle, ErrorBanner, SuccessBanner, useStaleErrors,
 } from "@/components/auth/shared";
 
 function LoginForm() {
@@ -21,6 +21,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const justReset = searchParams.get("reset") === "1";
   const next = safeNextPath(searchParams.get("next"));
+  const { clearOn, message } = useStaleErrors(state);
 
   return (
     <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
@@ -28,7 +29,7 @@ function LoginForm() {
       <p className="text-sm text-slate-400 mb-6">Login to your Rydvest account</p>
 
       {justReset && <SuccessBanner message="Password updated. Log in with your new password." />}
-      <ErrorBanner message={state?.message} />
+      <ErrorBanner message={message} />
 
       <form action={formAction} className="flex flex-col gap-4">
         {next && <input type="hidden" name="next" value={next} />}
@@ -36,7 +37,7 @@ function LoginForm() {
           <label htmlFor="email" className={labelClass}>Email address</label>
           <div className="relative">
             <FieldIcon path={icons.mail} />
-            <input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required className={inputClass} />
+            <input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required onChange={() => clearOn("form")} className={inputClass} />
           </div>
         </div>
 
@@ -51,6 +52,7 @@ function LoginForm() {
               placeholder="Enter your password"
               autoComplete="current-password"
               required
+              onChange={() => clearOn("form")}
               className="w-full pl-9 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
             />
             <EyeToggle show={showPwd} onToggle={() => setShowPwd(!showPwd)} />

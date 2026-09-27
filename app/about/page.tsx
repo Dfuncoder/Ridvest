@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import SiteNavbar from "@/components/SiteNavbar";
 import { CTABanner, Footer } from "@/components/Footer";
 import AboutUs from "@/components/AboutUs";
 
@@ -10,7 +10,7 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <main>
-      <Navbar />
+      <SiteNavbar />
       <AboutUs />
       <CTABanner />
       <Footer />

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function Navbar() {
+export default function Navbar({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -86,18 +86,29 @@ export default function Navbar() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm font-semibold px-4 py-2 rounded-lg border border-amber-400/40 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400 transition-all duration-150"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-bold text-sm px-5 py-2 rounded-lg transition-all duration-150 shadow-lg shadow-amber-400/20"
-            >
-              Get started →
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-bold text-sm px-5 py-2 rounded-lg transition-all duration-150 shadow-lg shadow-amber-400/20"
+              >
+                My dashboard →
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold px-4 py-2 rounded-lg border border-amber-400/40 text-amber-400 hover:bg-amber-400/10 hover:border-amber-400 transition-all duration-150"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-bold text-sm px-5 py-2 rounded-lg transition-all duration-150 shadow-lg shadow-amber-400/20"
+                >
+                  Get started →
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -143,20 +154,32 @@ export default function Navbar() {
             ))}
 
             <div className="border-t border-white/8 mt-3 pt-4 flex flex-col gap-3">
-              <Link
-                href="/login"
-                onClick={close}
-                className="w-full text-center text-sm font-semibold px-4 py-3 rounded-xl border border-amber-400/40 text-amber-400 hover:bg-amber-400/10 transition-all"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                onClick={close}
-                className="w-full text-center bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-bold text-sm px-4 py-3 rounded-xl transition-all"
-              >
-                Get started →
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/dashboard"
+                  onClick={close}
+                  className="w-full text-center bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-bold text-sm px-4 py-3 rounded-xl transition-all"
+                >
+                  My dashboard →
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={close}
+                    className="w-full text-center text-sm font-semibold px-4 py-3 rounded-xl border border-amber-400/40 text-amber-400 hover:bg-amber-400/10 transition-all"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={close}
+                    className="w-full text-center bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-bold text-sm px-4 py-3 rounded-xl transition-all"
+                  >
+                    Get started →
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

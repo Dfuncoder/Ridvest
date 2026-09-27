@@ -3,7 +3,7 @@
  * Messages are stored in the database (admin → Messages) and emailed to the
  * support inbox when Resend is configured.
  */
-import Navbar from "@/components/Navbar";
+import SiteNavbar from "@/components/SiteNavbar";
 import { Footer } from "@/components/Footer";
 import ContactForm from "@/components/ContactForm";
 
@@ -28,7 +28,7 @@ const contactPoints = [
 export default function ContactPage() {
   return (
     <main>
-      <Navbar />
+      <SiteNavbar />
 
       <section className="relative bg-[#0d2137] py-20 sm:py-24 px-6 overflow-hidden min-h-[80vh]">
         {/* Decorative glow (gradient, not filter:blur — see mobile GPU notes) */}

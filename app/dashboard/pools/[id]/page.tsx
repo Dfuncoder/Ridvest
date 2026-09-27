@@ -14,6 +14,7 @@ import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { InvestForm } from "@/components/dashboard/forms";
+import { CopyCode } from "@/components/dashboard/CopyCode";
 import { fmtNaira, fmtDate, poolProgressPct } from "@/lib/format";
 
 export default async function PoolDetailPage({
@@ -135,7 +136,7 @@ export default async function PoolDetailPage({
         {pool.is_private && isCreator && pool.status === "open" && (
           <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
             <p className="text-xs text-amber-700 mb-1 font-semibold">Share this invite code with friends:</p>
-            <p className="font-mono text-xl font-extrabold tracking-[0.3em] text-amber-600">{pool.invite_code}</p>
+            <CopyCode code={pool.invite_code as string} size="lg" />
           </div>
         )}
 

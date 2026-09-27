@@ -452,9 +452,12 @@ begin
     update public.pools
     set status     = 'active',
         started_at = now(),
-        ends_at    = now() + make_interval(weeks => v_product.duration_weeks)
+        ends_at    = now() + make_interval(weeks => v_product.duration_weeks + 1)
     where id = v_pool.id;
 
+    -- Payouts run weeks 2..N+1: the first week after funding is for
+    -- deploying the vehicle, so nothing is due then. ends_at moves out by the
+    -- same week so it still lands on the final payout.
     insert into public.payouts (investment_id, user_id, pool_id, amount, due_date)
     select
       i.id,
@@ -469,7 +472,7 @@ begin
           trunc(round(i.amount * (1 + v_product.roi_percent / 100.0), 2)
                 / v_product.duration_weeks, 2)
       end,
-      (now() + make_interval(weeks => gs.n))::date
+      (now() + make_interval(weeks => gs.n + 1))::date
     from public.investments i
     cross join generate_series(1, v_product.duration_weeks) as gs(n)
     where i.pool_id = v_pool.id and i.status = 'paid';
@@ -505,6 +508,50 @@ grant execute on function public.reject_manual_deposit(uuid, uuid, text) to serv
 -- These two read auth.uid(), so users call them with their own session.
 grant execute on function public.declare_manual_deposit(text, text) to authenticated;
 grant execute on function public.join_pool_from_balance(uuid, numeric) to authenticated;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 10b. NAME MATCHING (same definitions as migrate-bank-name-match.sql).
+--
+--      Duplicated deliberately: request_withdrawal below depends on them, and
+--      without them here a re-run of this file would replace the token rule
+--      with the old exact-string comparison and break every withdrawal.
+-- ─────────────────────────────────────────────────────────────────────────────
+create or replace function public.name_tokens(p_name text)
+returns text[]
+language sql
+immutable
+as $$
+  select coalesce(
+    array(
+      select t
+      from unnest(
+        string_to_array(
+          btrim(regexp_replace(lower(coalesce(p_name, '')), '[^a-z0-9]+', ' ', 'g')),
+          ' '
+        )
+      ) as t
+      where length(t) >= 2
+        and t <> all (array['mr','mrs','miss','ms','dr','chief','alhaji','engr','prof'])
+    ),
+    array[]::text[]
+  );
+$$;
+
+create or replace function public.names_match(p_account_name text, p_profile_name text)
+returns boolean
+language plpgsql
+immutable
+as $$
+declare
+  v_account text[] := public.name_tokens(p_account_name);
+  v_profile text[] := public.name_tokens(p_profile_name);
+begin
+  if array_length(v_profile, 1) is null or array_length(v_account, 1) is null then
+    return false;
+  end if;
+  return v_profile <@ v_account;
+end;
+$$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 11. WITHDRAWALS — take the same profile lock as join_pool_from_balance().
@@ -550,9 +597,9 @@ begin
 
   select * into v_profile from public.profiles where id = v_uid;
 
-  -- The name-match rule: bank account name must equal profile name.
-  if lower(regexp_replace(v_account.account_name, '\s+', ' ', 'g'))
-     <> lower(regexp_replace(v_profile.full_name, '\s+', ' ', 'g')) then
+  -- ★ THE NAME-MATCH RULE, token-based: every meaningful word of the profile
+  --   name must appear in the bank account name.
+  if not public.names_match(v_account.account_name, v_profile.full_name) then
     return jsonb_build_object('ok', false, 'reason', 'name_mismatch');
   end if;
 
@@ -654,9 +701,12 @@ begin
     update public.pools
     set status     = 'active',
         started_at = now(),
-        ends_at    = now() + make_interval(weeks => v_product.duration_weeks)
+        ends_at    = now() + make_interval(weeks => v_product.duration_weeks + 1)
     where id = v_pool.id;
 
+    -- Payouts run weeks 2..N+1: the first week after funding is for
+    -- deploying the vehicle, so nothing is due then. ends_at moves out by the
+    -- same week so it still lands on the final payout.
     insert into public.payouts (investment_id, user_id, pool_id, amount, due_date)
     select
       i.id,
@@ -671,7 +721,7 @@ begin
           trunc(round(i.amount * (1 + v_product.roi_percent / 100.0), 2)
                 / v_product.duration_weeks, 2)
       end,
-      (now() + make_interval(weeks => gs.n))::date
+      (now() + make_interval(weeks => gs.n + 1))::date
     from public.investments i
     cross join generate_series(1, v_product.duration_weeks) as gs(n)
     where i.pool_id = v_pool.id and i.status = 'paid';

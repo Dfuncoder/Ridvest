@@ -155,3 +155,98 @@ export function verifyKorapaySignature(data: unknown, signature: string | null):
   const b = Buffer.from(signature, "utf8");
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANK LOOKUP
+//
+// Used when a user adds a withdrawal account: they pick a bank and type an
+// account number, and Korapay tells us the name on that account. The resolved
+// name is what we store — a name the user typed themselves proves nothing.
+//
+// Both calls need KORAPAY_SECRET_KEY even when collections are set to manual
+// bank transfer. If the key is missing they report `unavailable` so the caller
+// can fall back to manual entry rather than blocking withdrawals entirely.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type Bank = { name: string; code: string; slug: string };
+
+export function korapayConfigured(): boolean {
+  return Boolean(process.env.KORAPAY_SECRET_KEY);
+}
+
+export async function korapayListBanks(): Promise<{ ok: boolean; banks: Bank[] }> {
+  if (!korapayConfigured()) return { ok: false, banks: [] };
+
+  try {
+    const res = await fetch(`${BASE_URL}/misc/banks?countryCode=NG`, {
+      headers: { Authorization: `Bearer ${secretKey()}` },
+      // The bank list barely changes; caching it keeps the profile page quick.
+      next: { revalidate: 60 * 60 * 24 },
+    });
+
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.status || !Array.isArray(json.data)) {
+      console.error("[korapay] bank list failed", res.status, json?.message);
+      return { ok: false, banks: [] };
+    }
+
+    const banks: Bank[] = json.data
+      .filter((b: { name?: string; code?: string }) => b?.name && b?.code)
+      .map((b: { name: string; code: string; slug?: string }) => ({
+        name: b.name,
+        code: b.code,
+        slug: b.slug ?? b.code,
+      }))
+      .sort((a: Bank, b: Bank) => a.name.localeCompare(b.name));
+
+    return { ok: true, banks };
+  } catch (err) {
+    console.error("[korapay] bank list error", err);
+    return { ok: false, banks: [] };
+  }
+}
+
+export type ResolvedAccount = {
+  status: "ok" | "not_found" | "unavailable";
+  accountName?: string;
+  bankName?: string;
+};
+
+/** Asks Korapay whose account this is. Never call with client-supplied names. */
+export async function korapayResolveAccount(
+  bankCode: string,
+  accountNumber: string
+): Promise<ResolvedAccount> {
+  if (!korapayConfigured()) return { status: "unavailable" };
+
+  try {
+    const res = await fetch(`${BASE_URL}/misc/banks/resolve`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ bank: bankCode, account: accountNumber, currency: "NGN" }),
+      cache: "no-store",
+    });
+
+    const json = await res.json().catch(() => null);
+    const name = json?.data?.account_name as string | undefined;
+
+    if (!res.ok || !json?.status || !name) {
+      // A wrong number is a normal outcome, not an outage.
+      if (res.status >= 400 && res.status < 500) return { status: "not_found" };
+      console.error("[korapay] resolve failed", res.status, json?.message);
+      return { status: "unavailable" };
+    }
+
+    return {
+      status: "ok",
+      accountName: name.trim(),
+      bankName: (json.data.bank_name as string | undefined)?.trim(),
+    };
+  } catch (err) {
+    console.error("[korapay] resolve error", err);
+    return { status: "unavailable" };
+  }
+}

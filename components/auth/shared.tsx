@@ -5,8 +5,50 @@
  * forgot/reset password) — logo, input styling, icons, banners.
  * Pure UI: no data fetching, no secrets.
  */
+import { useState } from "react";
 import Link from "next/link";
 
+
+// ── Stale-error handling ────────────────────────────────────────────────────
+/**
+ * useActionState keeps the last result until the next submit, so an error sits
+ * on screen after the user has already fixed the field ("passwords do not
+ * match" still showing once they match). This hides a field’s error as soon as
+ * the user edits it, and brings every error back when a new submission
+ * returns.
+ *
+ * No effects: the set of edited fields is tagged with the state object it was
+ * cleared against, so a new result invalidates it during render.
+ */
+export function useStaleErrors(state: { errors?: Record<string, string>; message?: string } | undefined) {
+  const [cleared, setCleared] = useState<{ token: unknown; fields: Set<string> }>({
+    token: state,
+    fields: new Set(),
+  });
+
+  const edited = cleared.token === state ? cleared.fields : new Set<string>();
+
+  /** Call from onChange. Hides this field’s error until the next submit. */
+  function clearOn(name: string) {
+    setCleared((prev) => {
+      const base = prev.token === state ? prev.fields : new Set<string>();
+      if (base.has(name)) return prev;
+      const next = new Set(base);
+      next.add(name);
+      return { token: state, fields: next };
+    });
+  }
+
+  /** The error for a field, or undefined once the user has edited it. */
+  function errorFor(name: string): string | undefined {
+    return edited.has(name) ? undefined : state?.errors?.[name];
+  }
+
+  // The form-level banner is stale the moment anything is edited.
+  const message = edited.size > 0 ? undefined : state?.message;
+
+  return { errorFor, clearOn, message };
+}
 // ── Brand logo ──────────────────────────────────────────────────────────────
 export function Logo() {
   return (

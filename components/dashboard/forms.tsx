@@ -5,12 +5,12 @@
  * Every form submits to a server action, which re-validates everything —
  * these components are presentation + optimistic UX only.
  */
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { joinPool, createPool, joinByInvite } from "@/app/actions/invest";
-import { updateProfile, addWithdrawalAccount, requestWithdrawal } from "@/app/actions/account";
+import { addWithdrawalAccount, requestWithdrawal, lookupBankAccount } from "@/app/actions/account";
 import type { FormState } from "@/app/actions/auth";
-import { NIGERIAN_STATES } from "@/lib/validation";
+import { MoneyInput } from "./MoneyInput";
 import { fmtNaira } from "@/lib/format";
 
 // Light-card styling shared by these forms.
@@ -53,6 +53,7 @@ export function InvestForm({
   balance: number;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(joinPool, undefined);
+  const [amount, setAmount] = useState<number | null>(null);
 
   const minimum = Math.min(minContribution, remaining);
 
@@ -79,15 +80,16 @@ export function InvestForm({
       <input type="hidden" name="poolId" value={poolId} />
       <div className="flex gap-2">
         <div className="flex-1">
-          <input
-            type="number"
+          <MoneyInput
+            id="inv-amount"
             name="amount"
+            value={amount}
+            onChange={setAmount}
             min={minimum}
             max={Math.min(remaining, balance)}
-            step={1}
             required
             placeholder={`Min ${fmtNaira(minimum)}`}
-            className={input}
+            className={`${input} tabular-nums`}
           />
         </div>
         <button type="submit" disabled={pending} className={`px-5 py-2.5 ${primaryBtn}`}>
@@ -96,7 +98,7 @@ export function InvestForm({
       </div>
       <FieldErr msg={state?.errors?.amount} />
       <p className="text-[11px] text-slate-400 mt-1.5">
-        Paid from your {fmtNaira(balance)} balance. {fmtNaira(remaining)} left to fill this pool.
+        {fmtNaira(remaining)} left to fill this pool.
       </p>
     </form>
   );
@@ -173,84 +175,164 @@ export function JoinByInviteForm() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EDIT PROFILE
-// ─────────────────────────────────────────────────────────────────────────────
-export function ProfileForm({
-  profile,
-}: {
-  profile: { full_name: string; phone: string; address: string; state_of_residence: string };
-}) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(updateProfile, undefined);
-
-  return (
-    <form action={formAction} className="flex flex-col gap-3">
-      <Banner state={state} />
-      <div>
-        <label htmlFor="pf-name" className={label}>Full name</label>
-        <input id="pf-name" name="fullName" type="text" required defaultValue={profile.full_name} className={input} />
-        <FieldErr msg={state?.errors?.fullName} />
-        <p className="text-[11px] text-slate-400 mt-1">
-          ⚠ Your withdrawal bank account must be in exactly this name.
-        </p>
-      </div>
-      <div>
-        <label htmlFor="pf-phone" className={label}>Phone number</label>
-        <input id="pf-phone" name="phone" type="tel" required defaultValue={profile.phone} className={input} />
-        <FieldErr msg={state?.errors?.phone} />
-      </div>
-      <div>
-        <label htmlFor="pf-address" className={label}>Home address</label>
-        <input id="pf-address" name="address" type="text" required defaultValue={profile.address} className={input} />
-        <FieldErr msg={state?.errors?.address} />
-      </div>
-      <div>
-        <label htmlFor="pf-state" className={label}>State of residence</label>
-        <select id="pf-state" name="state" required defaultValue={profile.state_of_residence} className={input}>
-          {NIGERIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <FieldErr msg={state?.errors?.state} />
-      </div>
-      <button type="submit" disabled={pending} className={`py-3 ${primaryBtn}`}>
-        {pending ? "Saving..." : "Save changes"}
-      </button>
-    </form>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ADD WITHDRAWAL BANK ACCOUNT
+//
+// The user picks a bank and types an account number; the name is fetched from
+// the bank and shown read-only. Nothing can be saved until a name comes back
+// and matches the profile, and the server resolves it again on submit.
 // ─────────────────────────────────────────────────────────────────────────────
-export function AddAccountForm({ profileName }: { profileName: string }) {
-  const [state, formAction, pending] = useActionState<FormState, FormData>(addWithdrawalAccount, undefined);
+export function AddAccountForm({
+  profileName,
+  banks,
+}: {
+  profileName: string;
+  banks: Array<{ name: string; code: string }>;
+}) {
+  const [state, formAction, pending] = useActionState<FormState, FormData>(
+    addWithdrawalAccount,
+    undefined
+  );
+
+  const [bankCode, setBankCode] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+
+  // The reply is tagged with the bank + number it was for, so a result for an
+  // old number is never shown against a new one.
+  const [result, setResult] = useState<{
+    key: string;
+    state: "ok" | "error";
+    name?: string;
+    message?: string;
+  } | null>(null);
+
+  const bankName = banks.find((b) => b.code === bankCode)?.name ?? "";
+  const lookupUnavailable = banks.length === 0;
+  const ready = Boolean(bankCode) && accountNumber.length === 10;
+  const key = `${bankCode}:${accountNumber}`;
+
+  // Ask the bank once we have a bank and ten digits. The state is only ever set
+  // from inside the timer callback, never synchronously while the effect runs.
+  useEffect(() => {
+    if (lookupUnavailable || !ready) return;
+
+    let current = true;
+    const timer = setTimeout(async () => {
+      const reply = await lookupBankAccount(bankCode, accountNumber);
+      if (!current) return;
+      if (reply.status === "ok") setResult({ key, state: "ok", name: reply.accountName });
+      else setResult({ key, state: "error", message: reply.message });
+    }, 400);
+
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [bankCode, accountNumber, key, ready, lookupUnavailable]);
+
+  // Derived, so nothing stale can linger: no inputs yet means idle, inputs
+  // without a matching reply means still loading.
+  const lookup: { state: "idle" | "loading" | "ok" | "error"; name?: string; message?: string } =
+    !ready ? { state: "idle" } : result?.key === key ? result : { state: "loading" };
+  const canSubmit = lookupUnavailable ? Boolean(bankCode || bankName) : lookup.state === "ok";
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <Banner state={state} />
-      <div>
-        <label htmlFor="wa-bank" className={label}>Bank name</label>
-        <input id="wa-bank" name="bankName" type="text" required placeholder="e.g. First Bank of Nigeria" className={input} />
-        <FieldErr msg={state?.errors?.bankName} />
-      </div>
+      <input type="hidden" name="bankCode" value={bankCode} />
+      <input type="hidden" name="bankName" value={bankName} />
+
+      {lookupUnavailable ? (
+        <div>
+          <label htmlFor="wa-bank" className={label}>Bank name</label>
+          <input id="wa-bank" name="bankName" type="text" required placeholder="e.g. First Bank of Nigeria" className={input} />
+          <FieldErr msg={state?.errors?.bankName} />
+        </div>
+      ) : (
+        <div>
+          <label htmlFor="wa-bank" className={label}>Bank</label>
+          <select
+            id="wa-bank"
+            required
+            value={bankCode}
+            onChange={(e) => setBankCode(e.target.value)}
+            className={input}
+          >
+            <option value="" disabled>Choose your bank</option>
+            {banks.map((b) => (
+              <option key={b.code} value={b.code}>{b.name}</option>
+            ))}
+          </select>
+          <FieldErr msg={state?.errors?.bankName} />
+        </div>
+      )}
+
       <div>
         <label htmlFor="wa-number" className={label}>Account number</label>
-        <input id="wa-number" name="accountNumber" type="text" inputMode="numeric" maxLength={10} required placeholder="10-digit account number" className={input} />
+        <input
+          id="wa-number"
+          name="accountNumber"
+          type="text"
+          inputMode="numeric"
+          maxLength={10}
+          required
+          value={accountNumber}
+          onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+          placeholder="10-digit account number"
+          className={`${input} tabular-nums tracking-wider`}
+        />
         <FieldErr msg={state?.errors?.accountNumber} />
       </div>
+
       <div>
-        <label htmlFor="wa-name" className={label}>Account holder name</label>
-        <input id="wa-name" name="accountName" type="text" required placeholder={profileName} className={input} />
+        <label htmlFor="wa-name" className={label}>Account name</label>
+        <input
+          id="wa-name"
+          name="accountName"
+          type="text"
+          readOnly={!lookupUnavailable}
+          required={lookupUnavailable}
+          value={lookupUnavailable ? undefined : lookup.name ?? ""}
+          defaultValue={lookupUnavailable ? "" : undefined}
+          placeholder={
+            lookupUnavailable
+              ? profileName
+              : lookup.state === "loading"
+                ? "Checking with your bank..."
+                : "Appears once your account is found"
+          }
+          className={`${input} ${lookupUnavailable ? "" : "font-bold cursor-default"} ${
+            lookup.state === "ok" ? "border-green-300 bg-green-50 text-green-900" : ""
+          }`}
+        />
         <FieldErr msg={state?.errors?.accountName} />
-        <p className="text-[11px] text-slate-400 mt-1">
-          Must match your profile name (<span className="font-semibold">{profileName}</span>) or withdrawals will be rejected.
-        </p>
+
+        {lookup.state === "loading" && (
+          <p className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-1.5">
+            <span className="w-3 h-3 rounded-full border-2 border-slate-300 border-t-amber-400 animate-spin" />
+            Checking with your bank
+          </p>
+        )}
+        {lookup.state === "error" && (
+          <p className="text-[11px] text-red-600 mt-1.5">{lookup.message}</p>
+        )}
+        {lookup.state === "idle" && !lookupUnavailable && (
+          <p className="text-[11px] text-slate-400 mt-1.5">
+            Pick your bank and enter the account number — we&apos;ll fetch the name.
+          </p>
+        )}
+        {lookupUnavailable && (
+          <p className="text-[11px] text-slate-400 mt-1.5">
+            Must match your profile name (<span className="font-semibold">{profileName}</span>).
+          </p>
+        )}
       </div>
-      <button type="submit" disabled={pending} className={`py-3 ${primaryBtn}`}>
+
+      <button type="submit" disabled={pending || !canSubmit} className={`py-3 ${primaryBtn}`}>
         {pending ? "Saving..." : "Add bank account"}
       </button>
     </form>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // REQUEST A WITHDRAWAL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -262,6 +344,7 @@ export function WithdrawForm({
   balance: number;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(requestWithdrawal, undefined);
+  const [amount, setAmount] = useState<number | null>(null);
 
   if (accounts.length === 0) {
     return (
@@ -288,7 +371,17 @@ export function WithdrawForm({
       </div>
       <div>
         <label htmlFor="wd-amount" className={label}>Amount (available: {fmtNaira(balance)})</label>
-        <input id="wd-amount" name="amount" type="number" min={1} max={balance} step="0.01" required placeholder="Amount to withdraw" className={input} />
+        <MoneyInput
+          id="wd-amount"
+          name="amount"
+          value={amount}
+          onChange={setAmount}
+          min={1}
+          max={balance}
+          required
+          placeholder="Amount to withdraw"
+          className={`${input} tabular-nums`}
+        />
         <FieldErr msg={state?.errors?.amount} />
       </div>
       <button type="submit" disabled={pending || balance <= 0} className={`py-3 ${primaryBtn}`}>

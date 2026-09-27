@@ -92,6 +92,21 @@ export async function createPool(_prev: FormState, formData: FormData): Promise<
 
   const admin = createSupabaseAdminClient();
 
+  // One pool in the making at a time, public or private. Otherwise the same
+  // investors get split across several half-empty pools and none of them fill.
+  // Pools are only ever created through this action, so this is the gate.
+  const { data: unfilled } = await admin
+    .from("pools")
+    .select("id, name")
+    .eq("created_by", user.id)
+    .eq("status", "open")
+    .limit(1)
+    .maybeSingle();
+
+  if (unfilled) {
+    return { message: ERRORS.POOL_ALREADY_OPEN };
+  }
+
   const { data: product } = await admin
     .from("pool_products")
     .select("id, active")

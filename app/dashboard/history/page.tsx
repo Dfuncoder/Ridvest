@@ -7,7 +7,7 @@
  */
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { fmtNaira, fmtDate } from "@/lib/format";
+import { fmtNaira, fmtDateTime } from "@/lib/format";
 
 export const metadata = { title: "History · Rydvest" };
 
@@ -144,7 +144,7 @@ export default async function HistoryPage() {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-slate-900 truncate">{e.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{fmtDate(e.at)}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{fmtDateTime(e.at)}</p>
                   {e.note && <p className="text-xs text-red-600 mt-1">{e.note}</p>}
                 </div>
 

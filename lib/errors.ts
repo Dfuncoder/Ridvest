@@ -59,6 +59,9 @@ export const ERRORS = {
     "The bank account name must match the name on your profile. Withdrawals to accounts in a different name are not allowed.",
   ACCOUNT_SAVE_FAILED: "Couldn't save your bank details. Please try again.",
   ACCOUNT_DUPLICATE: "You've already added this account number.",
+  ACCOUNT_NOT_FOUND: "We couldn't find that account. Check the number and the bank.",
+  ACCOUNT_LOOKUP_UNAVAILABLE:
+    "We can't check account names right now. Please try again in a few minutes.",
 
   // ── Investing / pools ─────────────────────────────────────────────────────
   POOL_NOT_FOUND: "That pool doesn't exist or is no longer available.",
@@ -67,6 +70,8 @@ export const ERRORS = {
   POOL_AMOUNT_TOO_LARGE: "That amount is more than what's left to fill this pool.",
   POOL_INVALID_AMOUNT: "Please enter a valid amount.",
   POOL_CREATE_FAILED: "Couldn't create your pool. Please try again.",
+  POOL_ALREADY_OPEN:
+    "You already have a pool that hasn't filled up yet. Once it's fully funded and running, you can create another one.",
   POOL_PRODUCT_INACTIVE: "This investment option is currently unavailable.",
   POOL_INVITE_INVALID: "That invite code doesn't match any private pool.",
   PAYMENT_INIT_FAILED: "Couldn't start the payment. Please try again.",

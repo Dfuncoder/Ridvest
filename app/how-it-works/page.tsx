@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import SiteNavbar from "@/components/SiteNavbar";
 import HowItWorks from "@/components/HowItWorks";
 import { CTABanner, Footer } from "@/components/Footer";
 
@@ -10,7 +10,7 @@ export const metadata = {
 export default function HowItWorksPage() {
   return (
     <main>
-      <Navbar />
+      <SiteNavbar />
       <HowItWorks />
       <CTABanner />
       <Footer />

@@ -11,7 +11,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getPaymentSettings } from "@/lib/settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DepositActions } from "@/components/admin/DepositActions";
-import { fmtDate } from "@/lib/format";
+import { fmtDateTime } from "@/lib/format";
 
 export const metadata = { title: "Confirm transfer · Rydvest admin" };
 
@@ -132,7 +132,7 @@ export default async function ConfirmDepositPage({
         {[
           ["Email", depositor?.email || "—"],
           ["Phone", depositor?.phone || "—"],
-          ["Declared", fmtDate(deposit.created_at)],
+          ["Declared", fmtDateTime(deposit.created_at)],
         ].map(([k, v]) => (
           <div key={k} className="flex justify-between gap-4 py-2.5">
             <dt className="text-slate-500">{k}</dt>

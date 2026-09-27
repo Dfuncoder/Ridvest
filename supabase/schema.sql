@@ -142,6 +142,8 @@ create index if not exists investments_user_idx on public.investments (user_id);
 -- 6. PAYOUTS — the weekly return schedule, generated the moment a pool fills.
 --    total return  = amount × (1 + roi/100)
 --    weekly        = total / duration_weeks (last week absorbs rounding)
+--    first payout  = 2 weeks after the pool fills (week 1 is deployment),
+--                    so the schedule runs weeks 2..duration_weeks+1
 --    status: scheduled → paid (admin marks paid; this credits the user's
 --    withdrawable balance).
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -456,7 +458,7 @@ begin
     update public.pools
     set status     = 'active',
         started_at = now(),
-        ends_at    = now() + make_interval(weeks => v_product.duration_weeks)
+        ends_at    = now() + make_interval(weeks => v_product.duration_weeks + 1)
     where id = v_pool.id;
 
     -- Generate the weekly payout schedule for every paid investment.
@@ -476,7 +478,7 @@ begin
           trunc(round(i.amount * (1 + v_product.roi_percent / 100.0), 2)
                 / v_product.duration_weeks, 2)
       end,
-      (now() + make_interval(weeks => gs.n))::date
+      (now() + make_interval(weeks => gs.n + 1))::date
     from public.investments i
     cross join generate_series(1, v_product.duration_weeks) as gs(n)
     where i.pool_id = v_pool.id and i.status = 'paid';

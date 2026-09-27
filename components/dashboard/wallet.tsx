@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { startKorapayDeposit, declareManualTransfer } from "@/app/actions/wallet";
 import type { FormState } from "@/app/actions/auth";
+import { MoneyInput } from "./MoneyInput";
 import { fmtNaira } from "@/lib/format";
 
 const input =
@@ -92,23 +93,20 @@ function ProcessingCard({ onDone }: { onDone: () => void }) {
 }
 
 function AmountField({ error }: { error?: string }) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number | null>(null);
 
   return (
     <div>
       <label htmlFor="fund-amount" className={label}>Amount to add</label>
-      <input
+      <MoneyInput
         id="fund-amount"
         name="amount"
-        type="number"
-        inputMode="numeric"
-        min={100}
-        step={1}
-        required
         value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        placeholder="e.g. 50000"
-        className={input}
+        onChange={setAmount}
+        min={100}
+        required
+        placeholder="e.g. 50,000"
+        className={`${input} tabular-nums`}
       />
       <FieldErr msg={error} />
       <div className="flex flex-wrap gap-2 mt-2.5">
@@ -116,7 +114,7 @@ function AmountField({ error }: { error?: string }) {
           <button
             key={q}
             type="button"
-            onClick={() => setAmount(String(q))}
+            onClick={() => setAmount(q)}
             className="px-3 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 bg-slate-50 text-slate-600 hover:border-amber-400 hover:text-slate-900 transition-colors"
           >
             {fmtNaira(q)}

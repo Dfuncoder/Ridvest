@@ -30,7 +30,7 @@ const faqs = [
     questions: [
       {
         q: "What is the minimum amount I can invest?",
-        a: "Each pool sets its own minimum contribution, shown clearly on the pool card before you invest. You can also fund an entire pool by yourself if you want full ownership — the target amount is the full cost shown on the pool.",
+        a: "The minimum investment on Rydvest is ₦100,000. You can invest any amount from ₦100,000 upwards, and you can also fund an entire pool by yourself if you want full ownership — the target amount is the full cost shown on the pool.",
       },
       {
         q: "What are my investment options?",
@@ -42,7 +42,7 @@ const faqs = [
       },
       {
         q: "How long does my money stay invested?",
-        a: "Each pool runs for its own fixed duration, shown on the pool before you invest. The clock starts the moment the pool is fully funded, and you collect weekly returns for the entire duration.",
+        a: "Each pool runs for its own fixed duration, shown on the pool before you invest. The clock starts the moment the pool is fully funded, your first payout lands two weeks later, and you collect weekly returns for the rest of the duration.",
       },
       {
         q: "What happens when my pool's duration ends?",
@@ -50,7 +50,7 @@ const faqs = [
       },
       {
         q: "Can I invest more than once?",
-        a: "Yes. You can hold multiple investments at the same time — different pools or different investment types. There is no limit to how many investments you can make.",
+        a: "Yes. You can hold as many investments as you like across different pools. The one limit is on creating pools: while a pool you started is still filling up, you cannot start another one. Once it is fully funded and running, you can create your next.",
       },
     ],
   },
@@ -59,7 +59,7 @@ const faqs = [
     questions: [
       {
         q: "When do I start receiving returns?",
-        a: "Your weekly payout schedule is created the moment your pool is fully funded, with the first payout due one week after the pool starts. Until a pool fills, your money is simply held in the pool — the earning clock only starts at 100% funding.",
+        a: "Your weekly payout schedule is created the moment your pool is fully funded, and your first payout arrives two weeks after that — the vehicle needs that time to be deployed and start working. After the first payout, returns come in weekly for the rest of the pool’s duration. Until a pool fills, your money is simply held in the pool; the earning clock only starts at 100% funding.",
       },
       {
         q: "How are my returns paid?",
@@ -81,6 +81,10 @@ const faqs = [
       {
         q: "What is a public pool?",
         a: "A public pool is an open investment opportunity visible to all Rydvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the vehicle is acquired and deployed.",
+      },
+      {
+        q: "Can I create more than one pool?",
+        a: "You can create public pools and private pools, but only one at a time. While a pool you created is still filling up, you cannot start another — this keeps pools filling instead of splitting the same investors across several half-empty ones. As soon as your pool is fully funded and running, you can create your next.",
       },
       {
         q: "What is a private pool?",

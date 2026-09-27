@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import SiteNavbar from "@/components/SiteNavbar";
 import Hero from "@/components/Hero";
 import Counters from "@/components/Counters";
 import Plans from "@/components/Plans";
@@ -18,7 +18,7 @@ export const metadata = {
 export default function Home() {
   return (
     <main>
-      <Navbar />
+      <SiteNavbar />
       <Hero />
       <AboutUs />
       <HowItWorks />

@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getPaymentSettings } from "@/lib/settings";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DepositActions } from "@/components/admin/DepositActions";
-import { fmtNaira, fmtDate } from "@/lib/format";
+import { fmtNaira, fmtDateTime } from "@/lib/format";
 
 export const metadata = { title: "Deposits · Rydvest admin" };
 
@@ -137,7 +137,7 @@ export default async function AdminDepositsPage() {
                   </div>
 
                   <p className="text-[11px] text-slate-400 mt-2.5 font-mono break-all">{d.reference}</p>
-                  <p className="text-[11px] text-slate-400">Declared {fmtDate(d.created_at)}</p>
+                  <p className="text-[11px] text-slate-400">Declared {fmtDateTime(d.created_at)}</p>
                 </div>
                 <DepositActions
                   depositId={d.id}
@@ -198,8 +198,8 @@ export default async function AdminDepositsPage() {
                           <p className="text-[11px] text-slate-400 mt-1">{d.admin_note}</p>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-slate-500">
-                        {fmtDate(d.credited_at ?? d.created_at)}
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                        {fmtDateTime(d.credited_at ?? d.created_at)}
                       </td>
                     </tr>
                   ))}

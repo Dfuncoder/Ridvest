@@ -15,7 +15,7 @@ import { signup, type FormState } from "@/app/actions/auth";
 import { NIGERIAN_STATES } from "@/lib/validation";
 import {
   AuthShell, FieldIcon, icons, inputClass, labelClass,
-  PasswordStrength, EyeToggle, ErrorBanner, FieldError,
+  PasswordStrength, EyeToggle, ErrorBanner, FieldError, useStaleErrors,
 } from "@/components/auth/shared";
 
 const steps = ["Personal details", "Residence & consent"];
@@ -30,9 +30,9 @@ export default function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [state, formAction, pending] = useActionState<FormState, FormData>(signup, undefined);
 
-  const errors = state?.errors ?? {};
+  const { errorFor, clearOn, message } = useStaleErrors(state);
   // If the server rejected a step-1 field while we're on step 2, tell the user.
-  const step1HasError = STEP1_FIELDS.some((f) => errors[f]);
+  const step1HasError = STEP1_FIELDS.some((f) => errorFor(f));
 
   return (
     <AuthShell>
@@ -60,27 +60,27 @@ export default function RegisterPage() {
               <label htmlFor="fullName" className={labelClass}>Full name</label>
               <div className="relative">
                 <FieldIcon path={icons.user} />
-                <input id="fullName" name="fullName" type="text" placeholder="Jude Mbakwe" autoComplete="name" required className={inputClass} />
+                <input id="fullName" name="fullName" type="text" placeholder="Jude Mbakwe" autoComplete="name" required className={inputClass} onChange={() => clearOn("fullName")} />
               </div>
-              <FieldError message={errors.fullName} />
+              <FieldError message={errorFor("fullName")} />
             </div>
 
             <div>
               <label htmlFor="email" className={labelClass}>Email address</label>
               <div className="relative">
                 <FieldIcon path={icons.mail} />
-                <input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required className={inputClass} />
+                <input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required className={inputClass} onChange={() => clearOn("email")} />
               </div>
-              <FieldError message={errors.email} />
+              <FieldError message={errorFor("email")} />
             </div>
 
             <div>
               <label htmlFor="phone" className={labelClass}>Phone number</label>
               <div className="relative">
                 <FieldIcon path={icons.phone} />
-                <input id="phone" name="phone" type="tel" placeholder="+234 800 000 0000" autoComplete="tel" required className={inputClass} />
+                <input id="phone" name="phone" type="tel" placeholder="+234 800 000 0000" autoComplete="tel" required className={inputClass} onChange={() => clearOn("phone")} />
               </div>
-              <FieldError message={errors.phone} />
+              <FieldError message={errorFor("phone")} />
             </div>
 
             <div>
@@ -93,7 +93,11 @@ export default function RegisterPage() {
                   type={showPwd ? "text" : "password"}
                   placeholder="Create a strong password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearOn("password");
+                    clearOn("confirmPassword");
+                  }}
                   autoComplete="new-password"
                   required
                   className="w-full pl-9 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
@@ -101,16 +105,16 @@ export default function RegisterPage() {
                 <EyeToggle show={showPwd} onToggle={() => setShowPwd(!showPwd)} />
               </div>
               <PasswordStrength password={password} />
-              <FieldError message={errors.password} />
+              <FieldError message={errorFor("password")} />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className={labelClass}>Confirm password</label>
               <div className="relative">
                 <FieldIcon path={icons.lock} />
-                <input id="confirmPassword" name="confirmPassword" type={showPwd ? "text" : "password"} placeholder="Repeat your password" autoComplete="new-password" required className={inputClass} />
+                <input id="confirmPassword" name="confirmPassword" type={showPwd ? "text" : "password"} placeholder="Repeat your password" autoComplete="new-password" required className={inputClass} onChange={() => { clearOn("confirmPassword"); clearOn("password"); }} />
               </div>
-              <FieldError message={errors.confirmPassword} />
+              <FieldError message={errorFor("confirmPassword")} />
             </div>
 
             <button
@@ -128,7 +132,7 @@ export default function RegisterPage() {
           <h1 className="text-xl font-extrabold text-white mb-1">Almost there</h1>
           <p className="text-sm text-slate-400 mb-5">A few details required to verify your identity</p>
 
-          <ErrorBanner message={state?.message} />
+          <ErrorBanner message={message} />
           {step1HasError && (
             <ErrorBanner message="There's a problem with your details on step 1 — tap Back to fix it." />
           )}
@@ -138,32 +142,32 @@ export default function RegisterPage() {
               <label htmlFor="dob" className={labelClass}>Date of birth</label>
               <div className="relative">
                 <FieldIcon path={icons.calendar} />
-                <input id="dob" name="dob" type="date" required className={inputClass} />
+                <input id="dob" name="dob" type="date" required className={inputClass} onChange={() => clearOn("dob")} />
               </div>
-              <FieldError message={errors.dob} />
+              <FieldError message={errorFor("dob")} />
             </div>
 
             <div>
               <label htmlFor="address" className={labelClass}>Home address</label>
               <div className="relative">
                 <FieldIcon path={icons.home} />
-                <input id="address" name="address" type="text" placeholder="12 Zik Avenue, Awka" autoComplete="street-address" required className={inputClass} />
+                <input id="address" name="address" type="text" placeholder="12 Zik Avenue, Awka" autoComplete="street-address" required className={inputClass} onChange={() => clearOn("address")} />
               </div>
-              <FieldError message={errors.address} />
+              <FieldError message={errorFor("address")} />
             </div>
 
             <div>
               <label htmlFor="state" className={labelClass}>State of residence</label>
               <div className="relative">
                 <FieldIcon path={icons.pin} />
-                <select id="state" name="state" required defaultValue="" className={`${inputClass} appearance-none bg-[#0f2e52]`}>
+                <select id="state" name="state" required defaultValue="" className={`${inputClass} appearance-none bg-[#0f2e52]`} onChange={() => clearOn("state")}>
                   <option value="" disabled>Select your state</option>
                   {NIGERIAN_STATES.map((s) => (
                     <option key={s} value={s} className="bg-[#0f2e52]">{s}</option>
                   ))}
                 </select>
               </div>
-              <FieldError message={errors.state} />
+              <FieldError message={errorFor("state")} />
             </div>
 
             <label className="flex items-start gap-3 cursor-pointer mt-1">
@@ -171,7 +175,10 @@ export default function RegisterPage() {
                 type="checkbox"
                 name="agreedToTerms"
                 checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  clearOn("agreedToTerms");
+                }}
                 className="mt-0.5 w-4 h-4 shrink-0 accent-amber-400"
               />
               <span className="text-xs text-slate-400 leading-relaxed">
@@ -182,7 +189,7 @@ export default function RegisterPage() {
                 I confirm that all details provided are accurate.
               </span>
             </label>
-            <FieldError message={errors.agreedToTerms} />
+            <FieldError message={errorFor("agreedToTerms")} />
 
             <div className="flex gap-3 mt-1">
               <button type="button" onClick={() => setStep(1)} className="px-5 py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/10 transition-colors">

@@ -8,7 +8,7 @@ export const metadata = {
 const sections = [
   {
     title: "1. About Rydvest",
-    content: `Rydvest is a transport co-investment platform operated by Rydvest Ltd, registered in Nigeria and headquartered in Ogidi, Anambra State. We provide a structured platform that allows individuals to invest in commercial vehicles and earn returns over a specified investment term.
+    content: `Rydvest is a transport co-investment platform operated by Rydvest Ltd, registered in Nigeria and headquartered in Anambra State. We provide a structured platform that allows individuals to invest in commercial vehicles and earn returns over a specified investment term.
 
 By accessing or using the Rydvest platform — whether through our website, mobile application, or any associated service — you agree to be bound by these Terms of Service. If you do not agree, please do not use our platform.`,
   },
@@ -99,7 +99,7 @@ Rydvest is not a bank or a licensed financial institution. This platform is stru
   },
   {
     title: "12. Contact",
-    content: `If you have questions about these Terms, please contact us at hello@rydvest.com or reach us on WhatsApp at +234 706 528 4100. We are also available at our office in Ogidi, Anambra State, Nigeria.`,
+    content: `If you have questions about these Terms, please contact us at hello@rydvest.com or reach us on WhatsApp at +234 706 528 4100. We are also available at our office in Anambra State, Nigeria.`,
   },
 ];
 
@@ -117,7 +117,7 @@ export default function TermsPage() {
           </Link>
           
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Terms of Service</h1>
-          <p className="text-slate-400 text-sm">Last updated: January 2026 · Rydvest Ltd, Ogidi, Anambra State, Nigeria</p>
+          <p className="text-slate-400 text-sm">Last updated: January 2026 · Rydvest Ltd, Anambra State, Nigeria</p>
         </div>
       </div>
 
