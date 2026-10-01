@@ -49,6 +49,25 @@ export default async function PoolDetailPage({
         .order("created_at", { ascending: false })
     : { data: [] };
 
+  const { data: myPayouts } = pool
+    ? await admin
+        .from("payouts")
+        .select("investment_id, amount, status, due_date")
+        .eq("pool_id", pool.id)
+        .eq("user_id", user.id)
+        .order("due_date", { ascending: true })
+    : { data: [] };
+
+  const earnedBy = new Map<string, number>();
+  const nextBy = new Map<string, { amount: number; date: string }>();
+  for (const pay of myPayouts ?? []) {
+    if (pay.status === "paid") {
+      earnedBy.set(pay.investment_id, (earnedBy.get(pay.investment_id) ?? 0) + Number(pay.amount));
+    } else if (!nextBy.has(pay.investment_id)) {
+      nextBy.set(pay.investment_id, { amount: Number(pay.amount), date: pay.due_date });
+    }
+  }
+
   const isMember = (myInvestments ?? []).length > 0;
   const isCreator = pool?.created_by === user.id;
   const hasValidCode = Boolean(pool?.invite_code && code && code.toUpperCase() === pool.invite_code);
@@ -154,21 +173,67 @@ export default async function PoolDetailPage({
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
           <h2 className="text-sm font-extrabold text-slate-900 px-5 pt-4 pb-2">My contributions</h2>
           <div className="divide-y divide-slate-100">
-            {(myInvestments ?? []).map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmtNaira(inv.amount)}</p>
-                  <p className="text-xs text-slate-400">{inv.paid_at ? fmtDate(inv.paid_at) : "Awaiting payment"}</p>
+            {(myInvestments ?? []).map((inv) => {
+              const expected =
+                Math.round(Number(inv.amount) * (1 + Number(product.roi_percent) / 100) * 100) / 100;
+              const earned = earnedBy.get(inv.id) ?? 0;
+              const next = nextBy.get(inv.id);
+              return (
+                <div key={inv.id} className="px-5 py-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-sm font-extrabold text-slate-900 tabular-nums">
+                        {fmtNaira(inv.amount)}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {inv.paid_at ? fmtDate(inv.paid_at) : "Awaiting payment"}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize shrink-0 ${
+                        inv.status === "paid"
+                          ? "bg-green-500/10 text-green-600 border-green-500/20"
+                          : inv.status === "pending_payment"
+                            ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                            : "bg-red-500/10 text-red-500 border-red-500/20"
+                      }`}
+                    >
+                      {inv.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-slate-50/80 border border-slate-100 rounded-xl px-3 py-2.5">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-1 leading-tight">
+                        Earned
+                      </p>
+                      <p className="text-sm font-extrabold text-green-600 tabular-nums">
+                        {fmtNaira(earned)}
+                      </p>
+                    </div>
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5">
+                      <p className="text-[10px] font-bold text-amber-500/80 uppercase tracking-[0.14em] mb-1 leading-tight">
+                        Next payout
+                      </p>
+                      <p className="text-sm font-extrabold text-amber-600 tabular-nums">
+                        {next ? fmtNaira(next.amount) : "—"}
+                      </p>
+                      {next && (
+                        <p className="text-[10px] text-amber-600/70 mt-0.5">{fmtDate(next.date)}</p>
+                      )}
+                    </div>
+                    <div className="bg-slate-50/80 border border-slate-100 rounded-xl px-3 py-2.5">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-1 leading-tight">
+                        Total expected
+                      </p>
+                      <p className="text-sm font-extrabold text-slate-900 tabular-nums">
+                        {fmtNaira(expected)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize ${
-                  inv.status === "paid" ? "bg-green-500/10 text-green-600 border-green-500/20"
-                  : inv.status === "pending_payment" ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                  : "bg-red-500/10 text-red-500 border-red-500/20"
-                }`}>
-                  {inv.status.replace(/_/g, " ")}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
