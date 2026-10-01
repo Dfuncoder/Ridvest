@@ -190,7 +190,7 @@ export default function Overview({ data }: { data: OverviewData }) {
               Deposit
             </Link>
             <Link
-              href="/dashboard/invest"
+              href="/dashboard/pools"
               className="flex-1 sm:flex-none text-center px-6 py-3.5 bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-white/15 text-white font-extrabold text-sm rounded-2xl transition-all duration-150"
             >
               Invest
@@ -225,7 +225,7 @@ export default function Overview({ data }: { data: OverviewData }) {
       <section className="grid grid-cols-4 gap-2.5 sm:gap-4">
         {[
           { label: "Deposit", href: "/dashboard/deposit", d: ICONS.deposit },
-          { label: "Invest", href: "/dashboard/invest", d: ICONS.invest },
+          { label: "Pools", href: "/dashboard/pools", d: ICONS.pools },
           { label: "Pools", href: "/dashboard/pools", d: ICONS.pools },
           { label: "Withdraw", href: "/dashboard/payouts", d: ICONS.payouts },
         ].map((a) => (
@@ -256,7 +256,7 @@ export default function Overview({ data }: { data: OverviewData }) {
           <div className={`rounded-2xl p-10 text-center ${card}`}>
             <p className={`text-sm ${muted} mb-5`}>You haven&apos;t invested yet.</p>
             <Link
-              href="/dashboard/invest"
+              href="/dashboard/pools"
               className="inline-block bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-amber-400/20"
             >
               Make your first investment →

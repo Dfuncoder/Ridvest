@@ -63,7 +63,7 @@ export async function joinPool(_prev: FormState, formData: FormData): Promise<Fo
   }
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/invest");
+  revalidatePath("/dashboard/pools");
   revalidatePath("/dashboard/portfolio");
   revalidatePath("/dashboard/deposit");
 

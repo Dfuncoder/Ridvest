@@ -86,7 +86,7 @@ export default async function WalletCallbackPage({
         )}
 
         <div className="flex gap-3 justify-center mt-7">
-          <Link href="/dashboard/invest" className="px-5 py-2.5 bg-[#0d2137] text-white text-sm font-bold rounded-xl hover:bg-[#16365a] transition-colors">
+          <Link href="/dashboard/pools" className="px-5 py-2.5 bg-[#0d2137] text-white text-sm font-bold rounded-xl hover:bg-[#16365a] transition-colors">
             Invest now
           </Link>
           <Link href="/dashboard/deposit" className="px-5 py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-200 transition-colors">

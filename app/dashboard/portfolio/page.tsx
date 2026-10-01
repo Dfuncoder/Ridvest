@@ -1,6 +1,7 @@
 /**
- * PORTFOLIO — every investment the user has made, with pool, status,
- * expected return and earnings so far.
+ * INVESTMENTS — every pool this user has money in, with status, expected
+ * return and earnings so far. Browsing and joining pools is /dashboard/pools;
+ * this page is only their own positions.
  */
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
@@ -40,14 +41,14 @@ export default async function PortfolioPage() {
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-extrabold text-slate-900">Portfolio</h1>
-        <p className="text-sm text-slate-500">All your investments in one place.</p>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Investments</h1>
+        <p className="text-sm text-slate-500 mt-1">Every pool you have money in.</p>
       </div>
 
       {(investments ?? []).length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center">
           <p className="text-sm text-slate-500 mb-4">No investments yet.</p>
-          <Link href="/dashboard/invest" className="inline-block bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-lg shadow-amber-400/20">
+          <Link href="/dashboard/pools" className="inline-block bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-lg shadow-amber-400/20">
             Start investing →
           </Link>
         </div>
