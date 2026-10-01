@@ -8,10 +8,16 @@
  *
  * Never trust anything from the client for identity — the user id always
  * comes from the verified session JWT, never from a form field.
+ *
+ * requireUser() also enforces the idle timeout (see lib/session.ts): Supabase
+ * refresh tokens never expire, so without this a session would stay valid
+ * forever.
  */
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "./supabase/server";
+import { idleTimeoutMinutes } from "./session";
 
 export type SessionUser = {
   id: string;
@@ -29,10 +35,44 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   return { id: data.claims.sub, email: (data.claims.email as string) ?? "" };
 }
 
-/** Redirects to /login unless someone is logged in. */
+/**
+ * Stamps the session as active, and reports whether it had already gone idle.
+ *
+ * Wrapped in React cache() so the several requireUser() calls that happen
+ * while rendering one page (layout, page, nested components) cost a single
+ * round trip. The write and the check happen together inside touch_session().
+ */
+const touchSession = cache(async (): Promise<boolean> => {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("touch_session", {
+    p_timeout_minutes: idleTimeoutMinutes(),
+  });
+
+  // A failed call must not lock anyone out — if the function is missing
+  // (migration not yet run) or the network blips, treat the session as live.
+  if (error) {
+    console.error("[auth] touch_session failed", error.message);
+    return true;
+  }
+
+  return Boolean((data as { ok?: boolean } | null)?.ok);
+});
+
+/**
+ * Redirects to /login unless someone is logged in AND their session has been
+ * used within the idle window. Called by every protected page and every
+ * server action, so there is no path that skips the timeout.
+ */
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+
+  if (!(await touchSession())) {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+    redirect("/login");
+  }
+
   return user;
 }
 

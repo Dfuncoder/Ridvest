@@ -236,7 +236,7 @@ export default async function HistoryPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-900">{e.label}</p>
                           {e.reference && (
-                            <p className="font-mono text-[10px] text-slate-400 truncate max-w-[14rem]">
+                            <p className="font-mono text-[10px] text-slate-400 truncate max-w-56">
                               {e.reference}
                             </p>
                           )}
