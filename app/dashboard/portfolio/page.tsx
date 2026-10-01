@@ -55,11 +55,16 @@ export default async function PortfolioPage() {
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
           {(investments ?? []).map((inv) => {
+            // An embedded relation is null when RLS hides the row, so read it
+            // defensively rather than letting the page 500.
             const pool = inv.pool as unknown as {
               id: string; name: string; status: string;
-              product: { name: string; roi_percent: number; duration_weeks: number };
-            };
-            const roi = Number(pool.product.roi_percent);
+              product: { name: string; roi_percent: number; duration_weeks: number } | null;
+            } | null;
+            if (!pool) return null;
+
+            const product = pool.product;
+            const roi = Number(product?.roi_percent ?? 0);
             const expected = Math.round(Number(inv.amount) * (1 + roi / 100) * 100) / 100;
             const earned = earnedByInvestment.get(inv.id) ?? 0;
             return (
@@ -67,7 +72,10 @@ export default async function PortfolioPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-extrabold text-slate-900 truncate">{pool.name}</p>
                   <p className="text-xs text-slate-400">
-                    {pool.product.name} · {roi}% / {pool.product.duration_weeks} wks · {fmtDate(inv.paid_at ?? inv.created_at)}
+                    {product
+                      ? `${product.name} · ${roi}% / ${product.duration_weeks} wks`
+                      : "Pool option no longer listed"}{" "}
+                    · {fmtDate(inv.paid_at ?? inv.created_at)}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-6">

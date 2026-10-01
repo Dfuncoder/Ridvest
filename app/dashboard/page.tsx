@@ -53,34 +53,46 @@ export default async function DashboardPage() {
     nextPayout: nextScheduled
       ? { amount: Number(nextScheduled.amount), date: nextScheduled.due_date }
       : null,
-    investments: (investments ?? []).map((inv) => {
-      // Supabase returns joined rows; single relations come back as objects.
-      const pool = inv.pool as unknown as {
-        id: string; name: string; status: string; amount_raised: number;
-        started_at: string | null; ends_at: string | null;
-        product: { name: string; target_amount: number; duration_weeks: number; roi_percent: number };
-      };
-      const roi = Number(pool.product.roi_percent);
-      const invPayouts = allPayouts.filter((p) => p.investment_id === inv.id);
-      return {
-        id: inv.id,
-        poolId: pool.id,
-        poolName: pool.name,
-        poolStatus: pool.status,
-        amount: Number(inv.amount),
-        earned: earnedByInvestment.get(inv.id) ?? 0,
-        totalExpected: Math.round(Number(inv.amount) * (1 + roi / 100) * 100) / 100,
-        weeksTotal: pool.product.duration_weeks,
-        weeksDone: invPayouts.filter((p) => p.status === "paid").length,
-        // For pools still filling, show fill progress instead of time progress.
-        fillPct: pool.product.target_amount
-          ? Math.min(100, Math.round((Number(pool.amount_raised) / Number(pool.product.target_amount)) * 100))
-          : 0,
-        startedAt: pool.started_at,
-        endsAt: pool.ends_at,
-        nextPayoutDate: invPayouts.find((p) => p.status === "scheduled")?.due_date ?? null,
-      };
-    }),
+    // An embedded relation comes back null when RLS hides the row, so every
+    // field is read defensively: a dashboard must degrade, never 500.
+    investments: (investments ?? [])
+      .map((inv) => {
+        const pool = inv.pool as unknown as {
+          id: string; name: string; status: string; amount_raised: number;
+          started_at: string | null; ends_at: string | null;
+          product: {
+            name: string; target_amount: number; duration_weeks: number; roi_percent: number;
+          } | null;
+        } | null;
+
+        if (!pool) return null;
+
+        const product = pool.product;
+        const roi = Number(product?.roi_percent ?? 0);
+        const target = Number(product?.target_amount ?? 0);
+        const invPayouts = allPayouts.filter((p) => p.investment_id === inv.id);
+
+        return {
+          id: inv.id,
+          poolId: pool.id,
+          poolName: pool.name,
+          poolStatus: pool.status,
+          amount: Number(inv.amount),
+          earned: earnedByInvestment.get(inv.id) ?? 0,
+          totalExpected: Math.round(Number(inv.amount) * (1 + roi / 100) * 100) / 100,
+          // Fall back to the payouts actually on file when the product is hidden.
+          weeksTotal: Number(product?.duration_weeks ?? invPayouts.length),
+          weeksDone: invPayouts.filter((p) => p.status === "paid").length,
+          // For pools still filling, show fill progress instead of time progress.
+          fillPct: target
+            ? Math.min(100, Math.round((Number(pool.amount_raised) / target) * 100))
+            : 0,
+          startedAt: pool.started_at,
+          endsAt: pool.ends_at,
+          nextPayoutDate: invPayouts.find((p) => p.status === "scheduled")?.due_date ?? null,
+        };
+      })
+      .filter((i): i is NonNullable<typeof i> => i !== null),
     recentPayouts: paidPayouts
       .slice()
       .sort((a, b) => (b.paid_at ?? "").localeCompare(a.paid_at ?? ""))
