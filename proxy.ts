@@ -1,7 +1,10 @@
 /**
  * Next.js 16 Proxy (formerly "middleware") — runs before every matched request.
  *
- * Two jobs:
+ * Three jobs:
+ *   0. MAINTENANCE GATE — while MAINTENANCE_MODE is on, every page is
+ *      rewritten to the launch page. Checked first and returns early, so the
+ *      holding page costs nothing beyond a string comparison.
  *   1. SESSION REFRESH — keeps the Supabase auth cookies fresh so users
  *      aren't randomly logged out (required by @supabase/ssr).
  *   2. OPTIMISTIC ROUTE PROTECTION — quickly bounces anonymous visitors away
@@ -13,11 +16,59 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNextPath } from "@/lib/redirects";
+import {
+  maintenanceEnabled,
+  bypassToken,
+  alwaysAllowed,
+  BYPASS_COOKIE,
+} from "@/lib/maintenance";
 
 // Pages a logged-in user shouldn't see again.
 const AUTH_PAGES = ["/login", "/register", "/forgot-password"];
 
+/** Routes where a session actually matters. Everything else skips the work. */
+function needsSession(path: string): boolean {
+  return (
+    path.startsWith("/dashboard") ||
+    path.startsWith("/admin") ||
+    AUTH_PAGES.includes(path) ||
+    path === "/reset-password" ||
+    path === "/verify-otp"
+  );
+}
+
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // ── 0. Maintenance gate ──────────────────────────────────────────────────
+  if (maintenanceEnabled(request.headers.get("host")) && !alwaysAllowed(path)) {
+    const token = bypassToken();
+    const offered = request.nextUrl.searchParams.get("preview");
+
+    // ?preview=<token> drops a cookie so the rest of the session sees the
+    // real site. Without a token configured there is no way through.
+    if (token && offered === token) {
+      const through = NextResponse.redirect(new URL(path, request.url));
+      through.cookies.set(BYPASS_COOKIE, token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: true,
+        path: "/",
+        maxAge: 60 * 60 * 12,
+      });
+      return through;
+    }
+
+    const holdsPass = token && request.cookies.get(BYPASS_COOKIE)?.value === token;
+    if (!holdsPass) {
+      // Rewrite, not redirect: the visitor's URL is left as they typed it.
+      return NextResponse.rewrite(new URL("/maintenance", request.url));
+    }
+  }
+
+  // Public pages need no Supabase client at all.
+  if (!needsSession(path)) return NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -45,8 +96,6 @@ export async function proxy(request: NextRequest) {
   // and refreshes the session if it has expired.
   const { data } = await supabase.auth.getClaims();
   const isLoggedIn = Boolean(data?.claims?.sub);
-
-  const path = request.nextUrl.pathname;
 
   // Anonymous visitor trying to open a protected area → send to login,
   // remembering where they were going so the login can return them there.
@@ -79,16 +128,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Only run where a session matters: protected areas + auth pages.
-  // Public pages (landing, about, FAQ, ...) skip the proxy entirely, which
-  // keeps their time-to-first-byte as fast as possible.
-  matcher: [
-    "/dashboard/:path*",
-    "/admin/:path*",
-    "/login",
-    "/register",
-    "/forgot-password",
-    "/reset-password",
-    "/verify-otp",
-  ],
+
+  // Everything except Next's own output and static files. The gate has to see
+  // every page; needsSession() above keeps the session work off public routes.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|favicon.svg).*)"],
 };

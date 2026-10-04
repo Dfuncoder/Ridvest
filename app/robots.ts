@@ -5,8 +5,22 @@
  * results and crawler logs.)
  */
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
+import { maintenanceEnabled } from "@/lib/maintenance";
 
-export default function robots(): MetadataRoute.Robots {
+// Rendered per request, not baked in at build: MAINTENANCE_MODE is meant to be
+// flipped without a redeploy, and a statically generated robots.txt would keep
+// serving whatever the env var said when the build ran.
+export const dynamic = "force-dynamic";
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  // Pre-launch: keep the holding page out of search results entirely, so the
+  // site is not first indexed as "coming soon".
+  const host = (await headers()).get("host");
+  if (maintenanceEnabled(host)) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
+
   return {
     rules: {
       userAgent: "*",

@@ -33,7 +33,7 @@ Public Pool — You contribute a minimum amount to an open investment pool along
 
 Private Pool — You create or join an invitation-only pool with people you trust — family, friends, or a cooperative. The pool functions the same way as a public pool once fully funded.
 
-In all cases, Rydvest acquires the vehicle, assigns a vetted driver, manages all operations, and pays returns directly to your registered bank account at the frequency specified at the time of investment. At the end of the specified term, your original capital is returned in full.`,
+In all cases, Rydvest acquires the vehicle, assigns a vetted driver, manages all operations, and pays returns directly to your registered bank account at the frequency specified at the time of investment.`,
   },
   {
     title: "4. Returns and Payouts",
