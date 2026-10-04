@@ -39,7 +39,7 @@ const steps = [
   {
     n: "01",
     title: "Create your account",
-    desc: "Sign up in minutes. Verify your identity and link your bank account. The whole thing takes less than 5 minutes.",
+    desc: "Sign up in minutes. Verify your identity and link your bank account. The entire process takes less than 5 minutes.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -126,7 +126,7 @@ const poolTypes = [
 ];
 
 const timeline = [
-  { when: "Day 1", title: "Investment confirmed", sub: "Transport vehicle acquired, driver assigned" },
+  { when: "Day 1", title: "Investment confirmed", sub: "Vehicle acquired, driver assigned" },
   { when: "Week 1–78", title: "Weekly returns paid", sub: "Directly to your dashboard, every 7 days" },
   { when: "Week 78", title: "Final payout", sub: "Your last payment. Cycle complete." },
   { when: "After 1.5 years", title: "Your choice", sub: "Reinvest or join a new pool." },
@@ -222,7 +222,7 @@ export default function HowItWorks() {
             <div className="bg-[#0d2137] rounded-2xl p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.07) 0%, transparent 65%)" }} />
 
-              <h3 className="text-lg font-extrabold text-white mb-2">The 78 Weeks cycle</h3>
+              <h3 className="text-lg font-extrabold text-white mb-2">The 78 Weeks Cycle</h3>
               <p className="text-slate-400 text-sm leading-relaxed mb-8">Every investment — pool or full ownership — runs for exactly 1.5 years.</p>
 
               <div className="flex flex-col">

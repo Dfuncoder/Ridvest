@@ -9,7 +9,7 @@ const faqs = [
     questions: [
       {
         q: "What is Rydvest?",
-        a: "Rydvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn weekly returns for the duration of your investment pool. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
+        a: "Rydvest is a Nigerian co-investment platform that lets you own a stake in a commercial transport vehicle and earn weekly returns for the duration of your investment pool. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
       },
       {
         q: "Who can invest on Rydvest?",

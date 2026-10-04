@@ -17,7 +17,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNextPath } from "@/lib/redirects";
 import {
-  maintenanceEnabled,
+  maintenanceDecision,
   bypassToken,
   alwaysAllowed,
   BYPASS_COOKIE,
@@ -41,7 +41,15 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // ── 0. Maintenance gate ──────────────────────────────────────────────────
-  if (maintenanceEnabled(request.headers.get("host")) && !alwaysAllowed(path)) {
+  // The decision is echoed as x-rv-maintenance on every response, so why the
+  // holding page did or did not appear is one curl away.
+  const decision = maintenanceDecision(request.headers.get("host"));
+  const tag = (res: NextResponse, note?: string) => {
+    res.headers.set("x-rv-maintenance", note ? decision + " (" + note + ")" : decision);
+    return res;
+  };
+
+  if (decision === "hold" && !alwaysAllowed(path)) {
     const token = bypassToken();
     const offered = request.nextUrl.searchParams.get("preview");
 
@@ -50,7 +58,7 @@ export async function proxy(request: NextRequest) {
     if (offered === "off") {
       const cleared = NextResponse.rewrite(new URL("/maintenance", request.url));
       cleared.cookies.delete(BYPASS_COOKIE);
-      return cleared;
+      return tag(cleared, "bypass cleared");
     }
 
     // ?preview=<token> drops a cookie so the rest of the session sees the
@@ -64,18 +72,18 @@ export async function proxy(request: NextRequest) {
         path: "/",
         maxAge: 60 * 60 * 12,
       });
-      return through;
+      return tag(through, "bypass set");
     }
 
     const holdsPass = token && request.cookies.get(BYPASS_COOKIE)?.value === token;
     if (!holdsPass) {
       // Rewrite, not redirect: the visitor's URL is left as they typed it.
-      return NextResponse.rewrite(new URL("/maintenance", request.url));
+      return tag(NextResponse.rewrite(new URL("/maintenance", request.url)));
     }
   }
 
   // Public pages need no Supabase client at all.
-  if (!needsSession(path)) return NextResponse.next({ request });
+  if (!needsSession(path)) return tag(NextResponse.next({ request }));
 
   let response = NextResponse.next({ request });
 
