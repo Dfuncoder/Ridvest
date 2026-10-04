@@ -45,6 +45,14 @@ export async function proxy(request: NextRequest) {
     const token = bypassToken();
     const offered = request.nextUrl.searchParams.get("preview");
 
+    // ?preview=off drops the cookie again, so you can check what visitors
+    // actually see without hunting through browser settings.
+    if (offered === "off") {
+      const cleared = NextResponse.rewrite(new URL("/maintenance", request.url));
+      cleared.cookies.delete(BYPASS_COOKIE);
+      return cleared;
+    }
+
     // ?preview=<token> drops a cookie so the rest of the session sees the
     // real site. Without a token configured there is no way through.
     if (token && offered === token) {

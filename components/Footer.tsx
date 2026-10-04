@@ -17,7 +17,7 @@ export function CTABanner() {
           Your asset is waiting.
         </h2>
         <p className="text-lg text-blue-200 leading-relaxed mb-10 max-w-xl mx-auto">
-          Join early investors earning from Nigeria's busiest transport sector. Start with as little as ₦100,000 today.
+          Join early investors earning from Nigeria's busiest transport sector. Start with a minimum of ₦100,000 today.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <Link href="/register" className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20">

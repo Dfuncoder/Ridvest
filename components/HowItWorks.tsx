@@ -49,7 +49,7 @@ const steps = [
   {
     n: "02",
     title: "Create or Join a Pool",
-    desc: "Own a Tricycle (keke) outright on your own, or join a public or private pool with others from as little as ₦100,000.",
+    desc: "Own a transport vehicle outright on your own, or join a public or private pool with others with a minimum of ₦100,000.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
@@ -126,7 +126,7 @@ const poolTypes = [
 ];
 
 const timeline = [
-  { when: "Day 1", title: "Investment confirmed", sub: "Tricycle (Keke) acquired, driver assigned" },
+  { when: "Day 1", title: "Investment confirmed", sub: "Transport vehicle acquired, driver assigned" },
   { when: "Week 1–78", title: "Weekly returns paid", sub: "Directly to your dashboard, every 7 days" },
   { when: "Week 78", title: "Final payout", sub: "Your last payment. Cycle complete." },
   { when: "After 1.5 years", title: "Your choice", sub: "Reinvest or join a new pool." },
@@ -151,7 +151,7 @@ export default function HowItWorks() {
               to <span className="text-blue-600">earning.</span>
             </h2>
             <p className="text-lg text-slate-500 leading-relaxed">
-              No Tricycle (keke) driving. No operations. No headaches. You handle the money — we handle everything else.
+              No driving. No operations. No headaches. You handle the money — we handle everything else.
             </p>
           </div>
         </FadeUp>
@@ -195,7 +195,7 @@ export default function HowItWorks() {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-slate-900 mb-1">Full ownership</div>
-                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full Tricycle (keke) cost yourself. You own it alone and keep all the returns.</div>
+                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full cost yourself. You own it alone and keep all the returns.</div>
                   </div>
                 </div>
 

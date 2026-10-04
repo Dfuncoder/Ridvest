@@ -1519,7 +1519,7 @@ export function CTABanner() {
           >
             Join early investors earning from Nigeria's busiest transport sector.
             <br />
-            Start with as little as ₦100,000 today.
+            Start with a minimum of ₦100,000 today.
           </p>
           <div
             className="rydvest-cta__actions"
