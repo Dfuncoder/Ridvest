@@ -19,6 +19,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ERRORS } from "@/lib/errors";
 import { safeNextPath } from "@/lib/redirects";
 import {
@@ -118,6 +119,10 @@ export async function verifyOtp(_prev: FormState, formData: FormData): Promise<F
 
   if (error) return { message: ERRORS.OTP_INVALID };
 
+  const { data: verified } = await supabase.auth.getClaims();
+  const verifiedId = verified?.claims?.sub as string | undefined;
+  if (verifiedId) await startIdleClock(verifiedId);
+
   redirect("/dashboard");
 }
 
@@ -138,6 +143,33 @@ export async function resendOtp(_prev: FormState, formData: FormData): Promise<F
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGIN — redirects admins to /admin, everyone else to /dashboard
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Starts the idle clock for an account that has just authenticated.
+ *
+ * Signing in does not touch profiles.last_active_at by itself, so a user who
+ * had been away longer than the idle window would authenticate successfully
+ * and then be thrown straight back out by requireUser() — and again on the
+ * next attempt, for ever. Stamping it here is what makes a fresh login mean a
+ * fresh clock.
+ *
+ * Deliberately uses the service role and an explicit id rather than the
+ * caller's session: if this write were to fail, the user would walk into that
+ * same loop, so it must not depend on auth.uid() being readable in the moment
+ * right after sign-in.
+ */
+async function startIdleClock(userId: string) {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { error } = await admin
+      .from("profiles")
+      .update({ last_active_at: new Date().toISOString() })
+      .eq("id", userId);
+    if (error) console.error("[auth] could not start idle clock:", error.message);
+  } catch (err) {
+    // Never block a successful login over this; the idle check fails open too.
+    console.error("[auth] could not start idle clock:", err);
+  }
+}
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
   // Where the user was headed before the login wall (e.g. a transfer
   // confirmation link). Validated, never trusted verbatim.
@@ -168,6 +200,8 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
 
   // Route by role (RLS lets the user read their own profile row).
   const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub as string | undefined;
+  if (userId) await startIdleClock(userId);
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
