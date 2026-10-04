@@ -8,7 +8,7 @@ export const metadata = {
 const sections = [
   {
     title: "1. About Rydvest",
-    content: `Rydvest is a transport co-investment platform operated by Rydvest Ltd, registered in Nigeria and headquartered in Anambra State. We provide a structured platform that allows individuals to invest in commercial vehicles and earn returns over a specified investment term.
+    content: `Rydvest is a transport co-investment platform operated by Rydvest Ltd, registered in Nigeria and headquartered in Anambra State. We provide a structured platform that allows individuals to invest in commercial transport vehicles and earn returns over a specified investment term.
 
 By accessing or using the Rydvest platform — whether through our website, mobile application, or any associated service — you agree to be bound by these Terms of Service. If you do not agree, please do not use our platform.`,
   },
