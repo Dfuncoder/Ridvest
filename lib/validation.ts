@@ -135,13 +135,37 @@ export const FundWalletSchema = z.object({
     .max(1_000_000_000, { error: ERRORS.DEPOSIT_INVALID_AMOUNT }),
 });
 
-export const PaymentSettingsSchema = z.object({
-  method: z.enum(["korapay", "manual"]),
-  bankName: z.string().trim().min(2).max(60),
-  accountName: z.string().trim().min(2).max(80),
-  accountNumber: z.string().trim().regex(/^d{10}$/, { error: ERRORS.ACCOUNT_NUMBER_INVALID }),
-  notifyEmails: z.string().trim().max(1000),
-});
+/**
+ * The bank fields describe where users send a MANUAL transfer, so they are
+ * only required when that is the method being saved. Validating them
+ * unconditionally meant a blank or odd account number blocked the switch to
+ * Korapay, where those fields are not used at all.
+ */
+export const PaymentSettingsSchema = z
+  .object({
+    method: z.enum(["korapay", "manual"]),
+    bankName: z.string().trim().max(60),
+    accountName: z.string().trim().max(80),
+    accountNumber: z.string().trim().max(20),
+    notifyEmails: z.string().trim().max(1000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.method !== "manual") return;
+
+    if (v.bankName.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["bankName"], message: ERRORS.ACCOUNT_BANK_REQUIRED });
+    }
+    if (v.accountName.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["accountName"], message: ERRORS.ACCOUNT_NAME_REQUIRED });
+    }
+    if (!/^\d{10}$/.test(v.accountNumber)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["accountNumber"],
+        message: ERRORS.ACCOUNT_NUMBER_INVALID,
+      });
+    }
+  });
 
 export const CreatePoolSchema = z.object({
   productId: z.uuid({ error: ERRORS.POOL_PRODUCT_INACTIVE }),

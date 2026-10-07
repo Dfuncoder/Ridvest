@@ -4,13 +4,14 @@
  */
 import { requireAdmin } from "@/lib/auth";
 import { getPaymentSettings } from "@/lib/settings";
+import { listBanksForAdmin } from "@/app/actions/admin";
 import { PaymentSettingsForm } from "@/components/admin/PaymentSettingsForm";
 
 export const metadata = { title: "Settings · Rydvest admin" };
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
-  const settings = await getPaymentSettings();
+  const [settings, banks] = await Promise.all([getPaymentSettings(), listBanksForAdmin()]);
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
@@ -20,7 +21,7 @@ export default async function AdminSettingsPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6">
-        <PaymentSettingsForm settings={settings} />
+        <PaymentSettingsForm settings={settings} banks={banks} />
       </div>
     </div>
   );

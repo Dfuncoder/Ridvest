@@ -17,6 +17,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
 import { parseEmailList } from "@/lib/settings";
+import { korapayListBanks, korapayResolveAccount, type Bank } from "@/lib/korapay";
 import { fmtNaira } from "@/lib/format";
 import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
@@ -560,4 +561,43 @@ export async function updatePaymentSettings(_prev: FormState, formData: FormData
   revalidatePath("/admin/settings");
   revalidatePath("/dashboard/deposit");
   return { success: true, message: "Payment settings saved." };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANK LOOKUP FOR THE COMPANY ACCOUNT
+//
+// Same Korapay resolve the user-side form uses, minus the profile name check:
+// this is Rydvest's own account, so the name that comes back is "RYDVEST LTD",
+// not the admin's. Lookup is a convenience here, not a security control — the
+// settings are written by an admin either way.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function listBanksForAdmin(): Promise<Bank[]> {
+  await requireAdmin();
+  const { banks } = await korapayListBanks();
+  return banks;
+}
+
+export type CompanyAccountLookup =
+  | { status: "ok"; accountName: string; bankName?: string }
+  | { status: "not_found" | "unavailable"; message: string };
+
+export async function resolveCompanyAccount(
+  bankCode: string,
+  accountNumber: string
+): Promise<CompanyAccountLookup> {
+  await requireAdmin();
+
+  if (!bankCode || !/^\d{10}$/.test(accountNumber)) {
+    return { status: "not_found", message: ERRORS.ACCOUNT_NUMBER_INVALID };
+  }
+
+  const resolved = await korapayResolveAccount(bankCode, accountNumber);
+  if (resolved.status === "unavailable") {
+    return { status: "unavailable", message: ERRORS.ACCOUNT_LOOKUP_UNAVAILABLE };
+  }
+  if (resolved.status !== "ok" || !resolved.accountName) {
+    return { status: "not_found", message: ERRORS.ACCOUNT_NOT_FOUND };
+  }
+
+  return { status: "ok", accountName: resolved.accountName, bankName: resolved.bankName };
 }
