@@ -119,7 +119,7 @@ export default async function TransferPage() {
           ) : (
             <div className="flex flex-col gap-2.5">
               <p className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs leading-relaxed text-slate-600">
-                Verify your identity before you can send money — your NIN or BVN and a photo.
+                Verify your identity before you can send money — your NIN and a photo. It takes a few minutes.
               </p>
               <Link
                 href="/dashboard/verify"

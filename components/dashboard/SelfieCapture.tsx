@@ -169,41 +169,30 @@ export default function SelfieCapture() {
           <span className="w-5 h-5 shrink-0 rounded-full bg-[#0d2137] text-white text-[10px] font-extrabold grid place-items-center">
             1
           </span>
-          <h3 className="text-sm font-extrabold text-slate-900">Your NIN or BVN</h3>
+          <h3 className="text-sm font-extrabold text-slate-900">Your NIN</h3>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-[150px_1fr]">
-          <div>
-            <label htmlFor="kyc-type" className={label}>
-              Which one
-            </label>
-            <select id="kyc-type" name="idType" defaultValue="nin" className={input}>
-              <option value="nin">NIN</option>
-              <option value="bvn">BVN</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="kyc-number" className={label}>
-              Number
-            </label>
-            <input
-              id="kyc-number"
-              name="idNumber"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={16}
-              required
-              placeholder="11 digits"
-              className={`${input} tabular-nums tracking-wide`}
-            />
-            {state?.errors?.idNumber && (
-              <p className="text-[11px] text-red-600 mt-1.5">{state.errors.idNumber}</p>
-            )}
-            {state?.errors?.idType && (
-              <p className="text-[11px] text-red-600 mt-1.5">{state.errors.idType}</p>
-            )}
-          </div>
+        <div>
+          <label htmlFor="kyc-number" className={label}>
+            National Identification Number
+          </label>
+          <input
+            id="kyc-number"
+            name="idNumber"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={16}
+            required
+            placeholder="11 digits"
+            className={`${input} tabular-nums tracking-wide`}
+          />
+          {state?.errors?.idNumber && (
+            <p className="text-[11px] text-red-600 mt-1.5">{state.errors.idNumber}</p>
+          )}
+          <p className="mt-1.5 text-[11px] text-slate-400">
+            Dial *346# on your registered line if you don&apos;t have it to hand.
+          </p>
         </div>
       </div>
 

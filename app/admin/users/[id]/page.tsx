@@ -17,6 +17,14 @@ import { fmtNaira, fmtDate, fmtDateTime } from "@/lib/format";
 export const metadata = { title: "User · Rydvest admin" };
 
 const eyebrow = "text-[10px] font-bold uppercase tracking-[0.14em]";
+const th = `px-4 py-3 ${eyebrow} text-slate-400 whitespace-nowrap`;
+const td = "px-4 py-3.5 align-middle";
+
+/** Both embeds name their constraint: transfers has two FKs into profiles. */
+const TRANSFER_SELECT =
+  "id, amount, note, reference, created_at, sender_id, recipient_id, " +
+  "sender:profiles!transfers_sender_id_fkey(id, full_name, user_code), " +
+  "recipient:profiles!transfers_recipient_id_fkey(id, full_name, user_code)";
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -64,6 +72,8 @@ export default async function AdminUserDetailPage({
     { data: withdrawals },
     { data: balance },
     { data: locker },
+    { data: transfersOut },
+    { data: transfersIn },
   ] = await Promise.all([
     admin
       .from("withdrawal_accounts")
@@ -89,6 +99,24 @@ export default async function AdminUserDetailPage({
     profile.locked_by
       ? admin.from("profiles").select("full_name").eq("id", profile.locked_by).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Each direction separately, then merged below.
+    //
+    // transfers has two foreign keys into profiles, so each embed has to name
+    // its constraint. And .eq() rather than one .or(): .or() takes a filter
+    // string, so the id would be interpolated into it, and a crafted route
+    // param could append filters of its own.
+    admin
+      .from("transfers")
+      .select(TRANSFER_SELECT)
+      .eq("sender_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    admin
+      .from("transfers")
+      .select(TRANSFER_SELECT)
+      .eq("recipient_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   const invested = (investments ?? [])
@@ -104,11 +132,37 @@ export default async function AdminUserDetailPage({
     .filter((w) => w.status === "paid")
     .reduce((s, w) => s + Number(w.amount), 0);
 
+  type TransferParty = { id: string; full_name: string | null; user_code: string | null } | null;
+  type UserTransfer = {
+    id: string;
+    amount: number;
+    note: string | null;
+    reference: string;
+    created_at: string;
+    sender_id: string;
+    recipient_id: string;
+    sender: TransferParty;
+    recipient: TransferParty;
+  };
+
+  const sentRows = (transfersOut ?? []) as unknown as UserTransfer[];
+  const receivedRows = (transfersIn ?? []) as unknown as UserTransfer[];
+
+  // Merged into one sequence, newest first: reading an account for abuse is
+  // about the order things happened, not about the two directions separately.
+  const transferRows = [...sentRows, ...receivedRows].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at)
+  );
+
+  const sentTotal = sentRows.reduce((s, t) => s + Number(t.amount), 0);
+  const receivedTotal = receivedRows.reduce((s, t) => s + Number(t.amount), 0);
+
   const recordCount =
     (investments ?? []).length +
     (deposits ?? []).length +
     (payouts ?? []).length +
-    (withdrawals ?? []).length;
+    (withdrawals ?? []).length +
+    transferRows.length;
 
   const locked = Boolean(profile.locked_at);
   const isAdmin = profile.role === "admin";
@@ -304,6 +358,100 @@ export default async function AdminUserDetailPage({
             </div>
           ))}
         </div>
+      </Card>
+
+      {/* ── TRANSFERS ──
+          Both directions in one table, because what matters when reading an
+          account for abuse is the sequence: money in, then straight back out,
+          is the shape worth seeing. The counterparty links through, so a chain
+          can be walked account to account. */}
+      <Card className="overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-3.5">
+          <h2 className="text-sm font-extrabold text-slate-900">
+            Transfers <span className="font-bold text-slate-400">({transferRows.length})</span>
+          </h2>
+          <div className="flex gap-4 text-xs">
+            <span className="text-slate-500">
+              Sent{" "}
+              <span className="font-bold tabular-nums text-slate-900">{fmtNaira(sentTotal)}</span>
+            </span>
+            <span className="text-slate-500">
+              Received{" "}
+              <span className="font-bold tabular-nums text-green-600">
+                {fmtNaira(receivedTotal)}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        {transferRows.length === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-slate-500">
+            This account has never sent or received a transfer.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-b border-slate-200/80 bg-slate-50/80">
+                  <th className={th}>When</th>
+                  <th className={th}>Direction</th>
+                  <th className={th}>Counterparty</th>
+                  <th className={`${th} hidden lg:table-cell`}>Note</th>
+                  <th className={`${th} text-right`}>Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {transferRows.map((t) => {
+                  const outgoing = t.sender_id === id;
+                  const other = outgoing ? t.recipient : t.sender;
+                  return (
+                    <tr key={t.id} className="transition-colors hover:bg-slate-50/60">
+                      <td className={`${td} whitespace-nowrap text-xs text-slate-500`}>
+                        {fmtDateTime(t.created_at)}
+                      </td>
+                      <td className={`${td} whitespace-nowrap`}>
+                        <span
+                          className={`${eyebrow} rounded-full border px-2.5 py-1 ${
+                            outgoing
+                              ? "border-slate-500/20 bg-slate-500/10 text-slate-600"
+                              : "border-green-500/20 bg-green-500/10 text-green-600"
+                          }`}
+                        >
+                          {outgoing ? "Sent" : "Received"}
+                        </span>
+                      </td>
+                      <td className={`${td} min-w-40`}>
+                        {other ? (
+                          <Link href={`/admin/users/${other.id}`} className="group block min-w-0">
+                            <p className="truncate text-sm font-bold text-slate-900 transition-colors group-hover:text-amber-600">
+                              {other.full_name ?? "—"}
+                            </p>
+                            <p className="font-mono text-[10px] text-slate-400">
+                              {other.user_code ?? ""}
+                            </p>
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className={`${td} hidden max-w-56 lg:table-cell text-xs text-slate-500`}>
+                        {t.note || "—"}
+                      </td>
+                      <td
+                        className={`${td} whitespace-nowrap text-right text-sm font-extrabold tabular-nums ${
+                          outgoing ? "text-slate-900" : "text-green-600"
+                        }`}
+                      >
+                        {outgoing ? "−" : "+"}
+                        {fmtNaira(t.amount)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       {/* ── ADMIN ACTIONS ── */}

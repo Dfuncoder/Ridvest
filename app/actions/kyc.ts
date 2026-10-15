@@ -21,6 +21,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, noReplyFrom } from "@/lib/email";
 import { getPaymentSettings } from "@/lib/settings";
 import { encryptSecret } from "@/lib/crypto";
+import { monnifyVerifyNin } from "@/lib/monnify";
+import { namesMatch } from "@/lib/names";
 import { ERRORS } from "@/lib/errors";
 import { KycSubmissionSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
@@ -61,7 +63,6 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
 
   // ── The typed fields ─────────────────────────────────────────────────────
   const parsed = KycSubmissionSchema.safeParse({
-    idType: formData.get("idType"),
     idNumber: formData.get("idNumber"),
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
@@ -113,10 +114,12 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
     .from("kyc_submissions")
     .insert({
       user_id: user.id,
-      id_type: parsed.data.idType,
+      id_type: "nin",
       id_number_encrypted: idNumberEncrypted,
       id_number_last4: idNumber.slice(-4),
       selfie_path: path,
+      // The NIMC lookup starts as soon as the response is on its way.
+      lookup_status: "checking",
     })
     .select("id")
     .single();
@@ -138,31 +141,95 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
   revalidatePath("/dashboard/payouts");
   revalidatePath("/admin/kyc");
 
-  // Tell the admins there is something to look at, once the user has their
-  // answer — they should not wait on an email send.
+  // Run the NIMC lookup and tell the admins, once the user has their answer.
+  // Neither should hold up the response: the lookup is a call to Monnify and
+  // the email is a call to Resend, and the user only needs to know we have it.
   after(async () => {
+    await runNinLookup(inserted.id, user.id, idNumber, profile?.full_name ?? "");
     await notifyAdmins({
       submissionId: inserted.id,
       name: profile?.full_name || user.email,
-      idType: parsed.data.idType,
     });
   });
 
   return {
     success: true,
-    message: "Sent. We'll email you as soon as your identity has been confirmed.",
+    message: ERRORS.KYC_CHECKING,
   };
 }
 
+/**
+ * Asks NIMC (through Monnify) who the NIN belongs to, and records the answer
+ * against the submission.
+ *
+ * The comparison is ours: Monnify is sent the number alone and never told what
+ * name to expect, so it cannot be led into agreeing with one. namesMatch() is
+ * the same token comparison used for bank account names, which tolerates
+ * middle names and ordering the way Nigerian records actually vary.
+ *
+ * Exported so an admin can re-run a check that failed — a flat Monnify wallet
+ * should not mean a user has to submit everything again.
+ */
+export async function runNinLookup(
+  submissionId: string,
+  userId: string,
+  nin: string,
+  profileName: string
+): Promise<void> {
+  const admin = createSupabaseAdminClient();
+  const result = await monnifyVerifyNin(nin);
+
+  if (result.status !== "ok") {
+    await admin
+      .from("kyc_submissions")
+      .update({
+        lookup_status: result.status === "not_found" ? "not_found" : "failed",
+        lookup_error: result.message.slice(0, 300),
+        lookup_at: new Date().toISOString(),
+      })
+      .eq("id", submissionId);
+
+    revalidatePath("/admin/kyc");
+    revalidatePath("/dashboard/verify");
+    return;
+  }
+
+  const nimcName = `${result.firstName} ${result.lastName}`.trim();
+  const matched = namesMatch(nimcName, profileName);
+
+  await admin
+    .from("kyc_submissions")
+    .update({
+      lookup_status: matched ? "matched" : "mismatch",
+      lookup_first_name: result.firstName,
+      lookup_last_name: result.lastName,
+      lookup_dob: result.dateOfBirth ?? null,
+      lookup_gender: result.gender ?? null,
+      lookup_phone: result.phoneNumber ?? null,
+      lookup_error: null,
+      lookup_at: new Date().toISOString(),
+    })
+    .eq("id", submissionId);
+
+  if (!matched) {
+    console.warn(
+      "[kyc] NIN name does not match profile",
+      JSON.stringify({ submissionId, userId })
+    );
+  }
+
+  revalidatePath("/admin/kyc");
+  revalidatePath("/dashboard/verify");
+}
+
 /** Lets the admin list know a verification is waiting, with a link to it. */
-async function notifyAdmins(params: { submissionId: string; name: string; idType: string }) {
+async function notifyAdmins(params: { submissionId: string; name: string }) {
   const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/+$/, "");
   const link = `${site}/admin/kyc`;
   const { notifyEmails } = await getPaymentSettings();
 
-  const label = params.idType.toUpperCase();
   const text = [
-    `${params.name} submitted a ${label} and a selfie for verification.`,
+    `${params.name} submitted an NIN and a selfie for verification.`,
     ``,
     `Review it here:`,
     link,

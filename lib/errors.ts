@@ -99,14 +99,15 @@ export const ERRORS = {
   WITHDRAW_FAILED: "Couldn't submit your withdrawal request. Please try again.",
 
   // ── Identity verification ─────────────────────────────────────────────────
-  KYC_ID_TYPE_INVALID: "Choose whether you're giving us your NIN or your BVN.",
-  KYC_ID_NUMBER_INVALID: "An NIN or BVN is exactly 11 digits.",
+  KYC_ID_NUMBER_INVALID: "Your NIN is exactly 11 digits.",
   KYC_SELFIE_REQUIRED: "Take a photo of your face to continue.",
   KYC_SELFIE_INVALID: "That photo didn't come through. Please take it again.",
   KYC_CAMERA_BLOCKED:
     "We can't reach your camera. Allow camera access in your browser settings, then reload this page.",
   KYC_CAMERA_MISSING: "We couldn't find a camera on this device. Try again on your phone.",
   KYC_ALREADY_PENDING: "Your details are already with us. We'll email you when they've been checked.",
+  KYC_CHECKING:
+    "We're checking your NIN now. This usually takes a few minutes — we'll email you as soon as it's done.",
   KYC_ALREADY_APPROVED: "Your identity is already verified.",
   KYC_SUBMIT_FAILED: "Couldn't submit your details. Please try again.",
   KYC_REQUIRED:
@@ -142,6 +143,9 @@ export const ERRORS = {
   ADMIN_KYC_REASON_REQUIRED: "Say why this is being rejected — the user is shown your reason.",
   ADMIN_KYC_DECRYPT_FAILED:
     "Couldn't read that number. The KYC_ENCRYPTION_KEY may have changed since it was stored.",
+  ADMIN_KYC_LOOKUP_FAILED:
+    "The NIN check didn't complete. Check the Monnify keys and wallet balance, then run it again.",
+  ADMIN_KYC_LOOKUP_RUNNING: "That check is already running. Give it a moment.",
 
   // ── Contact form ──────────────────────────────────────────────────────────
   CONTACT_NAME_REQUIRED: "Please enter your name.",

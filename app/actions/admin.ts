@@ -18,11 +18,12 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
 import { parseEmailList } from "@/lib/settings";
-import { korapayListBanks, korapayResolveAccount, type Bank } from "@/lib/korapay";
+import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
 import { fmtNaira } from "@/lib/format";
 import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { decryptSecret } from "@/lib/crypto";
+import { runNinLookup } from "./kyc";
 import { PoolProductSchema, PaymentSettingsSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
@@ -561,7 +562,7 @@ export async function updatePaymentSettings(_prev: FormState, formData: FormData
 // ─────────────────────────────────────────────────────────────────────────────
 export async function listBanksForAdmin(): Promise<Bank[]> {
   await requireAdmin();
-  const { banks } = await korapayListBanks();
+  const { banks } = await monnifyListBanks();
   return banks;
 }
 
@@ -579,7 +580,7 @@ export async function resolveCompanyAccount(
     return { status: "not_found", message: ERRORS.ACCOUNT_NUMBER_INVALID };
   }
 
-  const resolved = await korapayResolveAccount(bankCode, accountNumber);
+  const resolved = await monnifyValidateAccount(bankCode, accountNumber);
   if (resolved.status === "unavailable") {
     return { status: "unavailable", message: ERRORS.ACCOUNT_LOOKUP_UNAVAILABLE };
   }
@@ -793,16 +794,31 @@ export async function deleteUser(_prev: FormState, formData: FormData): Promise<
   }
 
   const admin = createSupabaseAdminClient();
-  const [inv, dep, pay, wd, txn] = await Promise.all([
+  const [inv, dep, pay, wd, txn, trfOut, trfIn] = await Promise.all([
     admin.from("investments").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("deposits").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("payouts").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("withdrawals").select("id", { count: "exact", head: true }).eq("user_id", userId),
     admin.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    // Counted explicitly rather than left to the foreign key. Deleting one
+    // side of a transfer would gut the other party's statement, and a clear
+    // refusal beats a constraint violation.
+    //
+    // Two .eq() queries rather than one .or(): .or() takes a string, so the id
+    // would be interpolated into a filter expression, and a crafted value
+    // could add filters of its own. .eq() passes it as a value.
+    admin.from("transfers").select("id", { count: "exact", head: true }).eq("sender_id", userId),
+    admin.from("transfers").select("id", { count: "exact", head: true }).eq("recipient_id", userId),
   ]);
 
   const records =
-    (inv.count ?? 0) + (dep.count ?? 0) + (pay.count ?? 0) + (wd.count ?? 0) + (txn.count ?? 0);
+    (inv.count ?? 0) +
+    (dep.count ?? 0) +
+    (pay.count ?? 0) +
+    (wd.count ?? 0) +
+    (txn.count ?? 0) +
+    (trfOut.count ?? 0) +
+    (trfIn.count ?? 0);
 
   if (records > 0) {
     return { message: ERRORS.ADMIN_DELETE_HAS_RECORDS };
@@ -1016,4 +1032,62 @@ export async function revealKycNumber(
   });
 
   return { ok: true, idNumber };
+}
+
+/**
+ * Re-runs the NIMC lookup on a submission whose check did not complete.
+ *
+ * Exists because the usual reason a check fails is a flat Monnify wallet, and
+ * making the user resubmit their NIN and selfie over our billing problem would
+ * be absurd. Each run is billed, so it is a deliberate button, not a retry
+ * loop.
+ */
+export async function recheckKycNin(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const submissionId = String(formData.get("submissionId") ?? "");
+  if (!submissionId) return { message: ERRORS.ADMIN_KYC_NOT_FOUND };
+
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("kyc_submissions")
+    .select(
+      "id, user_id, id_number_encrypted, lookup_status, profiles!kyc_submissions_user_id_fkey(full_name)"
+    )
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  if (!data) return { message: ERRORS.ADMIN_KYC_NOT_FOUND };
+  if (data.lookup_status === "checking") return { message: ERRORS.ADMIN_KYC_LOOKUP_RUNNING };
+
+  let nin: string;
+  try {
+    nin = decryptSecret(data.id_number_encrypted, data.user_id);
+  } catch (err) {
+    console.error("[admin] kyc recheck decrypt failed", err instanceof Error ? err.message : err);
+    return { message: ERRORS.ADMIN_KYC_DECRYPT_FAILED };
+  }
+
+  await admin
+    .from("kyc_submissions")
+    .update({ lookup_status: "checking", lookup_error: null })
+    .eq("id", submissionId);
+
+  const profile = data.profiles as unknown as { full_name: string | null } | null;
+  await runNinLookup(submissionId, data.user_id, nin, profile?.full_name ?? "");
+
+  await audit(user.id, "kyc.recheck", submissionId, { user_id: data.user_id });
+
+  const { data: after } = await admin
+    .from("kyc_submissions")
+    .select("lookup_status")
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  revalidatePath("/admin/kyc");
+
+  if (after?.lookup_status === "failed") {
+    return { message: ERRORS.ADMIN_KYC_LOOKUP_FAILED };
+  }
+  return { success: true, message: "Checked." };
 }

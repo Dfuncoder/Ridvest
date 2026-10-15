@@ -14,6 +14,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import KycDecision from "@/components/admin/KycActions";
 import RevealNumber from "@/components/admin/RevealNumber";
+import NinCheck from "@/components/admin/NinCheck";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
 export const metadata = { title: "Verification · Rydvest admin" };
@@ -97,6 +98,7 @@ export default async function AdminKycPage({
     .from("kyc_submissions")
     .select(
       `id, user_id, id_type, id_number_last4, selfie_path, status, admin_note, created_at, reviewed_at,
+       lookup_status, lookup_first_name, lookup_last_name, lookup_dob, lookup_gender, lookup_phone, lookup_error, lookup_at,
        user:profiles!kyc_submissions_user_id_fkey(full_name, email, phone, dob, state_of_residence, user_code, created_at),
        reviewer:profiles!kyc_submissions_reviewed_by_fkey(full_name)`
     )
@@ -242,6 +244,21 @@ export default async function AdminKycPage({
                         {s.status === "pending" ? "Waiting" : s.status}
                       </span>
                     </div>
+
+                    {/* ── WHAT NIMC SAID ──
+                        The decisive piece of evidence: the name on the
+                        national record, beside the name on the profile. */}
+                    <NinCheck
+                      status={s.lookup_status}
+                      nimcName={[s.lookup_first_name, s.lookup_last_name]
+                        .filter(Boolean)
+                        .join(" ")}
+                      nimcDob={s.lookup_dob}
+                      profileName={user?.full_name ?? ""}
+                      error={s.lookup_error}
+                      checkedAt={s.lookup_at}
+                      submissionId={s.id}
+                    />
 
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
                       <RevealNumber

@@ -152,10 +152,12 @@ export const UserCodeSchema = z
 // ── Identity verification ───────────────────────────────────────────────────
 // The selfie is NOT validated here — a Zod schema cannot tell an image from a
 // renamed executable. submitKyc checks the bytes themselves.
+// NIN only. BVN was dropped: the NIN lookup returns the name on the national
+// record, which is what makes the check worth anything, and offering two kinds
+// of number only gave people a way to pick the one nobody would check.
 export const KycSubmissionSchema = z.object({
-  idType: z.enum(["nin", "bvn"], { error: ERRORS.KYC_ID_TYPE_INVALID }),
-  // An NIN and a BVN are both 11 digits. Spaces are stripped first, because
-  // people read these off a card in groups of four.
+  // An NIN is 11 digits. Spaces and hyphens are stripped first, because people
+  // read these off a slip in groups.
   idNumber: z
     .string()
     .transform((v) => v.replace(/[^0-9]/g, ""))

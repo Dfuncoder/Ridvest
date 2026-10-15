@@ -17,18 +17,25 @@ const navItems = [
   { label: "Payouts", href: "/admin/payouts" },
   { label: "Deposits", href: "/admin/deposits" },
   { label: "Withdrawals", href: "/admin/withdrawals" },
+  { label: "Transfers", href: "/admin/transfers" },
   { label: "Users", href: "/admin/users" },
   { label: "Verification", href: "/admin/kyc" },
   { label: "Messages", href: "/admin/messages" },
   { label: "Settings", href: "/admin/settings" },
 ];
 
-/** A flat list of eleven links reads as a wall; three named groups do not. */
+/** A flat list of twelve links reads as a wall; three named groups do not. */
 const NAV_GROUPS: Array<{ title: string; hrefs: string[] }> = [
   { title: "Overview", hrefs: ["/admin"] },
   {
     title: "Money",
-    hrefs: ["/admin/deposits", "/admin/investments", "/admin/payouts", "/admin/withdrawals"],
+    hrefs: [
+      "/admin/deposits",
+      "/admin/investments",
+      "/admin/payouts",
+      "/admin/withdrawals",
+      "/admin/transfers",
+    ],
   },
   {
     title: "Manage",

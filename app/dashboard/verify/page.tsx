@@ -30,7 +30,7 @@ export default async function VerifyPage() {
   // RLS limits this to the user's own rows.
   const { data: submissions } = await supabase
     .from("kyc_submissions")
-    .select("id, id_type, id_number_last4, status, admin_note, created_at, reviewed_at")
+    .select("id, id_type, id_number_last4, status, admin_note, created_at, reviewed_at, lookup_status")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -116,7 +116,7 @@ export default async function VerifyPage() {
                 Your details are with us
               </h2>
               <p className="text-sm text-slate-500 mt-0.5">
-                We&apos;ll email you as soon as your identity has been confirmed.
+                This usually takes a few minutes. We&apos;ll email you as soon as it&apos;s done.
               </p>
               <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
                 <div>
@@ -161,13 +161,13 @@ export default async function VerifyPage() {
           <Card className="p-6">
             <h2 className="text-base font-extrabold text-slate-900">Verify your identity</h2>
             <p className="mt-0.5 mb-5 text-sm text-slate-500">
-              Two things: your NIN or BVN, and a photo taken on this device.
+              Two things: your NIN, and a photo taken on this device. It usually takes a few minutes.
             </p>
             <SelfieCapture />
           </Card>
 
           <p className="px-1 text-[11px] leading-relaxed text-slate-400">
-            Your NIN or BVN and your photo are used only to confirm your identity and are never
+            Your NIN and your photo are used only to confirm your identity and are never
             shown to other members.
           </p>
         </>

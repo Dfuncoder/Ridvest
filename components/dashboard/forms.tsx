@@ -366,7 +366,7 @@ export function WithdrawForm({
     return (
       <div className="flex flex-col gap-2.5">
         <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 leading-relaxed">
-          Verify your identity before your first withdrawal — your NIN or BVN and a photo.
+          Verify your identity before your first withdrawal — your NIN and a photo. It takes a few minutes.
         </p>
         <a
           href="/dashboard/verify"

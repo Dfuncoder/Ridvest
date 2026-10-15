@@ -6,7 +6,7 @@
  *
  * Withdrawal accounts are verified with the bank, not typed. The name-match
  * rule is then enforced in THREE places on purpose:
- *   1. Korapay tells us the name on the account, and we reject it here if it
+ *   1. Monnify tells us the name on the account, and we reject it here if it
  *      does not match the profile name (clear, early feedback).
  *   2. The request_withdrawal() SQL function re-checks the match at request
  *      time (can't be bypassed even if server code had a bug).
@@ -19,7 +19,7 @@ import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { namesMatch } from "@/lib/names";
-import { korapayListBanks, korapayResolveAccount, type Bank } from "@/lib/korapay";
+import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
 import { WithdrawalRequestSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
@@ -42,7 +42,7 @@ import type { FormState } from "./auth";
 // ─────────────────────────────────────────────────────────────────────────────
 export async function listBanks(): Promise<Bank[]> {
   await requireUser();
-  const { banks } = await korapayListBanks();
+  const { banks } = await monnifyListBanks();
   return banks;
 }
 
@@ -60,7 +60,7 @@ export async function lookupBankAccount(
     return { status: "not_found", message: ERRORS.ACCOUNT_NUMBER_INVALID };
   }
 
-  const resolved = await korapayResolveAccount(bankCode, accountNumber);
+  const resolved = await monnifyValidateAccount(bankCode, accountNumber);
   if (resolved.status === "unavailable") {
     return { status: "unavailable", message: ERRORS.ACCOUNT_LOOKUP_UNAVAILABLE };
   }
@@ -116,7 +116,7 @@ export async function addWithdrawalAccount(_prev: FormState, formData: FormData)
   let verified = false;
 
   if (bankCode) {
-    const resolved = await korapayResolveAccount(bankCode, accountNumber);
+    const resolved = await monnifyValidateAccount(bankCode, accountNumber);
     if (resolved.status === "ok" && resolved.accountName) {
       accountName = resolved.accountName;
       verified = true;
@@ -125,7 +125,7 @@ export async function addWithdrawalAccount(_prev: FormState, formData: FormData)
     }
   }
 
-  // Lookup unavailable (no Korapay key, or their API is down). Fall back to the
+  // Lookup unavailable (no Monnify keys, or their API is down). Fall back to the
   // name the user typed so withdrawals are not blocked outright — the profile
   // name check below still applies, and name_verified records that nobody
   // independently confirmed it.

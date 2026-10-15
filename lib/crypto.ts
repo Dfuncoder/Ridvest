@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
  * REVERSIBLE ENCRYPTION for the few fields that must be stored but must not be
- * readable from the database alone — today, NIN and BVN numbers.
+ * readable from the database alone — today, NIN numbers.
  *
  * AES-256-GCM, with the key held in KYC_ENCRYPTION_KEY and nowhere in the
  * database. That is the whole point: a leaked backup, a dumped table or a
