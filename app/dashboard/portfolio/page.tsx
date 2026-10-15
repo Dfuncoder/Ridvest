@@ -5,9 +5,11 @@
  * positions.
  */
 import Link from "next/link";
+import Image from "next/image";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fmtNaira, fmtDate } from "@/lib/format";
+import { vehicleImage } from "@/lib/vehicles";
 
 export const metadata = { title: "Investments · Rydvest" };
 
@@ -29,7 +31,7 @@ export default async function InvestmentsPage() {
     supabase
       .from("investments")
       .select(
-        "id, amount, status, paid_at, created_at, pool:pools(id, name, status, product:pool_products(name, roi_percent, duration_weeks))"
+        "id, amount, status, paid_at, created_at, pool:pools(id, name, status, product:pool_products(name, roi_percent, duration_weeks, image_path))"
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
@@ -92,7 +94,12 @@ export default async function InvestmentsPage() {
               id: string;
               name: string;
               status: string;
-              product: { name: string; roi_percent: number; duration_weeks: number } | null;
+              product: {
+                name: string;
+                roi_percent: number;
+                duration_weeks: number;
+                image_path: string | null;
+              } | null;
             } | null;
             if (!pool) return null;
 
@@ -111,7 +118,19 @@ export default async function InvestmentsPage() {
                 className="bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 p-5 block transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300"
               >
                 <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="min-w-0">
+                  {/* A thumbnail rather than a full-width photo: this list gets
+                      long, and it only has to say which vehicle at a glance. */}
+                  <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-slate-900">
+                    <Image
+                      src={vehicleImage(product?.name, product?.image_path)}
+                      alt={product?.name ?? "Vehicle"}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  </span>
+
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
                       {pool.name}
                     </p>

@@ -12,6 +12,7 @@ import { addWithdrawalAccount, requestWithdrawal, lookupBankAccount } from "@/ap
 import type { FormState } from "@/app/actions/auth";
 import { MoneyInput } from "./MoneyInput";
 import { fmtNaira } from "@/lib/format";
+import { poolMinimum } from "@/lib/economics";
 
 // Light-card styling shared by these forms.
 const input =
@@ -44,18 +45,23 @@ function FieldErr({ msg }: { msg?: string }) {
 export function InvestForm({
   poolId,
   minContribution,
+  isPrivate,
   remaining,
   balance,
 }: {
   poolId: string;
   minContribution: number;
+  isPrivate: boolean;
   remaining: number;
   balance: number;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(joinPool, undefined);
   const [amount, setAmount] = useState<number | null>(null);
 
-  const minimum = Math.min(minContribution, remaining);
+  // A private pool asks for more per person. Capped at what is left, because
+  // the last slice of a pool is allowed to come in under the floor — otherwise
+  // a pool whose remainder is small could never finish filling.
+  const minimum = Math.min(poolMinimum(minContribution, isPrivate), remaining);
 
   if (balance < minimum) {
     return (
@@ -134,12 +140,6 @@ export function CreatePoolForm({
         <input id="new-pool-name" name="name" type="text" required minLength={3} maxLength={80} placeholder="e.g. Jude & friends" className={input} />
         <FieldErr msg={state?.errors?.name} />
       </div>
-      <label className="flex items-center gap-2.5 cursor-pointer">
-        <input type="checkbox" name="isPrivate" value="true" className="w-4 h-4 accent-amber-400" />
-        <span className="text-xs text-slate-500">
-          Private pool — only people with the invite code can join
-        </span>
-      </label>
       <button type="submit" disabled={pending} className={`py-3 ${primaryBtn}`}>
         {pending ? "Creating..." : "Create pool →"}
       </button>
@@ -335,16 +335,48 @@ export function AddAccountForm({
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // REQUEST A WITHDRAWAL
+//
+// Two things have to be in place before the form is any use: a bank account in
+// the user's name, and a verified identity. Both are enforced in SQL by
+// request_withdrawal() as well — these branches exist so the user is told
+// which one is missing, rather than filling the form in and being refused.
 // ─────────────────────────────────────────────────────────────────────────────
 export function WithdrawForm({
   accounts,
   balance,
+  kycStatus,
 }: {
   accounts: Array<{ id: string; bank_name: string; account_number: string; account_name: string }>;
   balance: number;
+  kycStatus: "approved" | "pending" | "none";
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(requestWithdrawal, undefined);
   const [amount, setAmount] = useState<number | null>(null);
+
+  if (kycStatus === "pending") {
+    return (
+      <p className="text-xs text-slate-600 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3 leading-relaxed">
+        Your identity details are with us. We&apos;ll email you once they&apos;re confirmed, and
+        withdrawals open straight after.
+      </p>
+    );
+  }
+
+  if (kycStatus === "none") {
+    return (
+      <div className="flex flex-col gap-2.5">
+        <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 leading-relaxed">
+          Verify your identity before your first withdrawal — your NIN or BVN and a photo.
+        </p>
+        <a
+          href="/dashboard/verify"
+          className="text-center py-2.5 px-4 bg-[#0d2137] hover:bg-[#14314f] text-white font-extrabold text-sm rounded-xl transition-colors"
+        >
+          Verify my identity
+        </a>
+      </div>
+    );
+  }
 
   if (accounts.length === 0) {
     return (

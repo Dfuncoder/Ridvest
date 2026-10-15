@@ -4,8 +4,10 @@
  * Admin form for creating a pool option (product): name (e.g. "Keke Napep"),
  * pool price, minimum contribution, duration and ROI %.
  */
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import Image from "next/image";
 import { createProduct } from "@/app/actions/admin";
+import { VEHICLES } from "@/lib/vehicles";
 import type { FormState } from "@/app/actions/auth";
 
 const input =
@@ -19,6 +21,7 @@ function FieldErr({ msg }: { msg?: string }) {
 
 export default function ProductForm() {
   const [state, formAction, pending] = useActionState<FormState, FormData>(createProduct, undefined);
+  const [picked, setPicked] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
@@ -39,6 +42,56 @@ export default function ProductForm() {
       <div>
         <label htmlFor="pp-desc" className={label}>Description (optional)</label>
         <input id="pp-desc" name="description" type="text" maxLength={500} placeholder="Short description shown to investors" className={input} />
+      </div>
+
+      {/* The photo investors see on the pool card. Left on "Match the name"
+          it is worked out from the product name, which is right almost
+          always — pick one explicitly when the name is unusual. */}
+      <div>
+        <span className={label}>Photo on the pool card</span>
+        <div className="grid grid-cols-2 gap-2">
+          <label
+            className={`relative flex items-center justify-center h-20 rounded-xl border-2 cursor-pointer transition-colors text-center px-2 ${
+              picked === "" ? "border-amber-400 bg-amber-50" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+            }`}
+          >
+            <input
+              type="radio"
+              name="imagePath"
+              value=""
+              checked={picked === ""}
+              onChange={() => setPicked("")}
+              className="sr-only"
+            />
+            <span className="text-[11px] font-bold text-slate-600 leading-tight">
+              Match the name
+              <span className="block font-medium text-slate-400">automatic</span>
+            </span>
+          </label>
+
+          {VEHICLES.map((v) => (
+            <label
+              key={v.path}
+              className={`relative h-20 rounded-xl border-2 cursor-pointer overflow-hidden transition-colors ${
+                picked === v.path ? "border-amber-400" : "border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <input
+                type="radio"
+                name="imagePath"
+                value={v.path}
+                checked={picked === v.path}
+                onChange={() => setPicked(v.path)}
+                className="sr-only"
+              />
+              <Image src={v.path} alt={v.label} fill sizes="200px" className="object-cover" />
+              <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/75 to-transparent px-2 pt-4 pb-1.5 text-[10px] font-bold text-white leading-tight">
+                {v.label}
+              </span>
+            </label>
+          ))}
+        </div>
+        <FieldErr msg={state?.errors?.imagePath} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">

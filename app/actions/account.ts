@@ -207,3 +207,29 @@ export async function requestWithdrawal(_prev: FormState, formData: FormData): P
   revalidatePath("/dashboard/payouts");
   return { success: true, message: "Withdrawal request submitted. You'll be paid once it's approved." };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIDE BALANCE — a saved display preference.
+//
+// Stored on the profile rather than in the browser so the page can render
+// already masked, and so the choice follows the account to any device. Written
+// with the user's own client: the row policy limits it to their row and the
+// column grants limit it to this field.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function setHideBalance(hidden: boolean): Promise<void> {
+  const user = await requireUser();
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ hide_balance: hidden })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[account] setHideBalance failed", error.message);
+    return;
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/admin");
+}

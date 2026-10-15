@@ -10,6 +10,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { updateInterestRate } from "@/app/actions/admin";
+import { BalancePrivacy, BalanceToggle, Money, ResponsiveMoney } from "@/components/BalanceToggle";
 import { platformFee, PLATFORM_FEE_LABEL } from "@/lib/economics";
 import { fmtNaira } from "@/lib/format";
 
@@ -90,18 +91,15 @@ export default async function AdminOverviewPage() {
     { label: "Money in", value: fmtNaira(totalInvested), hint: "Confirmed investments" },
     { label: "Promised to investors", value: fmtNaira(totalPromised), hint: "Full payout schedule" },
     { label: "Paid out so far", value: fmtNaira(totalPaidOut), hint: "Payouts marked paid" },
-    {
-      label: "Still owed",
-      value: fmtNaira(outstanding),
-      hint: "Scheduled but not yet paid",
-      tone: "text-slate-900",
-    },
+    { label: "Still owed", value: fmtNaira(outstanding), hint: "Scheduled but not yet paid" },
   ];
 
   const needsYou = [
     {
       label: "Transfers to confirm",
       value: String(awaitingDeposits),
+      // A count, not a figure — stays readable while amounts are hidden.
+      isCount: true,
       detail: awaitingDeposits === 1 ? "1 waiting" : `${awaitingDeposits} waiting`,
       href: "/admin/deposits",
       tone: awaitingDeposits > 0 ? "text-amber-500" : "text-slate-300",
@@ -123,14 +121,18 @@ export default async function AdminOverviewPage() {
   ];
 
   return (
+    <BalancePrivacy initialHidden={Boolean(profile.hide_balance)}>
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          Business overview
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Welcome back, {profile.full_name?.split(" ")[0] ?? "admin"} — live totals from the ledger.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Business overview
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Welcome back, {profile.full_name?.split(" ")[0] ?? "admin"} — live totals from the ledger.
+          </p>
+        </div>
+        <BalanceToggle tone="light" className="w-10 h-10 rounded-xl hover:bg-slate-100" />
       </div>
 
       {/* ── PLATFORM EARNINGS ── */}
@@ -143,19 +145,27 @@ export default async function AdminOverviewPage() {
           <p className={`${eyebrow} text-white/40 mb-2`}>
             Rydvest earnings · {PLATFORM_FEE_LABEL} of funded pools
           </p>
-          <p className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
-            {fmtNaira(earnedFee)}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
+              <Money value={fmtNaira(earnedFee)} />
+            </p>
+            <BalanceToggle />
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-7">
             {[
-              { label: "Funded pools", value: fmtNaira(fundedRaised) },
-              { label: "In the pipeline", value: fmtNaira(pipelineFee), hint: "If filling pools close" },
-              { label: "Registered users", value: String(userCount ?? 0) },
+              { label: "Funded pools", amount: fundedRaised },
+              { label: "In the pipeline", amount: pipelineFee, hint: "If filling pools close" },
+              { label: "Registered users", count: userCount ?? 0 },
             ].map((s) => (
-              <div key={s.label} className="bg-white/[0.07] border border-white/10 rounded-xl px-3.5 py-3">
+              <div
+                key={s.label}
+                className="bg-white/[0.07] border border-white/10 rounded-xl px-3 sm:px-3.5 py-3 min-w-0"
+              >
                 <p className={`${eyebrow} text-white/35 mb-1 leading-tight`}>{s.label}</p>
-                <p className="text-sm font-extrabold text-white tabular-nums">{s.value}</p>
+                <p className="text-sm font-extrabold text-white tabular-nums">
+                  {s.count !== undefined ? s.count : <ResponsiveMoney value={s.amount!} />}
+                </p>
                 {s.hint && <p className="text-[10px] text-white/30 mt-0.5">{s.hint}</p>}
               </div>
             ))}
@@ -172,7 +182,7 @@ export default async function AdminOverviewPage() {
               <Card className="p-5 h-full transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-slate-300">
                 <p className={`${eyebrow} text-slate-400 mb-2`}>{n.label}</p>
                 <p className={`text-xl font-extrabold tabular-nums tracking-tight ${n.tone}`}>
-                  {n.value}
+                  {n.isCount ? n.value : <Money value={n.value} />}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1.5">{n.detail} →</p>
               </Card>
@@ -189,7 +199,7 @@ export default async function AdminOverviewPage() {
             <Card key={s.label} className="p-5">
               <p className={`${eyebrow} text-slate-400 mb-2 leading-tight`}>{s.label}</p>
               <p className="text-lg font-extrabold text-slate-900 tabular-nums tracking-tight">
-                {s.value}
+                <Money value={s.value} />
               </p>
               <p className="text-[11px] text-slate-400 mt-1.5">{s.hint}</p>
             </Card>
@@ -205,7 +215,7 @@ export default async function AdminOverviewPage() {
                   assetBurden > 0 ? "text-slate-900" : "text-green-600"
                 }`}
               >
-                {fmtNaira(Math.max(0, assetBurden))}
+                <Money value={fmtNaira(Math.max(0, assetBurden))} />
               </p>
             </div>
             <p className="text-[11px] text-slate-400 max-w-sm">
@@ -277,5 +287,6 @@ export default async function AdminOverviewPage() {
         </form>
       </Card>
     </div>
+    </BalancePrivacy>
   );
 }

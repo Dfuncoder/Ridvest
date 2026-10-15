@@ -201,6 +201,23 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   // Route by role (RLS lets the user read their own profile row).
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims?.sub as string | undefined;
+
+  // Refuse a locked account here too, so it never reaches a dashboard it would
+  // only be bounced out of.
+  if (userId) {
+    const service = createSupabaseAdminClient();
+    const { data: locked } = await service
+      .from("profiles")
+      .select("locked_at")
+      .eq("id", userId)
+      .single();
+
+    if (locked?.locked_at) {
+      await supabase.auth.signOut();
+      return { message: ERRORS.ACCOUNT_LOCKED };
+    }
+  }
+
   if (userId) await startIdleClock(userId);
   const { data: profile } = await supabase
     .from("profiles")

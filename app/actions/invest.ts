@@ -21,7 +21,8 @@ import crypto from "crypto";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
+import { ERRORS, DB_REASON_TO_ERROR, DYNAMIC_ERRORS } from "@/lib/errors";
+import { fmtNaira } from "@/lib/format";
 import { InvestSchema, CreatePoolSchema, JoinByInviteSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
@@ -50,15 +51,60 @@ export async function joinPool(_prev: FormState, formData: FormData): Promise<Fo
     return { message: ERRORS.GENERIC };
   }
 
-  const result = data as { ok?: boolean; reason?: string; pool_status?: string } | null;
+  const result = data as {
+    ok?: boolean;
+    reason?: string;
+    pool_status?: string;
+    remaining?: number;
+    minimum?: number;
+  } | null;
 
   if (!result?.ok) {
+    // Every one of these means a number the page is showing has gone out of
+    // date while it sat open — somebody else took part of the pool, or all of
+    // it, or the balance moved. Refresh the figures along with the error,
+    // otherwise the amount on screen contradicts the message and the user
+    // retypes the same number and is refused again.
+    if (
+      result?.reason === "amount_too_large" ||
+      result?.reason === "pool_not_open" ||
+      result?.reason === "pool_not_found" ||
+      result?.reason === "insufficient_balance"
+    ) {
+      revalidatePath("/dashboard/pools");
+      revalidatePath(`/dashboard/pools/${parsed.data.poolId}`);
+    }
+
     if (result?.reason === "insufficient_balance") {
       return { errors: { amount: ERRORS.INSUFFICIENT_BALANCE } };
     }
-    if (result?.reason === "amount_too_large" || result?.reason === "amount_too_small") {
-      return { errors: { amount: DB_REASON_TO_ERROR[result.reason] } };
+
+    if (result?.reason === "amount_too_large") {
+      const remaining = Number(result.remaining ?? 0);
+      return {
+        errors: {
+          // The figure comes from the same locked read that rejected the
+          // amount, so it is the real number, not the one the page was showing.
+          amount:
+            remaining > 0
+              ? DYNAMIC_ERRORS.POOL_TRY_LESS(fmtNaira(remaining))
+              : ERRORS.POOL_JUST_FILLED,
+        },
+      };
     }
+
+    if (result?.reason === "amount_too_small") {
+      const minimum = Number(result.minimum ?? 0);
+      return {
+        errors: {
+          amount:
+            minimum > 0
+              ? DYNAMIC_ERRORS.POOL_MINIMUM(fmtNaira(minimum))
+              : DB_REASON_TO_ERROR[result.reason],
+        },
+      };
+    }
+
     return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.GENERIC };
   }
 
@@ -86,7 +132,6 @@ export async function createPool(_prev: FormState, formData: FormData): Promise<
   const parsed = CreatePoolSchema.safeParse({
     productId: formData.get("productId"),
     name: formData.get("name"),
-    isPrivate: formData.get("isPrivate") ?? "false",
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
@@ -114,10 +159,14 @@ export async function createPool(_prev: FormState, formData: FormData): Promise<
     .single();
   if (!product || !product.active) return { message: ERRORS.POOL_PRODUCT_INACTIVE };
 
-  // 8-char alphanumeric invite code for private pools, e.g. "7F3KQ2ZP".
-  const inviteCode = parsed.data.isPrivate
-    ? crypto.randomBytes(6).toString("base64url").replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase().padEnd(8, "0")
-    : null;
+  // 8-char alphanumeric invite code, e.g. "7F3KQ2ZP".
+  const inviteCode = crypto
+    .randomBytes(6)
+    .toString("base64url")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .slice(0, 8)
+    .toUpperCase()
+    .padEnd(8, "0");
 
   const { data: created, error } = await admin
     .from("pools")
@@ -125,7 +174,10 @@ export async function createPool(_prev: FormState, formData: FormData): Promise<
       product_id: product.id,
       name: parsed.data.name,
       created_by: user.id,
-      is_private: parsed.data.isPrivate,
+      // A pool a user starts is always private — public ones are opened by an
+      // admin from /admin/pools. The pools_force_private trigger holds this
+      // line in the database too, so it does not rest on this action alone.
+      is_private: true,
       invite_code: inviteCode,
     })
     .select("id")

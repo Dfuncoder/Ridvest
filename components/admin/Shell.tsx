@@ -18,11 +18,12 @@ const navItems = [
   { label: "Deposits", href: "/admin/deposits" },
   { label: "Withdrawals", href: "/admin/withdrawals" },
   { label: "Users", href: "/admin/users" },
+  { label: "Verification", href: "/admin/kyc" },
   { label: "Messages", href: "/admin/messages" },
   { label: "Settings", href: "/admin/settings" },
 ];
 
-/** Ten flat links read as a wall; three named groups do not. */
+/** A flat list of eleven links reads as a wall; three named groups do not. */
 const NAV_GROUPS: Array<{ title: string; hrefs: string[] }> = [
   { title: "Overview", hrefs: ["/admin"] },
   {
@@ -31,7 +32,14 @@ const NAV_GROUPS: Array<{ title: string; hrefs: string[] }> = [
   },
   {
     title: "Manage",
-    hrefs: ["/admin/products", "/admin/pools", "/admin/users", "/admin/messages", "/admin/settings"],
+    hrefs: [
+      "/admin/products",
+      "/admin/pools",
+      "/admin/users",
+      "/admin/kyc",
+      "/admin/messages",
+      "/admin/settings",
+    ],
   },
 ];
 
@@ -137,7 +145,7 @@ export default function AdminShell({ name, children }: { name: string; children:
       )}
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
         {/* Solid background — backdrop-filter blurs are costly on mobile GPUs. */}
         <header className="sticky top-0 z-20 bg-white/95 border-b border-slate-200/80 px-5 lg:px-8 h-16 flex items-center gap-3">
           <button
@@ -149,7 +157,7 @@ export default function AdminShell({ name, children }: { name: string; children:
           </button>
           <p className="text-sm font-bold text-slate-900 tracking-tight">Admin console</p>
         </header>
-        <main className="flex-1 px-5 lg:px-8 py-7">
+        <main className="flex-1 min-w-0 px-5 lg:px-8 py-7">
           {children}
         </main>
       </div>

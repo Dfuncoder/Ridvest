@@ -12,6 +12,7 @@
  */
 import { z } from "zod";
 import { ERRORS } from "./errors";
+import { isKnownVehicleImage } from "./vehicles";
 
 /** The 36 Nigerian states + FCT — used for the signup dropdown and validation. */
 export const NIGERIAN_STATES = [
@@ -119,6 +120,48 @@ export const WithdrawalRequestSchema = z.object({
   amount: z.coerce.number().positive({ error: ERRORS.WITHDRAW_INVALID_AMOUNT }).max(1_000_000_000),
 });
 
+// ── Sending to another account ──────────────────────────────────────────────
+// The account ID is normalised the same way as normalise_user_code() in SQL:
+// strip anything that is not a letter or digit, then uppercase. People retype
+// these with spaces and hyphens, and the alphabet has no I, L, O, U, 0 or 1 to
+// confuse. The server re-checks all of this; these rules only mean the user
+// hears about a typo without a round trip.
+const USER_CODE_REGEX = /^RYD[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
+
+export const normaliseUserCode = (v: string): string =>
+  v.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+export const TransferSchema = z.object({
+  code: z
+    .string()
+    .transform(normaliseUserCode)
+    .refine((v) => USER_CODE_REGEX.test(v), { error: ERRORS.TRANSFER_CODE_INVALID }),
+  amount: z.coerce
+    .number()
+    .int({ error: ERRORS.TRANSFER_INVALID_AMOUNT })
+    .positive({ error: ERRORS.TRANSFER_INVALID_AMOUNT })
+    .max(1_000_000_000, { error: ERRORS.TRANSFER_INVALID_AMOUNT }),
+  note: z.string().trim().max(140).optional().default(""),
+});
+
+export const UserCodeSchema = z
+  .string()
+  .transform(normaliseUserCode)
+  .refine((v) => USER_CODE_REGEX.test(v), { error: ERRORS.TRANSFER_CODE_INVALID });
+
+// ── Identity verification ───────────────────────────────────────────────────
+// The selfie is NOT validated here — a Zod schema cannot tell an image from a
+// renamed executable. submitKyc checks the bytes themselves.
+export const KycSubmissionSchema = z.object({
+  idType: z.enum(["nin", "bvn"], { error: ERRORS.KYC_ID_TYPE_INVALID }),
+  // An NIN and a BVN are both 11 digits. Spaces are stripped first, because
+  // people read these off a card in groups of four.
+  idNumber: z
+    .string()
+    .transform((v) => v.replace(/[^0-9]/g, ""))
+    .refine((v) => /^[0-9]{11}$/.test(v), { error: ERRORS.KYC_ID_NUMBER_INVALID }),
+});
+
 // ── Investing ───────────────────────────────────────────────────────────────
 export const InvestSchema = z.object({
   poolId: z.uuid({ error: ERRORS.POOL_NOT_FOUND }),
@@ -167,10 +210,11 @@ export const PaymentSettingsSchema = z
     }
   });
 
+// A user-created pool is always private, so there is no isPrivate field to
+// accept here (see createPool and the pools_force_private trigger).
 export const CreatePoolSchema = z.object({
   productId: z.uuid({ error: ERRORS.POOL_PRODUCT_INACTIVE }),
   name: z.string().trim().min(3).max(80),
-  isPrivate: z.enum(["true", "false"]).transform((v) => v === "true"),
 });
 
 export const JoinByInviteSchema = z.object({
@@ -185,6 +229,15 @@ export const PoolProductSchema = z.object({
   minContribution: z.coerce.number().positive({ error: ERRORS.ADMIN_PRODUCT_INVALID }),
   durationWeeks: z.coerce.number().int().min(1).max(520, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
   roiPercent: z.coerce.number().min(0).max(1000, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
+  // Must be one of the bundled vehicle photos — never a free-text path, which
+  // would let an admin point a pool card at any URL. Empty means "work it out
+  // from the name" (lib/vehicles.ts).
+  imagePath: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || isKnownVehicleImage(v), { error: ERRORS.ADMIN_PRODUCT_INVALID })
+    .optional()
+    .default(""),
 });
 
 // ── Contact form ────────────────────────────────────────────────────────────

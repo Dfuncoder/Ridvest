@@ -178,7 +178,7 @@ function NameMatchDialog({
           The bank account you transfer from must be in the name
         </p>
 
-        <p className="text-base font-extrabold text-slate-900 text-center bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 mb-4 break-words">
+        <p className="text-base font-extrabold text-slate-900 text-center bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 mb-4 wrap-break-word">
           {profileName || "your profile name"}
         </p>
 
@@ -259,7 +259,7 @@ export function ManualTransferPanel({
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <h2 className="text-base font-extrabold text-slate-900 mb-1">Fund your account</h2>
             <p className="text-sm text-slate-500 mb-5">
-              Send a bank transfer to Rydvest and we&apos;ll credit your balance once it lands.
+              Add money to your balance by bank transfer.
             </p>
             <button onClick={() => setDialogOpen(true)} className={`w-full py-3.5 ${primaryBtn}`}>
               Fund account
@@ -331,9 +331,7 @@ export function KorapayPanel() {
     <form action={formAction} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-4">
       <div>
         <h2 className="text-base font-extrabold text-slate-900 mb-1">Fund your account</h2>
-        <p className="text-sm text-slate-500">
-          Pay by card or bank transfer. Your balance is credited automatically.
-        </p>
+        <p className="text-sm text-slate-500">Pay by card or bank transfer.</p>
       </div>
 
       {state?.message && !state.success && (

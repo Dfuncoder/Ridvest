@@ -10,12 +10,15 @@
  *   invited friend isn't a member yet, so RLS alone would hide the pool.
  */
 import Link from "next/link";
+import Image from "next/image";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { InvestForm } from "@/components/dashboard/forms";
 import { CopyCode } from "@/components/dashboard/CopyCode";
 import { fmtNaira, fmtDate, poolProgressPct } from "@/lib/format";
+import { vehicleImage } from "@/lib/vehicles";
+import { ResponsiveMoney } from "@/components/BalanceToggle";
 
 export default async function PoolDetailPage({
   params,
@@ -35,7 +38,7 @@ export default async function PoolDetailPage({
   const admin = createSupabaseAdminClient();
   const { data: pool } = await admin
     .from("pools")
-    .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, min_contribution, duration_weeks, roi_percent)")
+    .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, min_contribution, duration_weeks, roi_percent, image_path)")
     .eq("id", id)
     .single();
 
@@ -88,7 +91,7 @@ export default async function PoolDetailPage({
 
   const product = pool.product as unknown as {
     name: string; target_amount: number; min_contribution: number;
-    duration_weeks: number; roi_percent: number;
+    duration_weeks: number; roi_percent: number; image_path: string | null;
   };
   const raised = Number(pool.amount_raised);
   const target = Number(product.target_amount);
@@ -102,7 +105,20 @@ export default async function PoolDetailPage({
     <div className="max-w-3xl mx-auto flex flex-col gap-5">
       <Link href="/dashboard/pools" className="text-xs text-slate-500 hover:text-slate-700">← My pools</Link>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-6">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        {/* The vehicle, so this page opens on what the money actually buys. */}
+        <div className="relative aspect-21/9 bg-slate-900">
+          <Image
+            src={vehicleImage(product.name, product.image_path)}
+            alt={product.name}
+            fill
+            sizes="(min-width: 768px) 768px, 100vw"
+            priority
+            className="object-cover"
+          />
+        </div>
+
+        <div className="p-6">
         <div className="flex items-start justify-between gap-3 mb-1">
           <div>
             <h1 className="text-lg font-extrabold text-slate-900">{pool.name}</h1>
@@ -163,9 +179,16 @@ export default async function PoolDetailPage({
         {pool.status === "open" && remaining > 0 && (
           <div className="mt-5 border-t border-slate-100 pt-4">
             <h2 className="text-sm font-extrabold text-slate-900 mb-1">Add money to this pool</h2>
-            <InvestForm poolId={pool.id} minContribution={Number(product.min_contribution)} remaining={remaining} balance={walletBalance} />
+            <InvestForm
+              poolId={pool.id}
+              minContribution={Number(product.min_contribution)}
+              isPrivate={pool.is_private}
+              remaining={remaining}
+              balance={walletBalance}
+            />
           </div>
         )}
+        </div>
       </div>
 
       {/* My contributions to this pool */}
@@ -208,7 +231,7 @@ export default async function PoolDetailPage({
                         Earned
                       </p>
                       <p className="text-sm font-extrabold text-green-600 tabular-nums">
-                        {fmtNaira(earned)}
+                        <ResponsiveMoney value={earned} />
                       </p>
                     </div>
                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2.5">
@@ -216,7 +239,7 @@ export default async function PoolDetailPage({
                         Next payout
                       </p>
                       <p className="text-sm font-extrabold text-amber-600 tabular-nums">
-                        {next ? fmtNaira(next.amount) : "—"}
+                        {next ? <ResponsiveMoney value={Number(next.amount)} /> : "—"}
                       </p>
                       {next && (
                         <p className="text-[10px] text-amber-600/70 mt-0.5">{fmtDate(next.date)}</p>

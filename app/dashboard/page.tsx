@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   const [{ data: balance }, { data: profile }, { data: investments }, { data: payouts }] =
     await Promise.all([
     supabase.rpc("my_available_balance"),
-    supabase.from("profiles").select("full_name, user_code").eq("id", user.id).single(),
+    supabase.from("profiles").select("full_name, user_code, hide_balance").eq("id", user.id).single(),
     supabase
       .from("investments")
       .select(
@@ -47,6 +47,7 @@ export default async function DashboardPage() {
   const data: OverviewData = {
     firstName: (profile?.full_name ?? "").trim().split(/\s+/)[0] ?? "",
     userCode: profile?.user_code ?? "",
+    hideBalance: Boolean(profile?.hide_balance),
     balance: Number(balance ?? 0),
     totalInvested: (investments ?? []).reduce((sum, i) => sum + Number(i.amount), 0),
     totalEarned: paidPayouts.reduce((sum, p) => sum + Number(p.amount), 0),

@@ -1,11 +1,22 @@
 /**
- * PAYOUTS — the user's payout schedule, withdrawable balance, withdrawal
- * request form, and withdrawal history.
+ * WITHDRAW — the withdrawable balance, the request form, the payout schedule
+ * and every withdrawal already asked for.
+ *
+ * Three real tables rather than three lists of rows: these are statements, and
+ * figures that line up in a column can be scanned and added up. Each one drops
+ * its less important columns on a phone instead of shrinking the amounts.
  */
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { WithdrawForm } from "@/components/dashboard/forms";
+import { ResponsiveMoney } from "@/components/BalanceToggle";
 import { fmtNaira, fmtDate } from "@/lib/format";
+
+export const metadata = { title: "Withdraw · Rydvest" };
+
+const eyebrow = "text-[10px] font-bold uppercase tracking-[0.14em]";
+const th = `px-5 py-2.5 ${eyebrow} text-slate-400 whitespace-nowrap`;
+const td = "px-5 py-3.5 align-middle";
 
 const WITHDRAWAL_BADGE: Record<string, string> = {
   pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
@@ -14,117 +25,230 @@ const WITHDRAWAL_BADGE: Record<string, string> = {
   rejected: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={`bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHead({ title, right }: { title: string; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-200/80">
+      <h2 className="text-sm font-extrabold text-slate-900">{title}</h2>
+      {right}
+    </div>
+  );
+}
+
 export default async function PayoutsPage() {
   const user = await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: balance }, { data: payouts }, { data: accounts }, { data: withdrawals }] =
-    await Promise.all([
-      supabase.rpc("my_available_balance"),
-      supabase
-        .from("payouts")
-        .select("id, amount, due_date, status, paid_at, pool:pools(name)")
-        .eq("user_id", user.id)
-        .order("due_date", { ascending: true }),
-      supabase
-        .from("withdrawal_accounts")
-        .select("id, bank_name, account_number, account_name")
-        .eq("user_id", user.id),
-      supabase
-        .from("withdrawals")
-        .select("id, amount, status, admin_note, requested_at, processed_at")
-        .eq("user_id", user.id)
-        .order("requested_at", { ascending: false }),
-    ]);
+  const [
+    { data: balance },
+    { data: payouts },
+    { data: accounts },
+    { data: withdrawals },
+    { data: kyc },
+  ] = await Promise.all([
+    supabase.rpc("my_available_balance"),
+    supabase
+      .from("payouts")
+      .select("id, amount, due_date, status, paid_at, pool:pools(name)")
+      .eq("user_id", user.id)
+      .order("due_date", { ascending: true }),
+    supabase
+      .from("withdrawal_accounts")
+      .select("id, bank_name, account_number, account_name")
+      .eq("user_id", user.id),
+    supabase
+      .from("withdrawals")
+      .select("id, amount, status, admin_note, requested_at, processed_at")
+      .eq("user_id", user.id)
+      .order("requested_at", { ascending: false }),
+    supabase.from("kyc_submissions").select("status").eq("user_id", user.id),
+  ]);
 
   const upcoming = (payouts ?? []).filter((p) => p.status === "scheduled");
   const paid = (payouts ?? []).filter((p) => p.status === "paid").reverse();
+  const rows = withdrawals ?? [];
+
+  // An approved row anywhere in the history is what counts; a rejected one
+  // leaves the user back at "none" so the form points them at Verification.
+  const kycStatus = (kyc ?? []).some((k) => k.status === "approved")
+    ? "approved"
+    : (kyc ?? []).some((k) => k.status === "pending")
+      ? "pending"
+      : "none";
+
+  const poolName = (p: { pool: unknown }) =>
+    (p.pool as { name?: string } | null)?.name ?? "—";
+
+  const upcomingTotal = upcoming.reduce((s, p) => s + Number(p.amount), 0);
+  const paidTotal = paid.reduce((s, p) => s + Number(p.amount), 0);
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col gap-5">
       <div>
-        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Withdraw</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Withdraw</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Move your balance to a bank account in your name.
         </p>
       </div>
 
-      {/* Balance + withdraw */}
+      {/* ── BALANCE + REQUEST ── */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="bg-[#0d2137] rounded-2xl p-6">
-          <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1.5">Available to withdraw</p>
-          <p className="text-3xl font-black text-white tabular-nums">{fmtNaira(Number(balance ?? 0))}</p>
-          <p className="text-xs text-slate-400 mt-3">
-            Withdrawals are paid to a bank account that matches the name on your profile.
+        <div className="rounded-2xl bg-[#0d2137] p-6 flex flex-col justify-center">
+          <p className={`${eyebrow} text-slate-500 mb-1.5`}>Available to withdraw</p>
+          <p className="text-3xl font-black text-white tabular-nums tracking-tight">
+            {fmtNaira(Number(balance ?? 0))}
           </p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-6">
+        <Card className="p-6">
           <h2 className="text-sm font-extrabold text-slate-900 mb-3">Request a withdrawal</h2>
-          <WithdrawForm accounts={accounts ?? []} balance={Number(balance ?? 0)} />
-        </div>
+          <WithdrawForm
+            accounts={accounts ?? []}
+            balance={Number(balance ?? 0)}
+            kycStatus={kycStatus}
+          />
+        </Card>
       </div>
 
-      {/* Withdrawal history */}
-      {(withdrawals ?? []).length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-          <h2 className="text-sm font-extrabold text-slate-900 px-5 pt-4 pb-2">Withdrawal history</h2>
-          <div className="divide-y divide-slate-100">
-            {(withdrawals ?? []).map((w) => (
-              <div key={w.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmtNaira(w.amount)}</p>
-                  <p className="text-xs text-slate-400">
-                    Requested {fmtDate(w.requested_at)}
-                    {w.admin_note ? ` · ${w.admin_note}` : ""}
-                  </p>
-                </div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize ${WITHDRAWAL_BADGE[w.status] ?? ""}`}>
-                  {w.status}
-                </span>
-              </div>
-            ))}
+      {/* ── WITHDRAWALS ASKED FOR ── */}
+      {rows.length > 0 && (
+        <Card className="overflow-hidden">
+          <SectionHead
+            title="Your withdrawals"
+            right={<span className={`${eyebrow} text-slate-400`}>{rows.length} total</span>}
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="bg-slate-50/60 border-b border-slate-200/80">
+                  <th className={th}>Requested</th>
+                  <th className={`${th} hidden sm:table-cell`}>Processed</th>
+                  <th className={th}>Status</th>
+                  <th className={`${th} text-right`}>Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rows.map((w) => (
+                  <tr key={w.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className={`${td} text-xs text-slate-600 whitespace-nowrap`}>
+                      {fmtDate(w.requested_at)}
+                      {w.admin_note && (
+                        <span className="block text-[11px] text-slate-400 whitespace-normal max-w-56">
+                          {w.admin_note}
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${td} hidden sm:table-cell text-xs text-slate-500 whitespace-nowrap`}>
+                      {w.processed_at ? fmtDate(w.processed_at) : "—"}
+                    </td>
+                    <td className={`${td} whitespace-nowrap`}>
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize ${
+                          WITHDRAWAL_BADGE[w.status] ?? ""
+                        }`}
+                      >
+                        {w.status}
+                      </span>
+                    </td>
+                    <td className={`${td} text-right text-sm font-extrabold text-slate-900 tabular-nums whitespace-nowrap`}>
+                      <ResponsiveMoney value={Number(w.amount)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Upcoming payouts */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <h2 className="text-sm font-extrabold text-slate-900 px-5 pt-4 pb-2">Upcoming payouts</h2>
+      {/* ── WHAT IS STILL COMING ── */}
+      <Card className="overflow-hidden">
+        <SectionHead
+          title="Upcoming payouts"
+          right={
+            upcoming.length > 0 ? (
+              <span className={`${eyebrow} text-slate-400 tabular-nums`}>
+                {fmtNaira(upcomingTotal)} to come
+              </span>
+            ) : undefined
+          }
+        />
         {upcoming.length === 0 ? (
-          <p className="text-sm text-slate-500 px-5 pb-5">
-            Nothing scheduled yet — payouts are generated when a pool you're in fills up.
+          <p className="px-5 py-8 text-center text-sm text-slate-500">
+            Nothing scheduled yet. Join a pool to start earning.
           </p>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {upcoming.map((p) => (
-              <div key={p.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmtNaira(p.amount)}</p>
-                  <p className="text-xs text-slate-400">{(p.pool as unknown as { name: string })?.name}</p>
-                </div>
-                <span className="text-xs text-slate-500">Due {fmtDate(p.due_date)}</span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="bg-slate-50/60 border-b border-slate-200/80">
+                  <th className={th}>Due</th>
+                  <th className={th}>Pool</th>
+                  <th className={`${th} text-right`}>Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {upcoming.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className={`${td} text-xs font-semibold text-slate-700 whitespace-nowrap`}>
+                      {fmtDate(p.due_date)}
+                    </td>
+                    <td className={`${td} text-xs text-slate-500`}>{poolName(p)}</td>
+                    <td className={`${td} text-right text-sm font-extrabold text-slate-900 tabular-nums whitespace-nowrap`}>
+                      <ResponsiveMoney value={Number(p.amount)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Paid payouts */}
+      {/* ── WHAT HAS LANDED ── */}
       {paid.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-          <h2 className="text-sm font-extrabold text-slate-900 px-5 pt-4 pb-2">Paid payouts</h2>
-          <div className="divide-y divide-slate-100">
-            {paid.map((p) => (
-              <div key={p.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmtNaira(p.amount)}</p>
-                  <p className="text-xs text-slate-400">{(p.pool as unknown as { name: string })?.name}</p>
-                </div>
-                <span className="text-xs text-green-600 font-semibold">Paid {fmtDate(p.paid_at)}</span>
-              </div>
-            ))}
+        <Card className="overflow-hidden">
+          <SectionHead
+            title="Paid payouts"
+            right={
+              <span className={`${eyebrow} text-green-600 tabular-nums`}>
+                {fmtNaira(paidTotal)} received
+              </span>
+            }
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="bg-slate-50/60 border-b border-slate-200/80">
+                  <th className={th}>Paid</th>
+                  <th className={th}>Pool</th>
+                  <th className={`${th} text-right`}>Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paid.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className={`${td} text-xs font-semibold text-slate-700 whitespace-nowrap`}>
+                      {fmtDate(p.paid_at)}
+                    </td>
+                    <td className={`${td} text-xs text-slate-500`}>{poolName(p)}</td>
+                    <td className={`${td} text-right text-sm font-extrabold text-green-600 tabular-nums whitespace-nowrap`}>
+                      <ResponsiveMoney value={Number(p.amount)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -17,6 +17,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "./supabase/server";
+import { createSupabaseAdminClient } from "./supabase/admin";
 import { idleTimeoutMinutes } from "./session";
 
 export type SessionUser = {
@@ -81,6 +82,36 @@ const sessionIsLive = cache(async (): Promise<boolean> => {
  * used within the idle window. Called by every protected page and every server
  * action, so there is no path that skips the timeout.
  */
+/**
+ * Is this account locked?
+ *
+ * Read with the service role and the id from the verified session, so it cannot
+ * be dodged by a user whose own reads are restricted. Cached per request.
+ *
+ * Fails OPEN on error, like the idle check: a database blip must not lock
+ * every user out of a platform holding their money. A lock is only ever
+ * applied on a clear answer.
+ */
+const accountLocked = cache(async (userId: string): Promise<boolean> => {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from("profiles")
+      .select("locked_at")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("[auth] lock check failed, allowing request:", error.message);
+      return false;
+    }
+    return Boolean(data?.locked_at);
+  } catch (err) {
+    console.error("[auth] lock check threw, allowing request:", err);
+    return false;
+  }
+});
+
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -89,6 +120,10 @@ export async function requireUser(): Promise<SessionUser> {
   // can. Redirecting straight to /login would leave the session cookie valid
   // and the proxy would bounce it back to the dashboard for ever.
   if (!(await sessionIsLive())) redirect("/auth/logout");
+
+  // A locked account keeps all its data but cannot use the platform. Same
+  // hand-off, so the session is genuinely ended rather than looping.
+  if (await accountLocked(user.id)) redirect("/auth/logout?locked=1");
 
   return user;
 }
@@ -115,7 +150,7 @@ export async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role")
+    .select("id, full_name, email, role, hide_balance")
     .eq("id", user.id)
     .single();
 

@@ -16,5 +16,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/login", request.url));
+
+  // A locked account should be told why; an idle timeout should not be
+  // explained at all (see the earlier decision on that).
+  const locked = request.nextUrl.searchParams.get("locked") === "1";
+  return NextResponse.redirect(new URL(locked ? "/login?locked=1" : "/login", request.url));
 }
