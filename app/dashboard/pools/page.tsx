@@ -45,11 +45,15 @@ export default async function PoolsPage() {
   const user = await requireUser();
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: products }, { data: pools }, { data: balance }] = await Promise.all([
+  const [{ data: products }, { data: pools }, { data: balance }, { data: hasPin }] =
+    await Promise.all([
     supabase
       .from("pool_products")
-      .select("id, name, target_amount, duration_weeks, roi_percent")
+      // Only options meant for a private pool: this form is the only way a
+      // user creates one, and a public option would carry the wrong minimum.
+      .select("id, name, target_amount, duration_weeks, roi_percent, private_min_contribution")
       .eq("active", true)
+      .in("availability", ["private", "both"])
       .order("target_amount", { ascending: true }),
     supabase
       .from("pools")
@@ -58,8 +62,9 @@ export default async function PoolsPage() {
       )
       .eq("status", "open")
       .order("created_at", { ascending: false }),
-    supabase.rpc("my_available_balance"),
-  ]);
+      supabase.rpc("my_available_balance"),
+      supabase.rpc("has_transaction_pin"),
+    ]);
 
   const walletBalance = Number(balance ?? 0);
   const openPools = ((pools ?? []) as unknown as OpenPool[]).filter((p) => p.product?.active);
@@ -200,6 +205,7 @@ export default async function PoolsPage() {
                       isPrivate={pool.is_private}
                       remaining={remaining}
                       balance={walletBalance}
+                      hasPin={Boolean(hasPin)}
                     />
                   </div>
 
@@ -230,6 +236,12 @@ export default async function PoolsPage() {
               id: p.id,
               name: `${p.name} · ${Number(p.roi_percent)}% · ${p.duration_weeks} weeks`,
               target_amount: Number(p.target_amount),
+              // The slice THIS option asks for in a private pool, which is
+              // what the user will actually have to put in.
+              min_contribution: Math.max(
+                Number(p.private_min_contribution ?? 0),
+                PRIVATE_POOL_MINIMUM
+              ),
             }))}
           />
         </div>

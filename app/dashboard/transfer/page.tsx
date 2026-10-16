@@ -38,9 +38,11 @@ export default async function TransferPage() {
   const profile = await getProfile();
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: balance }, { data: kyc }, { data: sent }, { data: received }] = await Promise.all([
+  const [{ data: balance }, { data: kyc }, { data: hasPin }, { data: sent }, { data: received }] =
+    await Promise.all([
     supabase.rpc("my_available_balance"),
     supabase.from("kyc_submissions").select("status").eq("user_id", user.id),
+    supabase.rpc("has_transaction_pin"),
     supabase
       .from("transfers")
       .select("id, amount, note, created_at, recipient:profiles!transfers_recipient_id_fkey(full_name, user_code)")
@@ -110,7 +112,7 @@ export default async function TransferPage() {
           <h2 className="text-sm font-extrabold text-slate-900 mb-4">Send money</h2>
 
           {kycStatus === "approved" ? (
-            <TransferForm balance={walletBalance} />
+            <TransferForm balance={walletBalance} hasPin={Boolean(hasPin)} />
           ) : kycStatus === "pending" ? (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-slate-600">
               Your identity details are with us. We&apos;ll email you once they&apos;re confirmed,

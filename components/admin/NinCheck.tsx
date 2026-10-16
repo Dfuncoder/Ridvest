@@ -81,7 +81,16 @@ export default function NinCheck({
   // take did not survive the request that started it. Offering the re-run is
   // the only way back — without this a stuck row is unrecoverable from the UI.
   const stuck = key === "checking" && lookupIsStale(checkedAt);
-  const rerunnable = key === "failed" || key === "none" || stuck;
+
+  // Every state except a check genuinely in flight can be run again. A result
+  // that looks wrong, a NIMC record that has since been corrected, a mismatch
+  // the user has explained — all are reasons an admin may want to ask again,
+  // and refusing would just mean doing it in the database by hand.
+  const rerunnable = key !== "checking" || stuck;
+
+  // Re-running something that already answered costs another lookup fee, so
+  // it is worded as a deliberate repeat rather than a free refresh.
+  const settled = key === "matched" || key === "mismatch" || key === "not_found";
 
   return (
     <div className={`rounded-xl border px-4 py-3.5 ${tone.box}`}>
@@ -160,10 +169,19 @@ export default function NinCheck({
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
+            className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50 ${
+              settled
+                ? "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+                : "bg-slate-900 text-white hover:bg-slate-800"
+            }`}
           >
-            {pending ? "Checking..." : "Run the check"}
+            {pending ? "Checking..." : settled ? "Check again" : "Run the check"}
           </button>
+          {settled && !pending && (
+            <p className="mt-1.5 text-[10px] text-slate-400">
+              Asks NIMC again and replaces the result above. Billed as a new lookup.
+            </p>
+          )}
           {state?.message && (
             <p
               className={`mt-2 text-[11px] ${

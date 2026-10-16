@@ -120,6 +120,34 @@ export const WithdrawalRequestSchema = z.object({
   amount: z.coerce.number().positive({ error: ERRORS.WITHDRAW_INVALID_AMOUNT }).max(1_000_000_000),
 });
 
+// ── Transaction PIN ─────────────────────────────────────────────────────────
+// Four digits exactly. The obvious ones are rejected in SQL as well, because
+// this schema is only the first gate.
+const OBVIOUS_PINS = new Set([
+  "0000", "1111", "2222", "3333", "4444", "5555", "6666", "7777", "8888", "9999",
+  "1234", "4321", "1212", "2121", "0123", "9876", "1004", "2580",
+]);
+
+export const PinSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9]{4}$/, { error: ERRORS.PIN_INVALID });
+
+export const NewPinSchema = PinSchema.refine((v) => !OBVIOUS_PINS.has(v), {
+  error: ERRORS.PIN_TOO_SIMPLE,
+});
+
+export const SetPinSchema = z
+  .object({
+    pin: NewPinSchema,
+    confirmPin: z.string().trim(),
+    currentPin: z.string().trim().optional().default(""),
+  })
+  .refine((v) => v.pin === v.confirmPin, {
+    error: ERRORS.PIN_MISMATCH,
+    path: ["confirmPin"],
+  });
+
 // ── Sending to another account ──────────────────────────────────────────────
 // The account ID is normalised the same way as normalise_user_code() in SQL:
 // strip anything that is not a letter or digit, then uppercase. People retype
@@ -214,9 +242,36 @@ export const PaymentSettingsSchema = z
 
 // A user-created pool is always private, so there is no isPrivate field to
 // accept here (see createPool and the pools_force_private trigger).
+/**
+ * Words a user may not put in their own pool's name.
+ *
+ * A private pool's name is shown to everyone the invite code is shared with,
+ * beside the real pool option. Without this, somebody could name theirs
+ * "Rydvest Official Pool" and pass it off as ours to people they invite —
+ * which is the whole setup for a scam that we would be hosting.
+ */
+const RESERVED_POOL_WORDS = [
+  "rydvest",
+  "official",
+  "admin",
+  "support",
+  "verified",
+];
+
 export const CreatePoolSchema = z.object({
   productId: z.uuid({ error: ERRORS.POOL_PRODUCT_INACTIVE }),
-  name: z.string().trim().min(3).max(80),
+  name: z
+    .string()
+    .trim()
+    .min(3, { error: ERRORS.POOL_NAME_INVALID })
+    .max(80, { error: ERRORS.POOL_NAME_INVALID })
+    .refine(
+      (v) => {
+        const lower = v.toLowerCase();
+        return !RESERVED_POOL_WORDS.some((w) => lower.includes(w));
+      },
+      { error: ERRORS.POOL_NAME_RESERVED }
+    ),
 });
 
 export const JoinByInviteSchema = z.object({
@@ -240,6 +295,29 @@ export const PoolProductSchema = z.object({
     .refine((v) => v === "" || isKnownVehicleImage(v), { error: ERRORS.ADMIN_PRODUCT_INVALID })
     .optional()
     .default(""),
+
+  // Which kind of pool may be built from this option. Public options never
+  // appear when a user starts a private pool, and vice versa.
+  availability: z.enum(["public", "private", "both"]).optional().default("both"),
+
+  // Per-option floor for a private pool. Blank falls back to the global one.
+  privateMinContribution: z
+    .string()
+    .trim()
+    .optional()
+    .default("")
+    .transform((v) => (v === "" ? null : Number(v)))
+    .refine((v) => v === null || (Number.isFinite(v) && v > 0), {
+      error: ERRORS.ADMIN_PRODUCT_INVALID,
+    }),
+
+  // The cost breakdown. All five or none — a half-filled one would display
+  // zeros as if they were real figures.
+  assetValue: z.coerce.number().min(0).optional().default(0),
+  vat: z.coerce.number().min(0).optional().default(0),
+  serviceCharge: z.coerce.number().min(0).optional().default(0),
+  maintenanceFee: z.coerce.number().min(0).optional().default(0),
+  companyCharge: z.coerce.number().min(0).optional().default(0),
 });
 
 // ── Contact form ────────────────────────────────────────────────────────────

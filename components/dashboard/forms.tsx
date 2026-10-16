@@ -13,6 +13,7 @@ import type { FormState } from "@/app/actions/auth";
 import { MoneyInput } from "./MoneyInput";
 import { fmtNaira } from "@/lib/format";
 import { poolMinimum } from "@/lib/economics";
+import PinInput from "./PinInput";
 
 // Light-card styling shared by these forms.
 const input =
@@ -42,21 +43,48 @@ function FieldErr({ msg }: { msg?: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // JOIN A POOL — spends the Rydvest balance, no payment redirect.
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Shown in place of a money form when the user has no transaction PIN yet.
+ *
+ * Every outgoing movement needs one, so there is nothing useful to show until
+ * it exists — better to send them to set it than to let them fill in an
+ * amount and be refused at the end.
+ */
+function NeedsPin({ action }: { action: "invest" | "withdraw" }) {
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 leading-relaxed">
+        Set a 4-digit transaction PIN before you {action === "invest" ? "invest" : "withdraw"}. It
+        takes a moment and protects everything in your balance.
+      </p>
+      <Link href="/dashboard/profile" className={`block text-center px-5 py-2.5 ${primaryBtn}`}>
+        Set my PIN
+      </Link>
+    </div>
+  );
+}
+
 export function InvestForm({
   poolId,
   minContribution,
   isPrivate,
   remaining,
   balance,
+  hasPin,
 }: {
   poolId: string;
   minContribution: number;
   isPrivate: boolean;
   remaining: number;
   balance: number;
+  hasPin: boolean;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(joinPool, undefined);
   const [amount, setAmount] = useState<number | null>(null);
+
+  // Nothing leaves a balance without a PIN, so there is no point showing the
+  // amount box to somebody who has not set one yet.
+  if (!hasPin) return <NeedsPin action="invest" />;
 
   // A private pool asks for more per person. Capped at what is left, because
   // the last slice of a pool is allowed to come in under the floor — otherwise
@@ -103,6 +131,11 @@ export function InvestForm({
         </button>
       </div>
       <FieldErr msg={state?.errors?.amount} />
+
+      <div className="mt-3">
+        <PinInput name="pin" label="Transaction PIN" error={state?.errors?.pin} />
+      </div>
+
       <p className="text-[11px] text-slate-400 mt-1.5">
         {fmtNaira(remaining)} left to fill this pool.
       </p>
@@ -116,7 +149,12 @@ export function InvestForm({
 export function CreatePoolForm({
   products,
 }: {
-  products: Array<{ id: string; name: string; target_amount: number }>;
+  products: Array<{
+    id: string;
+    name: string;
+    target_amount: number;
+    min_contribution: number;
+  }>;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(createPool, undefined);
 
@@ -129,7 +167,7 @@ export function CreatePoolForm({
           <option value="" disabled>Choose an option</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name} — {fmtNaira(p.target_amount)}
+              {p.name} — {fmtNaira(p.target_amount)} · from {fmtNaira(p.min_contribution)} each
             </option>
           ))}
         </select>
@@ -345,13 +383,17 @@ export function WithdrawForm({
   accounts,
   balance,
   kycStatus,
+  hasPin,
 }: {
   accounts: Array<{ id: string; bank_name: string; account_number: string; account_name: string }>;
   balance: number;
   kycStatus: "approved" | "pending" | "none";
+  hasPin: boolean;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(requestWithdrawal, undefined);
   const [amount, setAmount] = useState<number | null>(null);
+
+  if (!hasPin) return <NeedsPin action="withdraw" />;
 
   if (kycStatus === "pending") {
     return (
@@ -416,6 +458,9 @@ export function WithdrawForm({
         />
         <FieldErr msg={state?.errors?.amount} />
       </div>
+
+      <PinInput name="pin" label="Transaction PIN" error={state?.errors?.pin} />
+
       <button type="submit" disabled={pending || balance <= 0} className={`py-3 ${primaryBtn}`}>
         {pending ? "Submitting..." : "Request withdrawal"}
       </button>

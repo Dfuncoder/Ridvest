@@ -18,6 +18,7 @@ import { InvestForm } from "@/components/dashboard/forms";
 import { CopyCode } from "@/components/dashboard/CopyCode";
 import { fmtNaira, fmtDate, poolProgressPct } from "@/lib/format";
 import { vehicleImage } from "@/lib/vehicles";
+import AssetBreakdown from "@/components/dashboard/AssetBreakdown";
 import { ResponsiveMoney } from "@/components/BalanceToggle";
 
 export default async function PoolDetailPage({
@@ -32,13 +33,16 @@ export default async function PoolDetailPage({
   const { code } = await searchParams;
 
   const supabase = await createSupabaseServerClient();
-  const { data: balance } = await supabase.rpc("my_available_balance");
+  const [{ data: balance }, { data: hasPin }] = await Promise.all([
+    supabase.rpc("my_available_balance"),
+    supabase.rpc("has_transaction_pin"),
+  ]);
   const walletBalance = Number(balance ?? 0);
 
   const admin = createSupabaseAdminClient();
   const { data: pool } = await admin
     .from("pools")
-    .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, target_amount, min_contribution, duration_weeks, roi_percent, image_path)")
+    .select("id, name, status, amount_raised, is_private, invite_code, created_by, started_at, ends_at, product:pool_products(name, description, target_amount, min_contribution, duration_weeks, roi_percent, image_path, asset_value, vat, service_charge, maintenance_fee, company_charge)")
     .eq("id", id)
     .single();
 
@@ -90,8 +94,19 @@ export default async function PoolDetailPage({
   }
 
   const product = pool.product as unknown as {
-    name: string; target_amount: number; min_contribution: number;
-    duration_weeks: number; roi_percent: number; image_path: string | null;
+    name: string;
+    description: string | null;
+    target_amount: number;
+    min_contribution: number;
+    duration_weeks: number;
+    roi_percent: number;
+    image_path: string | null;
+    // All five together or all null — the breakdown is all-or-nothing.
+    asset_value: number | null;
+    vat: number | null;
+    service_charge: number | null;
+    maintenance_fee: number | null;
+    company_charge: number | null;
   };
   const raised = Number(pool.amount_raised);
   const target = Number(product.target_amount);
@@ -185,11 +200,15 @@ export default async function PoolDetailPage({
               isPrivate={pool.is_private}
               remaining={remaining}
               balance={walletBalance}
+              hasPin={Boolean(hasPin)}
             />
           </div>
         )}
         </div>
       </div>
+
+      {/* What the money buys, and what comes back. */}
+      <AssetBreakdown product={product} />
 
       {/* My contributions to this pool */}
       {(myInvestments ?? []).length > 0 && (

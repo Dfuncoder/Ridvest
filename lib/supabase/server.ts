@@ -10,6 +10,7 @@
  * you're reading/writing on behalf of the current user.
  */
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 export async function createSupabaseServerClient() {
@@ -35,5 +36,24 @@ export async function createSupabaseServerClient() {
         },
       },
     }
+  );
+}
+
+/**
+ * A client that authenticates but does NOT keep the session.
+ *
+ * Used to check a password without logging anybody in. The first step of
+ * two-step login has to confirm the password is right while leaving the
+ * browser signed out — the session is only established once the emailed code
+ * has also been accepted.
+ *
+ * Nothing is written to cookies, so a successful call here changes nothing
+ * about who the browser is.
+ */
+export function createSupabaseCheckClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }

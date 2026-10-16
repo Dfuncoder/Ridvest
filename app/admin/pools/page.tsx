@@ -27,6 +27,8 @@ export default async function AdminPoolsPage() {
       .from("pool_products")
       .select("id, name, target_amount")
       .eq("active", true)
+      // Official pools are public, so private-only options do not belong here.
+      .in("availability", ["public", "both"])
       .order("name"),
   ]);
 

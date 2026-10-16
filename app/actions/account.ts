@@ -18,9 +18,10 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
+import { pinFieldError } from "@/lib/pin";
 import { namesMatch } from "@/lib/names";
 import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
-import { WithdrawalRequestSchema, fieldErrors } from "@/lib/validation";
+import { WithdrawalRequestSchema, PinSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -185,12 +186,18 @@ export async function requestWithdrawal(_prev: FormState, formData: FormData): P
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
+  // Shape-checked here only so an empty box reads as "enter your PIN" rather
+  // than "wrong PIN". Whether it is the RIGHT PIN is decided in SQL.
+  const pin = PinSchema.safeParse(formData.get("pin"));
+  if (!pin.success) return { errors: { pin: ERRORS.PIN_REQUIRED } };
+
   // Called with the USER client so auth.uid() inside the function is the
   // real logged-in user.
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("request_withdrawal", {
     p_account_id: parsed.data.accountId,
     p_amount: parsed.data.amount,
+    p_pin: pin.data,
   });
 
   if (error) {
@@ -198,8 +205,13 @@ export async function requestWithdrawal(_prev: FormState, formData: FormData): P
     return { message: ERRORS.WITHDRAW_FAILED };
   }
 
-  const result = data as { ok: boolean; reason?: string };
+  const result = data as { ok: boolean; reason?: string; attempts_left?: number };
   if (!result?.ok) {
+    // A PIN problem belongs on the PIN box, with the countdown, not as a
+    // banner the user has to work out the cause of.
+    const pinError = pinFieldError(result);
+    if (pinError) return { errors: { pin: pinError } };
+
     return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.WITHDRAW_FAILED };
   }
 

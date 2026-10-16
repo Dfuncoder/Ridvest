@@ -22,8 +22,9 @@ import { lookupUserCode, sendTransfer } from "@/app/actions/transfer";
 import { MoneyInput } from "./MoneyInput";
 import { ERRORS } from "@/lib/errors";
 import { fmtNaira } from "@/lib/format";
-import { TRANSFER_LIMITS } from "@/lib/economics";
+import { TRANSFER_LIMITS, TRANSFER_FEE } from "@/lib/economics";
 import { normaliseUserCode } from "@/lib/validation";
+import PinInput from "./PinInput";
 import type { FormState } from "@/app/actions/auth";
 
 const input =
@@ -38,7 +39,13 @@ type Lookup =
   | { kind: "ok"; code: string; name: string }
   | { kind: "error"; message: string };
 
-export default function TransferForm({ balance }: { balance: number }) {
+export default function TransferForm({
+  balance,
+  hasPin,
+}: {
+  balance: number;
+  hasPin: boolean;
+}) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     sendTransfer,
     undefined
@@ -99,6 +106,25 @@ export default function TransferForm({ balance }: { balance: number }) {
   // Replacing the form rather than clearing it: the confirmation stays put
   // until the sender chooses to send again, and there is no state to reset
   // behind their back.
+  // Nothing leaves a balance without a PIN, so there is nothing useful to
+  // show until one exists.
+  if (!hasPin) {
+    return (
+      <div className="flex flex-col gap-2.5">
+        <p className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs leading-relaxed text-slate-600">
+          Set a 4-digit transaction PIN before you send money. It takes a moment and protects
+          everything in your balance.
+        </p>
+        <a
+          href="/dashboard/profile"
+          className="rounded-xl bg-[#0d2137] px-4 py-2.5 text-center text-sm font-extrabold text-white transition-colors hover:bg-[#14314f]"
+        >
+          Set my PIN
+        </a>
+      </div>
+    );
+  }
+
   if (state?.success) {
     return (
       <div className="flex flex-col gap-4">
@@ -130,7 +156,12 @@ export default function TransferForm({ balance }: { balance: number }) {
 
   const resolved = lookup?.kind === "ok" ? lookup : null;
   const canSend =
-    resolved !== null && amount !== null && amount > 0 && amount <= balance && !pending;
+    resolved !== null &&
+    amount !== null &&
+    amount > 0 &&
+    // The fee comes out of the same balance, so it has to fit too.
+    amount + TRANSFER_FEE <= balance &&
+    !pending;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -202,7 +233,7 @@ export default function TransferForm({ balance }: { balance: number }) {
               value={amount}
               onChange={setAmount}
               min={TRANSFER_LIMITS.minAmount}
-              max={Math.min(balance, TRANSFER_LIMITS.maxAmount)}
+              max={Math.min(Math.max(balance - TRANSFER_FEE, 0), TRANSFER_LIMITS.maxAmount)}
               required
               placeholder={`From ${fmtNaira(TRANSFER_LIMITS.minAmount)}`}
               className={`${input} tabular-nums`}
@@ -225,6 +256,31 @@ export default function TransferForm({ balance }: { balance: number }) {
               className={input}
             />
           </div>
+
+          {/* What actually leaves the balance. The fee is on top of the
+              amount, so showing only the amount would understate it. */}
+          <dl className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs">
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">They receive</dt>
+              <dd className="font-semibold tabular-nums text-slate-900">
+                {amount ? fmtNaira(amount) : "—"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Transfer fee</dt>
+              <dd className="font-semibold tabular-nums text-slate-900">
+                {fmtNaira(TRANSFER_FEE)}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3 border-t border-slate-200 pt-1.5">
+              <dt className="font-bold text-slate-700">Leaves your balance</dt>
+              <dd className="font-extrabold tabular-nums text-slate-900">
+                {amount ? fmtNaira(amount + TRANSFER_FEE) : "—"}
+              </dd>
+            </div>
+          </dl>
+
+          <PinInput name="pin" label="Transaction PIN" error={state?.errors?.pin} />
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
             <p className="text-xs leading-relaxed text-amber-800">

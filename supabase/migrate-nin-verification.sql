@@ -105,14 +105,20 @@ alter table public.kyc_submissions
 create index if not exists kyc_lookup_status_idx
   on public.kyc_submissions (lookup_status, created_at desc);
 
--- The user may read the outcome of their own check, but not the raw names
--- returned for somebody else's — the row policy already limits that, and the
--- column grant keeps the API surface to what the dashboard actually shows.
+-- NOTHING about the NIN check is served to the user API — not the outcome,
+-- not even that a check happened.
+--
+-- Telling somebody their number is "being checked" tells them it is checked at
+-- all, which is a hint anyone probing with a borrowed or invented NIN can use:
+-- submit, watch, and learn what passes. The lookup columns are for the admin
+-- screen, which reads through the service role and bypasses these grants.
+--
+-- A user sees exactly what they saw before: submitted, approved, or turned
+-- down with a reason.
 revoke select on public.kyc_submissions from authenticated;
 grant select (
   id, user_id, id_type, id_number_last4, selfie_path,
-  status, admin_note, reviewed_by, reviewed_at, created_at,
-  lookup_status, lookup_at
+  status, admin_note, reviewed_by, reviewed_at, created_at
 ) on public.kyc_submissions to authenticated;
 
 -- ═══════════════════════════════════════════════════════════════════════════

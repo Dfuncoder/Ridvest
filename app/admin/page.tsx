@@ -11,7 +11,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { updateInterestRate } from "@/app/actions/admin";
 import { BalancePrivacy, BalanceToggle, Money, ResponsiveMoney } from "@/components/BalanceToggle";
-import { platformFee, PLATFORM_FEE_LABEL } from "@/lib/economics";
+import { platformFee, PLATFORM_FEE_LABEL, TRANSFER_FEE } from "@/lib/economics";
 import { fmtNaira } from "@/lib/format";
 
 export const metadata = { title: "Overview · Rydvest admin" };
@@ -41,6 +41,7 @@ export default async function AdminOverviewPage() {
     { data: withdrawals },
     { data: pools },
     { data: deposits },
+    { data: feeIncome },
     { data: rateSetting },
   ] = await Promise.all([
     admin.from("profiles").select("id", { count: "exact", head: true }),
@@ -49,6 +50,7 @@ export default async function AdminOverviewPage() {
     admin.from("withdrawals").select("amount, status"),
     admin.from("pools").select("status, amount_raised"),
     admin.from("deposits").select("status"),
+    admin.rpc("transfer_fee_income"),
     admin.from("app_settings").select("value").eq("key", "interest_rate_percent").single(),
   ]);
 
@@ -77,6 +79,19 @@ export default async function AdminOverviewPage() {
     .filter((p) => p.status === "active" || p.status === "completed")
     .reduce((s, p) => s + Number(p.amount_raised), 0);
   const earnedFee = platformFee(fundedRaised);
+
+  // The second income stream: a flat charge on each internal transfer.
+  // Totalled in SQL rather than by pulling every transfer row back here.
+  const transferFees = (feeIncome ?? {}) as {
+    total?: number;
+    count?: number;
+    today?: number;
+    this_month?: number;
+    last_30d?: number;
+    volume?: number;
+  };
+  const transferFeeTotal = Number(transferFees.total ?? 0);
+  const totalEarnings = earnedFee + transferFeeTotal;
 
   // Still filling: what the fee becomes if these pools reach target.
   const fillingRaised = (pools ?? [])
@@ -123,16 +138,17 @@ export default async function AdminOverviewPage() {
   return (
     <BalancePrivacy initialHidden={Boolean(profile.hide_balance)}>
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Business overview
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Welcome back, {profile.full_name?.split(" ")[0] ?? "admin"} — live totals from the ledger.
-          </p>
-        </div>
-        <BalanceToggle tone="light" className="w-10 h-10 rounded-xl hover:bg-slate-100" />
+      {/* No eye on this line. There is one beside the earnings figure below,
+          and both drove the same page-wide toggle — two controls for one
+          setting, the second of them sitting next to a heading with no money
+          on it. The toggle belongs next to what it hides. */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          Business overview
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Welcome back, {profile.full_name?.split(" ")[0] ?? "admin"} — live totals from the ledger.
+        </p>
       </div>
 
       {/* ── PLATFORM EARNINGS ── */}
@@ -142,19 +158,26 @@ export default async function AdminOverviewPage() {
           style={{ background: "radial-gradient(circle, rgba(250,204,21,0.16) 0%, transparent 68%)" }}
         />
         <div className="relative z-10">
-          <p className={`${eyebrow} text-white/40 mb-2`}>
-            Rydvest earnings · {PLATFORM_FEE_LABEL} of funded pools
-          </p>
+          <p className={`${eyebrow} text-white/40 mb-2`}>Rydvest earnings · all sources</p>
           <div className="flex items-center gap-3">
             <p className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
-              <Money value={fmtNaira(earnedFee)} />
+              <Money value={fmtNaira(totalEarnings)} />
             </p>
             <BalanceToggle />
           </div>
+          <p className="mt-1.5 text-xs text-white/40">
+            {PLATFORM_FEE_LABEL} of every funded pool, plus {fmtNaira(TRANSFER_FEE)} on each
+            internal transfer.
+          </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-7">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-7">
             {[
-              { label: "Funded pools", amount: fundedRaised },
+              { label: "From pools", amount: earnedFee, hint: PLATFORM_FEE_LABEL + " of funded" },
+              {
+                label: "From transfers",
+                amount: transferFees.total,
+                hint: `${transferFees.count} transfer${transferFees.count === 1 ? "" : "s"}`,
+              },
               { label: "In the pipeline", amount: pipelineFee, hint: "If filling pools close" },
               { label: "Registered users", count: userCount ?? 0 },
             ].map((s) => (
@@ -171,6 +194,64 @@ export default async function AdminOverviewPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── TRANSFER FEE INCOME ──
+          Broken out by period rather than shown as one total, because a
+          single lifetime figure cannot tell you whether the stream is growing
+          or has stopped. */}
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+            Transfer fees
+          </h2>
+          <Link
+            href="/admin/transfers"
+            className="text-xs font-bold text-amber-500 transition-colors hover:text-amber-400"
+          >
+            Every transfer →
+          </Link>
+        </div>
+
+        <Card className="overflow-hidden">
+          <div className="grid grid-cols-2 divide-slate-100 sm:grid-cols-4 sm:divide-x">
+            {[
+              { label: "Today", amount: Number(transferFees.today ?? 0) },
+              { label: "This month", amount: Number(transferFees.this_month ?? 0) },
+              { label: "Last 30 days", amount: Number(transferFees.last_30d ?? 0) },
+              { label: "All time", amount: transferFeeTotal, strong: true },
+            ].map((s) => (
+              <div key={s.label} className="min-w-0 px-4 py-4">
+                <p className={`${eyebrow} text-slate-400 mb-1`}>{s.label}</p>
+                <p
+                  className={`truncate text-base font-extrabold tabular-nums tracking-tight ${
+                    s.strong ? "text-green-600" : "text-slate-900"
+                  }`}
+                >
+                  <Money value={fmtNaira(s.amount)} />
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-1 border-t border-slate-200/80 bg-slate-50/60 px-4 py-3 text-xs text-slate-500">
+            <span>
+              <span className="font-bold text-slate-900 tabular-nums">
+                {Number(transferFees.count ?? 0).toLocaleString()}
+              </span>{" "}
+              transfers
+            </span>
+            <span>
+              <span className="font-bold text-slate-900 tabular-nums">
+                <Money value={fmtNaira(Number(transferFees.volume ?? 0))} />
+              </span>{" "}
+              moved between accounts
+            </span>
+            <span>
+              {fmtNaira(TRANSFER_FEE)} per transfer
+            </span>
+          </div>
+        </Card>
       </section>
 
       {/* ── NEEDS YOU ── */}

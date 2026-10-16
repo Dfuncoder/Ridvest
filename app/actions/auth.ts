@@ -18,10 +18,18 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { createSupabaseServerClient, createSupabaseCheckClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ERRORS } from "@/lib/errors";
 import { safeNextPath } from "@/lib/redirects";
+import {
+  CHALLENGE_COOKIE,
+  CHALLENGE_TTL_MS,
+  createChallenge,
+  readChallenge,
+  loginOtpDisabled,
+} from "@/lib/login-challenge";
 import {
   SignupSchema,
   LoginSchema,
@@ -182,8 +190,13 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   // Same vague message for bad input and bad credentials — no account probing.
   if (!parsed.success) return { message: ERRORS.AUTH_INVALID_LOGIN };
 
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  // ── Step 1: the password ────────────────────────────────────────────────
+  //
+  // Checked with a client that does NOT persist the session, so a correct
+  // password proves identity without signing the browser in. The session is
+  // established only by the code step below.
+  const check = createSupabaseCheckClient();
+  const { error } = await check.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   });
@@ -191,6 +204,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   if (error) {
     // Registered but never confirmed the email → push them through OTP again.
     if (error.code === "email_not_confirmed") {
+      const supabase = await createSupabaseServerClient();
       await supabase.auth.resend({ type: "signup", email: parsed.data.email });
       redirect(`/verify-otp?email=${encodeURIComponent(parsed.data.email)}`);
     }
@@ -198,12 +212,104 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     return { message: ERRORS.AUTH_INVALID_LOGIN };
   }
 
-  // Route by role (RLS lets the user read their own profile row).
+  // That sign-in minted tokens nobody will use. Drop them rather than leave
+  // a live refresh token behind for a session that never existed.
+  await check.auth.signOut();
+
+  // ── Locked accounts stop here ───────────────────────────────────────────
+  //
+  // Before the code is sent, not after: there is no reason to email a code to
+  // an account that cannot be used.
+  const service = createSupabaseAdminClient();
+  const { data: profile } = await service
+    .from("profiles")
+    .select("id, locked_at, role")
+    .eq("email", parsed.data.email)
+    .maybeSingle();
+
+  if (profile?.locked_at) return { message: ERRORS.ACCOUNT_LOCKED };
+
+  // ── The escape hatch ────────────────────────────────────────────────────
+  //
+  // With LOGIN_OTP_DISABLED=1 the second step is skipped entirely and the
+  // password alone signs them in — there to get everyone back in if email
+  // delivery breaks.
+  if (loginOtpDisabled()) {
+    const supabase = await createSupabaseServerClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    });
+    if (signInError) return { message: ERRORS.AUTH_INVALID_LOGIN };
+    if (profile?.id) await startIdleClock(profile.id);
+    if (next) redirect(next);
+    redirect(profile?.role === "admin" ? "/admin" : "/dashboard");
+  }
+
+  // ── Step 2: send the code ───────────────────────────────────────────────
+  const supabase = await createSupabaseServerClient();
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    // Never create an account from this path; the password already proved one
+    // exists. Without this a typo'd address could register somebody new.
+    options: { shouldCreateUser: false },
+  });
+
+  if (otpError) {
+    if (otpError.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
+    console.error("[auth] could not send login code", otpError.message);
+    return { message: ERRORS.LOGIN_CODE_SEND_FAILED };
+  }
+
+  // The proof that the password step happened. Short-lived, signed, and
+  // worthless on its own — see lib/login-challenge.ts.
+  const jar = await cookies();
+  jar.set(CHALLENGE_COOKIE, createChallenge(parsed.data.email, next ?? ""), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor(CHALLENGE_TTL_MS / 1000),
+  });
+
+  redirect("/verify-login");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 2 OF LOGIN — the emailed code.
+//
+// The email comes from the signed challenge cookie, never from the form: a
+// posted address could be swapped for somebody else's after the password step.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function verifyLoginOtp(_prev: FormState, formData: FormData): Promise<FormState> {
+  const jar = await cookies();
+  const challenge = readChallenge(jar.get(CHALLENGE_COOKIE)?.value);
+  if (!challenge) return { message: ERRORS.LOGIN_CHALLENGE_EXPIRED };
+
+  const token = String(formData.get("token") ?? "").trim();
+  if (!/^[0-9]{6}$/.test(token)) return { message: ERRORS.OTP_INVALID };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: challenge.email,
+    token,
+    type: "email",
+  });
+
+  if (error) {
+    if (error.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
+    return { message: ERRORS.OTP_INVALID };
+  }
+
+  // Spent. Clearing it stops a second login being completed from the same
+  // password check.
+  jar.delete(CHALLENGE_COOKIE);
+
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims?.sub as string | undefined;
 
-  // Refuse a locked account here too, so it never reaches a dashboard it would
-  // only be bounced out of.
+  // Re-checked after the session exists: an account locked during the minute
+  // between password and code must not get in.
   if (userId) {
     const service = createSupabaseAdminClient();
     const { data: locked } = await service
@@ -219,15 +325,38 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   }
 
   if (userId) await startIdleClock(userId);
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", claims?.claims?.sub ?? "")
+    .eq("id", userId ?? "")
     .single();
 
-  if (next) redirect(next);
+  if (challenge.next) redirect(challenge.next);
   redirect(profile?.role === "admin" ? "/admin" : "/dashboard");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESEND THE LOGIN CODE
+// ─────────────────────────────────────────────────────────────────────────────
+export async function resendLoginOtp(_prev: FormState): Promise<FormState> {
+  const jar = await cookies();
+  const challenge = readChallenge(jar.get(CHALLENGE_COOKIE)?.value);
+  if (!challenge) return { message: ERRORS.LOGIN_CHALLENGE_EXPIRED };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: challenge.email,
+    options: { shouldCreateUser: false },
+  });
+
+  if (error) {
+    if (error.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
+    return { message: ERRORS.OTP_RESEND_FAILED };
+  }
+  return { success: true, message: "A new code has been sent to your email." };
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGOUT

@@ -57,6 +57,7 @@ type Party = { id: string; full_name: string | null; user_code: string | null } 
 type TransferRow = {
   id: string;
   amount: number;
+  fee: number;
   note: string | null;
   reference: string;
   created_at: string;
@@ -99,7 +100,7 @@ export default async function AdminTransfersPage({
   // transfers has two foreign keys into profiles, so both embeds must name
   // their constraint — an ambiguous embed fails the whole query.
   const select =
-    "id, amount, note, reference, created_at, " +
+    "id, amount, fee, note, reference, created_at, " +
     "sender:profiles!transfers_sender_id_fkey(id, full_name, user_code), " +
     "recipient:profiles!transfers_recipient_id_fkey(id, full_name, user_code)";
 
@@ -126,6 +127,7 @@ export default async function AdminTransfersPage({
   const recent = all.filter((t) => new Date(t.created_at).getTime() >= dayAgo);
   const movedAll = all.reduce((s, t) => s + Number(t.amount), 0);
   const movedDay = recent.reduce((s, t) => s + Number(t.amount), 0);
+  const feesAll = all.reduce((s, t) => s + Number(t.fee ?? 0), 0);
 
   // ── The shapes ───────────────────────────────────────────────────────────
   const sentBy = new Map<string, TransferRow[]>();
@@ -226,7 +228,7 @@ export default async function AdminTransfersPage({
       </div>
 
       {/* ── COUNTS ── */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
         {[
           { label: "Transfers", value: String(totalCount ?? 0), tone: "text-slate-900" },
           { label: "Moved", value: fmtNaira(movedAll), tone: "text-slate-900" },
@@ -236,6 +238,9 @@ export default async function AdminTransfersPage({
             value: fmtNaira(movedDay),
             tone: movedDay > 0 ? "text-amber-600" : "text-slate-300",
           },
+          // Fees over the same window as everything else on this page, so the
+          // figure reconciles with the rows below rather than with all time.
+          { label: "Fees earned", value: fmtNaira(feesAll), tone: "text-green-600" },
         ].map((t) => (
           <Card key={t.label} className="min-w-0 px-3 py-3.5 sm:px-4">
             <p className={`${eyebrow} text-slate-400 mb-1`}>{t.label}</p>
@@ -360,6 +365,7 @@ export default async function AdminTransfersPage({
                   <th className={th}>To</th>
                   <th className={`${th} hidden lg:table-cell`}>Note</th>
                   <th className={`${th} hidden xl:table-cell`}>Reference</th>
+                  <th className={`${th} text-right`}>Fee</th>
                   <th className={`${th} text-right`}>Amount</th>
                 </tr>
               </thead>
@@ -380,6 +386,9 @@ export default async function AdminTransfersPage({
                     </td>
                     <td className={`${td} hidden xl:table-cell font-mono text-[10px] text-slate-400`}>
                       {t.reference}
+                    </td>
+                    <td className={`${td} whitespace-nowrap text-right text-xs tabular-nums text-green-600`}>
+                      {fmtNaira(t.fee ?? 0)}
                     </td>
                     <td className={`${td} whitespace-nowrap text-right text-sm font-extrabold tabular-nums text-slate-900`}>
                       {fmtNaira(t.amount)}

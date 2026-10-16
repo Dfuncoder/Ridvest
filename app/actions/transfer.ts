@@ -19,7 +19,8 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ERRORS, DB_REASON_TO_ERROR, DYNAMIC_ERRORS } from "@/lib/errors";
-import { TransferSchema, UserCodeSchema } from "@/lib/validation";
+import { pinFieldError } from "@/lib/pin";
+import { TransferSchema, UserCodeSchema, PinSchema } from "@/lib/validation";
 import { fmtNaira } from "@/lib/format";
 import type { FormState } from "./auth";
 
@@ -89,6 +90,9 @@ export async function sendTransfer(_prev: FormState, formData: FormData): Promis
     return { errors: out };
   }
 
+  const pin = PinSchema.safeParse(formData.get("pin"));
+  if (!pin.success) return { errors: { pin: ERRORS.PIN_REQUIRED } };
+
   const confirmedName = String(formData.get("confirmedName") ?? "").trim();
   if (!confirmedName) {
     return { message: ERRORS.TRANSFER_NOT_CONFIRMED };
@@ -107,6 +111,7 @@ export async function sendTransfer(_prev: FormState, formData: FormData): Promis
   const { data, error } = await supabase.rpc("transfer_to_user", {
     p_code: parsed.data.code,
     p_amount: parsed.data.amount,
+    p_pin: pin.data,
     p_note: parsed.data.note || null,
   });
 
@@ -124,9 +129,14 @@ export async function sendTransfer(_prev: FormState, formData: FormData): Promis
     recipient_name?: string;
     amount?: number;
     reference?: string;
+    fee?: number;
+    attempts_left?: number;
   } | null;
 
   if (!result?.ok) {
+    const pinError = pinFieldError(result);
+    if (pinError) return { errors: { pin: pinError } };
+
     switch (result?.reason) {
       case "below_minimum":
         return {

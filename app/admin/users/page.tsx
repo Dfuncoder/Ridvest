@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import ClickableRow from "@/components/admin/ClickableRow";
 import { fmtNaira, fmtDate } from "@/lib/format";
 
 export const metadata = { title: "Users · Rydvest admin" };
@@ -23,6 +24,31 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * Whether this account has cleared identity verification.
+ *
+ * "Not sent" and "Rejected" are kept apart deliberately: one is a user who
+ * has not got round to it, the other is somebody whose submission was turned
+ * down, and only the second is a reason to look closer.
+ */
+function KycBadge({ status }: { status?: "approved" | "pending" | "rejected" }) {
+  const styles: Record<string, { cls: string; label: string }> = {
+    approved: { cls: "bg-green-500/10 text-green-600 border-green-500/20", label: "Verified" },
+    pending: { cls: "bg-amber-500/10 text-amber-600 border-amber-500/20", label: "Waiting" },
+    rejected: { cls: "bg-red-500/10 text-red-600 border-red-500/20", label: "Rejected" },
+  };
+  const s = status ? styles[status] : null;
+
+  if (!s) {
+    return <span className="text-[10px] font-bold text-slate-300">Not sent</span>;
+  }
+  return (
+    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${s.cls}`}>
+      {s.label}
+    </span>
   );
 }
 
@@ -53,12 +79,18 @@ export default async function AdminUsersPage({
     );
   }
 
-  const [{ data: users, error }, { data: investments }, { data: payouts }, { data: deposits }] =
-    await Promise.all([
+  const [
+    { data: users, error },
+    { data: investments },
+    { data: payouts },
+    { data: deposits },
+    { data: kyc },
+  ] = await Promise.all([
       select,
       admin.from("investments").select("user_id, amount, status"),
       admin.from("payouts").select("user_id, amount, status"),
       admin.from("deposits").select("user_id, credited_amount, status"),
+      admin.from("kyc_submissions").select("user_id, status"),
     ]);
 
   if (error) console.error("[admin] users query failed", error);
@@ -84,9 +116,21 @@ export default async function AdminUsersPage({
     (d) => d.status === "credited"
   );
 
+  // One approved submission anywhere is what counts; a rejection leaves the
+  // user unverified rather than permanently marked, since they can resubmit.
+  const kycBy = new Map<string, "approved" | "pending" | "rejected">();
+  for (const k of kyc ?? []) {
+    const current = kycBy.get(k.user_id);
+    if (current === "approved") continue;
+    if (k.status === "approved") kycBy.set(k.user_id, "approved");
+    else if (k.status === "pending") kycBy.set(k.user_id, "pending");
+    else if (!current) kycBy.set(k.user_id, "rejected");
+  }
+
   const rows = users ?? [];
   const lockedCount = rows.filter((u) => u.locked_at).length;
   const adminCount = rows.filter((u) => u.role === "admin").length;
+  const verifiedCount = rows.filter((u) => kycBy.get(u.id) === "approved").length;
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-5">
@@ -98,13 +142,18 @@ export default async function AdminUsersPage({
       </div>
 
       {/* ── COUNTS ── */}
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {[
           { label: "Registered", value: String(rows.length), tone: "text-slate-900" },
+          {
+            label: "Verified",
+            value: `${verifiedCount}`,
+            tone: verifiedCount ? "text-green-600" : "text-slate-300",
+          },
           { label: "Locked", value: String(lockedCount), tone: lockedCount ? "text-red-500" : "text-slate-300" },
           { label: "Admins", value: String(adminCount), tone: "text-amber-600" },
         ].map((t) => (
-          <Card key={t.label} className="px-4 py-3.5">
+          <Card key={t.label} className="min-w-0 px-3 py-3.5 sm:px-4">
             <p className={`${eyebrow} text-slate-400 mb-1`}>{t.label}</p>
             <p className={`text-base font-extrabold tabular-nums tracking-tight ${t.tone}`}>
               {t.value}
@@ -155,15 +204,21 @@ export default async function AdminUsersPage({
                   <th className={`${th} text-right`}>Invested</th>
                   <th className={`${th} text-right`}>Earned</th>
                   <th className={th}>Joined</th>
+                  <th className={th}>KYC</th>
                   <th className={th}>Status</th>
                   <th className={th}></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {rows.map((u) => (
-                  <tr
+                  <ClickableRow
                     key={u.id}
-                    className={u.locked_at ? "bg-red-50/40" : "hover:bg-slate-50/60 transition-colors"}
+                    href={`/admin/users/${u.id}`}
+                    className={
+                      u.locked_at
+                        ? "bg-red-50/40 hover:bg-red-50/70 transition-colors"
+                        : "hover:bg-slate-50/60 transition-colors"
+                    }
                   >
                     <td className={`${td} min-w-52`}>
                       <Link
@@ -198,6 +253,13 @@ export default async function AdminUsersPage({
                       </span>
                     </td>
 
+                    {/* Verification is a different axis to account status: a
+                        locked user can be verified, an active one need not be.
+                        Shown separately rather than merged into one badge. */}
+                    <td className={`${td} whitespace-nowrap`}>
+                      <KycBadge status={kycBy.get(u.id)} />
+                    </td>
+
                     <td className={`${td} whitespace-nowrap`}>
                       {u.role === "admin" ? (
                         <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-400 text-[#0d2137]">
@@ -214,15 +276,23 @@ export default async function AdminUsersPage({
                       )}
                     </td>
 
-                    <td className={`${td} whitespace-nowrap`}>
-                      <Link
-                        href={`/admin/users/${u.id}`}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                    {/* A chevron rather than a button: the whole row is the
+                        target now, and this is just the affordance saying so.
+                        It is narrow, so it stays on screen where the button
+                        did not. */}
+                    <td className={`${td} w-8 text-right text-slate-300`}>
+                      <svg
+                        className="inline h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                        aria-hidden="true"
                       >
-                        View
-                      </Link>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
                     </td>
-                  </tr>
+                  </ClickableRow>
                 ))}
               </tbody>
             </table>
@@ -231,7 +301,8 @@ export default async function AdminUsersPage({
       </Card>
 
       <p className="text-xs text-slate-400">
-        Showing up to 500 users, newest first. Locking and deletion are on each user&apos;s page.
+        Showing up to 500 users, newest first. Click a row to open the account — locking and
+        deletion are there.
       </p>
     </div>
   );

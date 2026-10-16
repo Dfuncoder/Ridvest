@@ -54,6 +54,7 @@ export default async function PayoutsPage() {
     { data: accounts },
     { data: withdrawals },
     { data: kyc },
+    { data: hasPin },
   ] = await Promise.all([
     supabase.rpc("my_available_balance"),
     supabase
@@ -71,6 +72,7 @@ export default async function PayoutsPage() {
       .eq("user_id", user.id)
       .order("requested_at", { ascending: false }),
     supabase.from("kyc_submissions").select("status").eq("user_id", user.id),
+    supabase.rpc("has_transaction_pin"),
   ]);
 
   const upcoming = (payouts ?? []).filter((p) => p.status === "scheduled");
@@ -114,6 +116,7 @@ export default async function PayoutsPage() {
             accounts={accounts ?? []}
             balance={Number(balance ?? 0)}
             kycStatus={kycStatus}
+            hasPin={Boolean(hasPin)}
           />
         </Card>
       </div>

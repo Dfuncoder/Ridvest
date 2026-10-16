@@ -22,8 +22,9 @@ import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ERRORS, DB_REASON_TO_ERROR, DYNAMIC_ERRORS } from "@/lib/errors";
+import { pinFieldError } from "@/lib/pin";
 import { fmtNaira } from "@/lib/format";
-import { InvestSchema, CreatePoolSchema, JoinByInviteSchema, fieldErrors } from "@/lib/validation";
+import { InvestSchema, CreatePoolSchema, JoinByInviteSchema, PinSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,10 +41,16 @@ export async function joinPool(_prev: FormState, formData: FormData): Promise<Fo
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
+  // Shape-checked here only so an empty box reads as "enter your PIN" rather
+  // than "wrong PIN". Whether it is the RIGHT PIN is decided in SQL.
+  const pin = PinSchema.safeParse(formData.get("pin"));
+  if (!pin.success) return { errors: { pin: ERRORS.PIN_REQUIRED } };
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("join_pool_from_balance", {
     p_pool_id: parsed.data.poolId,
     p_amount: parsed.data.amount,
+    p_pin: pin.data,
   });
 
   if (error) {
@@ -60,6 +67,11 @@ export async function joinPool(_prev: FormState, formData: FormData): Promise<Fo
   } | null;
 
   if (!result?.ok) {
+    // A PIN problem belongs on the PIN box, with the countdown, not as a
+    // banner the user has to work out the cause of.
+    const pinError = pinFieldError(result);
+    if (pinError) return { errors: { pin: pinError } };
+
     // Every one of these means a number the page is showing has gone out of
     // date while it sat open — somebody else took part of the pool, or all of
     // it, or the balance moved. Refresh the figures along with the error,

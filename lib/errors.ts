@@ -42,6 +42,10 @@ export const ERRORS = {
   AUTH_NOT_LOGGED_IN: "Please log in to continue.",
   AUTH_NOT_ADMIN: "You don't have permission to access that page.",
   AUTH_RATE_LIMITED: "Too many attempts. Please wait a moment and try again.",
+  LOGIN_CODE_SENT: "We've emailed you a 6-digit code. It expires in 10 minutes.",
+  LOGIN_CODE_SEND_FAILED:
+    "We couldn't send your login code. Please try again in a moment.",
+  LOGIN_CHALLENGE_EXPIRED: "That took too long. Please enter your email and password again.",
   ACCOUNT_LOCKED:
     "This account has been locked. Please contact support@rydvest.com if you think this is a mistake.",
 
@@ -72,6 +76,9 @@ export const ERRORS = {
   POOL_JUST_FILLED: "This pool just filled up. Pick another one below.",
   POOL_INVALID_AMOUNT: "Please enter a valid amount.",
   POOL_CREATE_FAILED: "Couldn't create your pool. Please try again.",
+  POOL_NAME_INVALID: "Give your pool a name between 3 and 80 characters.",
+  POOL_NAME_RESERVED:
+    "Pick a different name — it can't include Rydvest, Official, Admin, Support or Verified.",
   POOL_ALREADY_OPEN:
     "You already have a pool that hasn't filled up yet. Once it's fully funded and running, you can create another one.",
   POOL_PRODUCT_INACTIVE: "This investment option is currently unavailable.",
@@ -112,12 +119,22 @@ export const ERRORS = {
   KYC_CAMERA_NOT_READY: "The camera hasn't finished starting. Give it a second and try again.",
   KYC_PHOTO_FAILED: "That photo didn't save. Please take it again.",
   KYC_ALREADY_PENDING: "Your details are already with us. We'll email you when they've been checked.",
-  KYC_CHECKING:
-    "We're checking your NIN now. This usually takes a few minutes — we'll email you as soon as it's done.",
   KYC_ALREADY_APPROVED: "Your identity is already verified.",
   KYC_SUBMIT_FAILED: "Couldn't submit your details. Please try again.",
   KYC_REQUIRED:
     "Verify your identity before you can withdraw. Go to Verification to submit your details.",
+
+  // ── Transaction PIN ───────────────────────────────────────────────────────
+  PIN_INVALID: "Your PIN must be 4 digits.",
+  PIN_TOO_SIMPLE: "Pick a less obvious PIN — not 1234, 0000 or four of the same digit.",
+  PIN_MISMATCH: "The two PINs don't match.",
+  PIN_CURRENT_WRONG: "That's not your current PIN.",
+  PIN_NOT_SET: "Set up your transaction PIN first.",
+  PIN_WRONG: "Wrong PIN.",
+  PIN_LOCKED: "Too many wrong tries. Your PIN is locked for a short while.",
+  PIN_REQUIRED: "Enter your 4-digit PIN to continue.",
+  PIN_SET_FAILED: "Couldn't save your PIN. Please try again.",
+  PIN_PASSWORD_WRONG: "That password is not correct.",
 
   // ── Sending to another account ────────────────────────────────────────────
   TRANSFER_CODE_INVALID: "That doesn't look like an account ID. They start with RYD.",
@@ -134,6 +151,8 @@ export const ERRORS = {
 
   // ── Admin ─────────────────────────────────────────────────────────────────
   ADMIN_PRODUCT_INVALID: "Please fill in all product fields with valid values.",
+  ADMIN_BREAKDOWN_MISMATCH:
+    "The cost breakdown must add up to the pool price exactly.",
   ADMIN_ACTION_FAILED: "That action failed. Please try again.",
   DEPOSIT_NARRATION_REQUIRED: "Add the narration from the bank alert — it goes on the user's receipt.",
   ADMIN_USER_NOT_FOUND: "User not found.",
@@ -180,6 +199,10 @@ export const DYNAMIC_ERRORS = {
   /** The floor this pool asks for per person. `minimum` is already formatted. */
   POOL_MINIMUM: (minimum: string) => `This pool takes ${minimum} or more per person.`,
 
+  /** How many tries are left before the PIN locks. */
+  PIN_ATTEMPTS_LEFT: (left: number) =>
+    left === 1 ? "Wrong PIN. One more try before it locks." : `Wrong PIN. ${left} tries left.`,
+
   /** Transfer limits. Each figure is already formatted. */
   TRANSFER_MINIMUM: (minimum: string) => `The smallest you can send is ${minimum}.`,
   TRANSFER_MAXIMUM: (maximum: string) => `The most you can send at once is ${maximum}.`,
@@ -195,6 +218,12 @@ export const DB_REASON_TO_ERROR: Record<string, string> = {
   not_authenticated: ERRORS.AUTH_NOT_LOGGED_IN,
   account_locked: ERRORS.ACCOUNT_LOCKED,
   kyc_required: ERRORS.KYC_REQUIRED,
+  pin_not_set: ERRORS.PIN_NOT_SET,
+  pin_wrong: ERRORS.PIN_WRONG,
+  pin_locked: ERRORS.PIN_LOCKED,
+  pin_invalid: ERRORS.PIN_INVALID,
+  pin_too_simple: ERRORS.PIN_TOO_SIMPLE,
+  current_pin_wrong: ERRORS.PIN_CURRENT_WRONG,
   invalid_code: ERRORS.TRANSFER_CODE_INVALID,
   recipient_not_found: ERRORS.TRANSFER_RECIPIENT_NOT_FOUND,
   self_transfer: ERRORS.TRANSFER_TO_SELF,

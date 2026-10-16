@@ -15,6 +15,7 @@ import { requireUser, getProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AddAccountForm } from "@/components/dashboard/forms";
 import { CodeCard } from "@/components/dashboard/ProfileDetails";
+import PinSetup from "@/components/dashboard/PinSetup";
 import { deleteWithdrawalAccount, listBanks } from "@/app/actions/account";
 import { fmtDate } from "@/lib/format";
 
@@ -59,13 +60,14 @@ export default async function ProfilePage() {
   if (!profile) return null;
 
   const supabase = await createSupabaseServerClient();
-  const [{ data: accounts }, { data: kyc }, banks] = await Promise.all([
+  const [{ data: accounts }, { data: kyc }, { data: hasPin }, banks] = await Promise.all([
     supabase
       .from("withdrawal_accounts")
       .select("id, bank_name, account_number, account_name, name_verified, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
     supabase.from("kyc_submissions").select("status").eq("user_id", user.id),
+    supabase.rpc("has_transaction_pin"),
     listBanks(),
   ]);
 
@@ -109,7 +111,7 @@ export default async function ProfilePage() {
               {kycStatus === "approved"
                 ? "Verified"
                 : kycStatus === "pending"
-                  ? "Being checked"
+                  ? "Submitted"
                   : "Not verified yet"}
             </p>
           </div>
@@ -128,6 +130,17 @@ export default async function ProfilePage() {
       </div>
 
       <CodeCard code={profile.user_code ?? ""} />
+
+      {/* ── TRANSACTION PIN ── */}
+      <Card className="overflow-hidden">
+        <SectionHead title="Transaction PIN" />
+        <div className="p-5">
+          <p className="mb-4 text-xs leading-relaxed text-slate-500">
+            Required every time you withdraw, join a pool or send money.
+          </p>
+          <PinSetup hasPin={Boolean(hasPin)} />
+        </div>
+      </Card>
 
       {/* ── THE RECORD ── */}
       <Card className="overflow-hidden">

@@ -30,7 +30,7 @@ export default async function VerifyPage() {
   // RLS limits this to the user's own rows.
   const { data: submissions } = await supabase
     .from("kyc_submissions")
-    .select("id, id_type, id_number_last4, status, admin_note, created_at, reviewed_at, lookup_status")
+    .select("id, id_type, id_number_last4, status, admin_note, created_at, reviewed_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 

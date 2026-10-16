@@ -157,7 +157,7 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
 
   return {
     success: true,
-    message: ERRORS.KYC_CHECKING,
+    message: "Sent. We'll email you as soon as your identity has been confirmed.",
   };
 }
 

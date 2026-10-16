@@ -20,6 +20,7 @@ import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
 import { parseEmailList } from "@/lib/settings";
 import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
 import { fmtNaira } from "@/lib/format";
+import { totalPackage } from "@/lib/economics";
 import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { decryptSecret } from "@/lib/crypto";
@@ -48,10 +49,39 @@ export async function createProduct(_prev: FormState, formData: FormData): Promi
     durationWeeks: formData.get("durationWeeks"),
     roiPercent: formData.get("roiPercent"),
     imagePath: formData.get("imagePath") ?? "",
+    availability: formData.get("availability") ?? "both",
+    privateMinContribution: formData.get("privateMinContribution") ?? "",
+    assetValue: formData.get("assetValue") ?? 0,
+    vat: formData.get("vat") ?? 0,
+    serviceCharge: formData.get("serviceCharge") ?? 0,
+    maintenanceFee: formData.get("maintenanceFee") ?? 0,
+    companyCharge: formData.get("companyCharge") ?? 0,
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
   if (parsed.data.minContribution > parsed.data.targetAmount) {
     return { errors: { minContribution: ERRORS.ADMIN_PRODUCT_INVALID } };
+  }
+
+  // The breakdown is all-or-nothing, and when given it has to equal the pool
+  // price. The database enforces this too; failing here just means the admin
+  // is told which number is wrong instead of seeing a constraint error.
+  const parts = {
+    assetValue: parsed.data.assetValue,
+    vat: parsed.data.vat,
+    serviceCharge: parsed.data.serviceCharge,
+    maintenanceFee: parsed.data.maintenanceFee,
+    companyCharge: parsed.data.companyCharge,
+  };
+  const itemised = Object.values(parts).some((v) => v > 0);
+  if (itemised && totalPackage(parts) !== parsed.data.targetAmount) {
+    return { errors: { assetValue: ERRORS.ADMIN_BREAKDOWN_MISMATCH } };
+  }
+
+  if (
+    parsed.data.privateMinContribution !== null &&
+    parsed.data.privateMinContribution > parsed.data.targetAmount
+  ) {
+    return { errors: { privateMinContribution: ERRORS.ADMIN_PRODUCT_INVALID } };
   }
 
   const admin = createSupabaseAdminClient();
@@ -66,6 +96,13 @@ export async function createProduct(_prev: FormState, formData: FormData): Promi
       roi_percent: parsed.data.roiPercent,
       // Empty means the card works the image out from the name instead.
       image_path: parsed.data.imagePath || null,
+      availability: parsed.data.availability,
+      private_min_contribution: parsed.data.privateMinContribution,
+      asset_value: itemised ? parts.assetValue : null,
+      vat: itemised ? parts.vat : null,
+      service_charge: itemised ? parts.serviceCharge : null,
+      maintenance_fee: itemised ? parts.maintenanceFee : null,
+      company_charge: itemised ? parts.companyCharge : null,
       created_by: user.id,
     })
     .select("id")

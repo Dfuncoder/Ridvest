@@ -8,6 +8,8 @@ import { useActionState, useState } from "react";
 import Image from "next/image";
 import { createProduct } from "@/app/actions/admin";
 import { VEHICLES } from "@/lib/vehicles";
+import { PRIVATE_POOL_MINIMUM } from "@/lib/economics";
+import { fmtNaira } from "@/lib/format";
 import type { FormState } from "@/app/actions/auth";
 
 const input =
@@ -22,6 +24,20 @@ function FieldErr({ msg }: { msg?: string }) {
 export default function ProductForm() {
   const [state, formAction, pending] = useActionState<FormState, FormData>(createProduct, undefined);
   const [picked, setPicked] = useState("");
+  const [availability, setAvailability] = useState("both");
+  const [targetAmount, setTargetAmount] = useState("");
+  const [parts, setParts] = useState<Record<string, string>>({
+    assetValue: "",
+    vat: "",
+    serviceCharge: "",
+    maintenanceFee: "",
+    companyCharge: "",
+  });
+
+  const breakdownTotal = Object.values(parts).reduce((s, v) => s + (Number(v) || 0), 0);
+  // "Itemised" means at least one part was entered. The server and the
+  // database both require all five to reconcile once that is true.
+  const itemised = breakdownTotal > 0;
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
@@ -94,10 +110,103 @@ export default function ProductForm() {
         <FieldErr msg={state?.errors?.imagePath} />
       </div>
 
+      {/* Which kind of pool this option is for. Without this every option
+          showed up in both places, and a public option with a ₦50,000 minimum
+          would appear when a user went to start a private pool. */}
+      <div>
+        <span className={label}>Available for</span>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { value: "both", title: "Both", hint: "Either kind" },
+            { value: "public", title: "Official only", hint: "Admin opens it" },
+            { value: "private", title: "Private only", hint: "Users start it" },
+          ].map((o) => (
+            <label
+              key={o.value}
+              className={`cursor-pointer rounded-xl border-2 px-3 py-2.5 text-center transition-colors ${
+                availability === o.value
+                  ? "border-amber-400 bg-amber-50"
+                  : "border-slate-200 bg-slate-50 hover:border-slate-300"
+              }`}
+            >
+              <input
+                type="radio"
+                name="availability"
+                value={o.value}
+                checked={availability === o.value}
+                onChange={() => setAvailability(o.value)}
+                className="sr-only"
+              />
+              <span className="block text-[11px] font-bold text-slate-700">{o.title}</span>
+              <span className="block text-[10px] text-slate-400">{o.hint}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* ── WHAT THE MONEY BUYS ──
+          Investors see this on the pool page. The five parts must add up to
+          the pool price, so the price is computed here rather than typed —
+          a breakdown that does not reconcile is worse than none at all. */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5">
+        <span className={label}>Cost breakdown (optional)</span>
+        <div className="grid grid-cols-2 gap-2.5">
+          {[
+            { key: "assetValue", label: "Asset value" },
+            { key: "vat", label: "VAT" },
+            { key: "serviceCharge", label: "Service charge" },
+            { key: "maintenanceFee", label: "Maintenance fee" },
+            { key: "companyCharge", label: "Company's charge" },
+          ].map((f) => (
+            <div key={f.key}>
+              <label htmlFor={`pp-${f.key}`} className="mb-1 block text-[10px] font-bold text-slate-500">
+                {f.label} (₦)
+              </label>
+              <input
+                id={`pp-${f.key}`}
+                name={f.key}
+                type="number"
+                min={0}
+                step="0.01"
+                value={parts[f.key] ?? ""}
+                onChange={(e) => setParts({ ...parts, [f.key]: e.target.value })}
+                placeholder="0"
+                className={input}
+              />
+            </div>
+          ))}
+          <div>
+            <span className="mb-1 block text-[10px] font-bold text-slate-500">Total package</span>
+            <p className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-extrabold tabular-nums text-slate-900">
+              {fmtNaira(breakdownTotal)}
+            </p>
+          </div>
+        </div>
+        <FieldErr msg={state?.errors?.assetValue} />
+        <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
+          Leave these at zero to skip the breakdown. When filled in, the total becomes the pool
+          price and investors see each line on the pool page.
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="pp-target" className={label}>Pool price (₦)</label>
-          <input id="pp-target" name="targetAmount" type="number" min={1} step="0.01" required placeholder="2500000" className={input} />
+          <input
+            id="pp-target"
+            name="targetAmount"
+            type="number"
+            min={1}
+            step="0.01"
+            required
+            placeholder="2500000"
+            // Driven by the breakdown when there is one, so the two can never
+            // disagree; typed directly when there is not.
+            value={itemised ? String(breakdownTotal) : targetAmount}
+            onChange={(e) => setTargetAmount(e.target.value)}
+            readOnly={itemised}
+            className={`${input} ${itemised ? "bg-slate-100 text-slate-500" : ""}`}
+          />
           <FieldErr msg={state?.errors?.targetAmount} />
         </div>
         <div>
@@ -106,6 +215,28 @@ export default function ProductForm() {
           <FieldErr msg={state?.errors?.minContribution} />
         </div>
       </div>
+
+      {availability !== "public" && (
+        <div>
+          <label htmlFor="pp-privmin" className={label}>
+            Min contribution in a private pool (₦)
+          </label>
+          <input
+            id="pp-privmin"
+            name="privateMinContribution"
+            type="number"
+            min={1}
+            step="0.01"
+            placeholder={`Leave blank for ${fmtNaira(PRIVATE_POOL_MINIMUM)}`}
+            className={input}
+          />
+          <FieldErr msg={state?.errors?.privateMinContribution} />
+          <p className="mt-1 text-[10px] text-slate-400">
+            A private pool is a few people filling one vehicle, so the slices are bigger. Blank
+            uses the standard {fmtNaira(PRIVATE_POOL_MINIMUM)} floor.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>

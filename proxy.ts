@@ -24,7 +24,9 @@ import {
 } from "@/lib/maintenance";
 
 // Pages a logged-in user shouldn't see again.
-const AUTH_PAGES = ["/login", "/register", "/forgot-password"];
+// /verify-login is here too: somebody already signed in has no business on
+// the code step, and AUTH_PAGES is also what needsSession() keys off.
+const AUTH_PAGES = ["/login", "/register", "/forgot-password", "/verify-login"];
 
 /** Routes where a session actually matters. Everything else skips the work. */
 function needsSession(path: string): boolean {
