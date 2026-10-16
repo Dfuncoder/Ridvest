@@ -40,7 +40,7 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-2.5 border-b border-slate-100 last:border-0">
       <dt className={`${eyebrow} text-slate-400 shrink-0`}>{label}</dt>
-      <dd className="text-sm font-semibold text-slate-900 text-right break-words min-w-0">
+      <dd className="text-sm font-semibold text-slate-900 text-right wrap-break-word min-w-0">
         {value || <span className="text-slate-300">—</span>}
       </dd>
     </div>
@@ -72,6 +72,7 @@ export default async function AdminUserDetailPage({
     { data: withdrawals },
     { data: balance },
     { data: locker },
+    { data: kycRows },
     { data: transfersOut },
     { data: transfersIn },
   ] = await Promise.all([
@@ -105,6 +106,14 @@ export default async function AdminUserDetailPage({
     // its constraint. And .eq() rather than one .or(): .or() takes a filter
     // string, so the id would be interpolated into it, and a crafted route
     // param could append filters of its own.
+    admin
+      .from("kyc_submissions")
+      .select(
+        "id, status, id_number_last4, created_at, reviewed_at, lookup_status, " +
+          "reviewer:profiles!kyc_submissions_reviewed_by_fkey(full_name)"
+      )
+      .eq("user_id", id)
+      .order("created_at", { ascending: false }),
     admin
       .from("transfers")
       .select(TRANSFER_SELECT)
@@ -156,6 +165,40 @@ export default async function AdminUserDetailPage({
 
   const sentTotal = sentRows.reduce((s, t) => s + Number(t.amount), 0);
   const receivedTotal = receivedRows.reduce((s, t) => s + Number(t.amount), 0);
+
+  // The account-level verdict, not just the newest row: one approval anywhere
+  // is what has_approved_kyc() gates withdrawals on, so the badge has to agree
+  // with the permission rather than with whatever was submitted last.
+  type KycRow = {
+    id: string;
+    status: string;
+    id_number_last4: string;
+    created_at: string;
+    reviewed_at: string | null;
+    reviewer: { full_name: string | null } | null;
+  };
+  const kycAll = (kycRows ?? []) as unknown as KycRow[];
+  const approvedRow = kycAll.find((k) => k.status === "approved");
+  const latestRow = approvedRow ?? kycAll[0] ?? null;
+
+  const kyc = {
+    latest: latestRow,
+    reviewerName: latestRow?.reviewer?.full_name ?? null,
+    label: approvedRow
+      ? "Verified"
+      : kycAll.some((k) => k.status === "pending")
+        ? "Waiting"
+        : kycAll.length
+          ? "Rejected"
+          : "Not sent",
+    tone: approvedRow
+      ? "bg-green-500/10 text-green-600 border-green-500/20"
+      : kycAll.some((k) => k.status === "pending")
+        ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+        : kycAll.length
+          ? "bg-red-500/10 text-red-600 border-red-500/20"
+          : "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  };
 
   const recordCount =
     (investments ?? []).length +
@@ -258,6 +301,50 @@ export default async function AdminUserDetailPage({
             <Detail label="Joined" value={fmtDateTime(profile.created_at)} />
             <Detail label="Last active" value={fmtDateTime(profile.last_active_at)} />
           </dl>
+        </Card>
+
+        {/* ── IDENTITY ──
+            Whether this person may move money at all. It belongs on the page
+            where an admin decides to lock or delete an account, not only in
+            the list — this is where you look before acting on somebody. */}
+        <Card className="p-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-extrabold text-slate-900">Identity verification</h2>
+            <span
+              className={`${eyebrow} rounded-full border px-2.5 py-1 ${
+                kyc.tone
+              }`}
+            >
+              {kyc.label}
+            </span>
+          </div>
+
+          {kyc.latest ? (
+            <>
+              <dl>
+                <Detail label="NIN" value={`${"·".repeat(7)}${kyc.latest.id_number_last4}`} />
+                <Detail label="Submitted" value={fmtDateTime(kyc.latest.created_at)} />
+                {kyc.latest.reviewed_at && (
+                  <Detail label="Decided" value={fmtDateTime(kyc.latest.reviewed_at)} />
+                )}
+                {kyc.reviewerName && <Detail label="Decided by" value={kyc.reviewerName} />}
+                {(kycRows ?? []).length > 1 && (
+                  <Detail label="Attempts" value={String((kycRows ?? []).length)} />
+                )}
+              </dl>
+
+              <Link
+                href="/admin/kyc"
+                className="mt-4 inline-block rounded-lg bg-slate-100 px-3.5 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200"
+              >
+                Open the verification queue
+              </Link>
+            </>
+          ) : (
+            <p className="text-sm leading-relaxed text-slate-500">
+              This account has never submitted an NIN, so it cannot withdraw or send money.
+            </p>
+          )}
         </Card>
 
         {/* ── BANK ACCOUNTS ── */}

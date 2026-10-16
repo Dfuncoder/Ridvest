@@ -83,6 +83,7 @@ const navLinks = [
   { label: "Invest now", href: "/register" },
   { label: "Returns calculator", href: "/#calc" },
   { label: "About us", href: "/about" },
+  { label: "Our team", href: "/team" },
   { label: "Talk to us", href: "/contact" },
 ];
 

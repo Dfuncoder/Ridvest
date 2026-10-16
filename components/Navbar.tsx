@@ -20,6 +20,7 @@ export default function Navbar({ isLoggedIn = false }: { isLoggedIn?: boolean })
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About us", href: "/about" },
+    { label: "Team", href: "/team" },
     { label: "How it works", href: "/how-it-works" },
     { label: "Calculator", href: "/#calc" },
     { label: "Contact", href: "/contact" },
