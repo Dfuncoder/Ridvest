@@ -53,6 +53,13 @@ begin
     alter table public.kyc_submissions
       rename column id_number to id_number_plaintext_legacy;
 
+    -- RENAMING KEEPS THE COLUMN'S NOT NULL. Without this line every future
+    -- insert has to supply a plaintext NIN — which the app deliberately never
+    -- writes — so submissions fail with a not-null violation on a column
+    -- nobody is meant to use again.
+    alter table public.kyc_submissions
+      alter column id_number_plaintext_legacy drop not null;
+
     alter table public.kyc_submissions
       add column id_number_encrypted text,
       add column id_number_last4 text;
