@@ -149,6 +149,23 @@ export function PaymentSettingsForm({
       >
         <span className={label}>Account users transfer to</span>
 
+        {/* The bank list came back empty. WHY is a server-side matter and is
+            logged there — naming a provider or an environment variable on a
+            screen is plumbing nobody reads a settings page to find out. What
+            belongs here is what changes for the person using it: no dropdown,
+            no name check, so the number had better be right. */}
+        {lookupUnavailable && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+            <p className="text-xs leading-relaxed text-amber-800">
+              <span className="font-bold">Bank lookup is unavailable.</span> Type the bank and
+              account name by hand for now.
+            </p>
+            <p className="mt-1.5 text-[11px] text-amber-700/80">
+              Check the account number carefully — nothing is confirming it against the bank.
+            </p>
+          </div>
+        )}
+
         {lookupUnavailable ? (
           <div className="grid gap-4 sm:grid-cols-3">
             <div>

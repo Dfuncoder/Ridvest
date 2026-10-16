@@ -255,7 +255,6 @@ export default async function AdminKycPage({
                         .join(" ")}
                       nimcDob={s.lookup_dob}
                       profileName={user?.full_name ?? ""}
-                      error={s.lookup_error}
                       checkedAt={s.lookup_at}
                       submissionId={s.id}
                     />

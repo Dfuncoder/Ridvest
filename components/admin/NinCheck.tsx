@@ -60,7 +60,6 @@ export default function NinCheck({
   nimcName,
   nimcDob,
   profileName,
-  error,
   checkedAt,
   submissionId,
 }: {
@@ -68,7 +67,6 @@ export default function NinCheck({
   nimcName: string;
   nimcDob: string | null;
   profileName: string;
-  error: string | null;
   checkedAt: string | null;
   submissionId: string;
 }) {
@@ -150,10 +148,13 @@ export default function NinCheck({
         </p>
       )}
 
+      {/* The raw reason is kept on the row (lookup_error) for whoever is
+          debugging, but not printed here: it names a provider and its failure
+          modes, which is plumbing rather than anything to act on. What matters
+          on screen is that the submission is fine and the check can be rerun. */}
       {key === "failed" && (
         <p className="text-xs leading-relaxed text-amber-800">
-          {error ?? "The check did not complete."} Nothing is wrong with this submission — run it
-          again once the cause is fixed.
+          The check did not complete. Nothing is wrong with this submission — run it again.
         </p>
       )}
 

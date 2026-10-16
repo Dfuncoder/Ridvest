@@ -167,9 +167,9 @@ export const ERRORS = {
   ADMIN_KYC_ALREADY_REVIEWED: "Somebody has already decided this one.",
   ADMIN_KYC_REASON_REQUIRED: "Say why this is being rejected — the user is shown your reason.",
   ADMIN_KYC_DECRYPT_FAILED:
-    "Couldn't read that number. The KYC_ENCRYPTION_KEY may have changed since it was stored.",
+    "Couldn't read that number. It was stored with a key this server no longer has.",
   ADMIN_KYC_LOOKUP_FAILED:
-    "The NIN check didn't complete. Check the Monnify keys and wallet balance, then run it again.",
+    "The NIN check didn't complete. Nothing is wrong with the submission — try running it again.",
   ADMIN_KYC_LOOKUP_RUNNING: "That check is already running. Give it a moment.",
 
   // ── Contact form ──────────────────────────────────────────────────────────

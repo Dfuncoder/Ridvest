@@ -85,8 +85,23 @@ async function fetchToken(): Promise<string | null> {
   }
 }
 
+/** Logged once per process, not once per lookup — this would otherwise fill the log. */
+let warnedUnconfigured = false;
+
 async function token(): Promise<string | null> {
-  if (!monnifyConfigured()) return null;
+  if (!monnifyConfigured()) {
+    // The one place that knows WHY bank lookups and NIN checks are silently
+    // doing nothing. The screens just say the feature is unavailable; the
+    // reason belongs here, where whoever can fix it is looking.
+    if (!warnedUnconfigured) {
+      warnedUnconfigured = true;
+      console.error(
+        "[monnify] MONNIFY_API_KEY and/or MONNIFY_SECRET_KEY are not set in this environment — " +
+          "bank dropdowns, account-name checks and NIN verification are all disabled."
+      );
+    }
+    return null;
+  }
   if (cachedToken && cachedToken.expiresAt > Date.now()) return cachedToken.value;
 
   if (!inFlight) {
