@@ -15,6 +15,7 @@
 import { useActionState } from "react";
 import { recheckKycNin } from "@/app/actions/admin";
 import { fmtDateTime } from "@/lib/format";
+import { lookupIsStale } from "@/lib/kyc";
 import type { FormState } from "@/app/actions/auth";
 
 type Status = "none" | "checking" | "matched" | "mismatch" | "not_found" | "failed";
@@ -75,7 +76,12 @@ export default function NinCheck({
 
   const key = (status in TONE ? status : "none") as Status;
   const tone = TONE[key];
-  const rerunnable = key === "failed" || key === "none";
+
+  // A check that has been "running" for longer than a lookup could possibly
+  // take did not survive the request that started it. Offering the re-run is
+  // the only way back — without this a stuck row is unrecoverable from the UI.
+  const stuck = key === "checking" && lookupIsStale(checkedAt);
+  const rerunnable = key === "failed" || key === "none" || stuck;
 
   return (
     <div className={`rounded-xl border px-4 py-3.5 ${tone.box}`}>
@@ -86,9 +92,16 @@ export default function NinCheck({
         </span>
       </div>
 
-      {key === "checking" && (
+      {key === "checking" && !stuck && (
         <p className="text-xs leading-relaxed text-slate-600">
-          Running now. It usually takes a few minutes — reload to see the result.
+          Running now — it takes a few seconds. Reload to see the result.
+        </p>
+      )}
+
+      {stuck && (
+        <p className="text-xs leading-relaxed text-amber-800">
+          This check started a while ago and never finished, so it is not coming back. Nothing is
+          wrong with the submission — run it again.
         </p>
       )}
 
@@ -135,8 +148,10 @@ export default function NinCheck({
         </p>
       )}
 
-      {checkedAt && key !== "checking" && (
-        <p className="mt-2 text-[10px] text-slate-400">Checked {fmtDateTime(checkedAt)}</p>
+      {checkedAt && (key !== "checking" || stuck) && (
+        <p className="mt-2 text-[10px] text-slate-400">
+          {stuck ? "Started" : "Checked"} {fmtDateTime(checkedAt)}
+        </p>
       )}
 
       {rerunnable && (

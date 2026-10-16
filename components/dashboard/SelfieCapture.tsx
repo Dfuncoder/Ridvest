@@ -1,15 +1,29 @@
 "use client";
 
 /**
- * IDENTITY VERIFICATION FORM — the ID number plus a photo taken here, now.
+ * IDENTITY VERIFICATION FORM — the NIN plus a photo taken here, now.
  *
  * The photo is captured from the camera rather than chosen from storage: a
  * file picker would let somebody send a saved picture of another person. There
  * is deliberately no upload fallback.
  *
- * Captured frames are drawn to a canvas, scaled to SELFIE_WIDTH and encoded as
- * JPEG, which keeps the submission comfortably inside the Server Action body
- * limit without the user having to think about file sizes.
+ * ── WHY THE VIDEO ELEMENT IS ALWAYS MOUNTED ──────────────────────────────
+ * It used to be rendered only while the stage was "live", with the stream
+ * attached inside a requestAnimationFrame after setStage. That frame can run
+ * BEFORE React commits the DOM, so videoRef.current was still null, the
+ * attach silently did nothing, and the preview stayed black for good — no
+ * error, no way back. That is the blank-camera bug.
+ *
+ * Now the <video> is in the DOM from first render (hidden with opacity, not
+ * unmounted) so the ref is always valid, and the stream is attached in an
+ * effect that by definition runs after commit. Nothing depends on timing.
+ *
+ * ── WHY getUserMedia FAILS, AND WHAT WE SAY ──────────────────────────────
+ * Every branch below reports something the user can act on, because "it didn't
+ * work" on a camera is almost always one of four fixable things: the page is
+ * not on https, permission was denied, another app holds the camera, or the
+ * requested resolution is not available. The last one gets a second attempt
+ * with no constraints at all before we give up.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { submitKyc } from "@/app/actions/kyc";
@@ -26,66 +40,127 @@ const label = "block text-xs font-bold text-slate-700 mb-1.5";
 
 type Stage = "idle" | "starting" | "live" | "captured";
 
+/** Turns a getUserMedia rejection into something the user can do about it. */
+function cameraMessage(err: unknown): string {
+  const name = err instanceof Error ? err.name : "";
+  switch (name) {
+    case "NotAllowedError":
+    case "SecurityError":
+      return ERRORS.KYC_CAMERA_BLOCKED;
+    case "NotFoundError":
+    case "DevicesNotFoundError":
+      return ERRORS.KYC_CAMERA_MISSING;
+    case "NotReadableError":
+    case "TrackStartError":
+    case "AbortError":
+      return ERRORS.KYC_CAMERA_IN_USE;
+    default:
+      return ERRORS.KYC_CAMERA_BLOCKED;
+  }
+}
+
 export default function SelfieCapture() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const [stage, setStage] = useState<Stage>("idle");
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  /** The exact failure, shown small — it is what makes a report diagnosable. */
+  const [detail, setDetail] = useState<string | null>(null);
   const [shot, setShot] = useState<{ blob: Blob; url: string } | null>(null);
 
   const [state, setState] = useState<FormState>(undefined);
   const [pending, setPending] = useState(false);
 
-  // ── Camera lifecycle ─────────────────────────────────────────────────────
-  const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-  }, []);
+  // ── Attach the stream, after the DOM exists ──────────────────────────────
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !stream) return;
 
-  // Release the camera if the user navigates away mid-flow, so the recording
-  // indicator does not stay lit.
-  useEffect(() => stopCamera, [stopCamera]);
+    video.srcObject = stream;
 
-  const startCamera = useCallback(async () => {
+    // play() is a promise and it does reject — muted autoplay is usually
+    // allowed, but not on every Android browser. A swallowed rejection here
+    // was the second way this could end up as a black box.
+    void video.play().catch((err: unknown) => {
+      setCameraError(ERRORS.KYC_CAMERA_BLOCKED);
+      setDetail(err instanceof Error ? `play(): ${err.name}` : "play() was refused");
+    });
+
+    return () => {
+      video.srcObject = null;
+    };
+  }, [stream]);
+
+  // ── Let the camera go when we are done with it or the user leaves ────────
+  useEffect(() => {
+    if (!stream) return;
+    return () => stream.getTracks().forEach((t) => t.stop());
+  }, [stream]);
+
+  const stopCamera = useCallback(() => setStream(null), []);
+
+  async function startCamera() {
     setCameraError(null);
+    setDetail(null);
     setStage("starting");
 
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError(ERRORS.KYC_CAMERA_MISSING);
+    // getUserMedia only exists in a secure context. On plain http over a LAN
+    // address the whole API is simply missing, which otherwise reads as "no
+    // camera on this device" and sends people looking for the wrong problem.
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setCameraError(ERRORS.KYC_CAMERA_INSECURE);
+      setDetail(`page is on ${window.location.protocol}//`);
       setStage("idle");
       return;
     }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      setStage("live");
-      // The video element only exists once the stage is "live", so attach on
-      // the next frame rather than to a ref that is still null.
-      requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play().catch(() => {});
-        }
-      });
-    } catch (err) {
-      const name = err instanceof Error ? err.name : "";
-      setCameraError(
-        name === "NotFoundError" || name === "OverconstrainedError"
-          ? ERRORS.KYC_CAMERA_MISSING
-          : ERRORS.KYC_CAMERA_BLOCKED
-      );
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(ERRORS.KYC_CAMERA_INSECURE);
+      setDetail("navigator.mediaDevices is unavailable");
       setStage("idle");
+      return;
     }
-  }, []);
+
+    // Ask for a front camera at a useful size; if the device cannot give
+    // exactly that, take whatever camera it has rather than failing.
+    const attempts: MediaStreamConstraints[] = [
+      { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false },
+      { video: { facingMode: "user" }, audio: false },
+      { video: true, audio: false },
+    ];
+
+    let lastError: unknown = null;
+    for (const constraints of attempts) {
+      try {
+        const next = await navigator.mediaDevices.getUserMedia(constraints);
+        setStream(next);
+        setStage("live");
+        return;
+      } catch (err) {
+        lastError = err;
+        const name = err instanceof Error ? err.name : "";
+        // A refused permission will not change with looser constraints.
+        if (name === "NotAllowedError" || name === "SecurityError") break;
+      }
+    }
+
+    setCameraError(cameraMessage(lastError));
+    setDetail(lastError instanceof Error ? `${lastError.name}: ${lastError.message}` : null);
+    setStage("idle");
+  }
 
   function capture() {
     const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
+
+    // videoWidth is 0 until metadata arrives. Tapping before then used to do
+    // nothing at all; now it says so.
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setCameraError(ERRORS.KYC_CAMERA_NOT_READY);
+      return;
+    }
+
+    setCameraError(null);
 
     const scale = SELFIE_WIDTH / video.videoWidth;
     const canvas = document.createElement("canvas");
@@ -93,14 +168,25 @@ export default function SelfieCapture() {
     canvas.height = Math.round(video.videoHeight * scale);
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      setCameraError(ERRORS.KYC_PHOTO_FAILED);
+      setDetail("no 2d canvas context");
+      return;
+    }
+
     // The preview is mirrored so it feels like a mirror; the stored photo is
     // drawn unmirrored, the way whoever reviews it expects to see a face.
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(
       (blob) => {
-        if (!blob) return;
+        if (!blob) {
+          // Used to return silently, which left the submit button disabled
+          // with nothing on screen explaining why.
+          setCameraError(ERRORS.KYC_PHOTO_FAILED);
+          setDetail("canvas.toBlob returned nothing");
+          return;
+        }
         setShot((prev) => {
           if (prev) URL.revokeObjectURL(prev.url);
           return { blob, url: URL.createObjectURL(blob) };
@@ -145,8 +231,6 @@ export default function SelfieCapture() {
     }
   }
 
-  // On success the page re-renders into the pending state and this form goes
-  // away — this covers the moment before that lands.
   if (state?.success) {
     return (
       <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3.5">
@@ -154,6 +238,8 @@ export default function SelfieCapture() {
       </p>
     );
   }
+
+  const live = stage === "live";
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
@@ -206,20 +292,24 @@ export default function SelfieCapture() {
         </div>
 
         <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl bg-slate-900 grid place-items-center">
-          {stage === "live" && (
-            <>
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                autoPlay
-                className="absolute inset-0 h-full w-full object-cover scale-x-[-1]"
-              />
-              {/* A soft oval to line the face up with. */}
-              <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                <div className="h-[78%] aspect-3/4 rounded-[50%] border-2 border-white/50" />
-              </div>
-            </>
+          {/* Always mounted, never conditionally rendered — see the note at the
+              top of this file. Hidden with opacity when there is nothing to
+              show, so the ref is valid from the very first render. */}
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            className={`absolute inset-0 h-full w-full object-cover scale-x-[-1] transition-opacity duration-200 ${
+              live ? "opacity-100" : "opacity-0"
+            }`}
+          />
+
+          {live && (
+            /* A soft oval to line the face up with. */
+            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+              <div className="h-[78%] aspect-3/4 rounded-[50%] border-2 border-white/50" />
+            </div>
           )}
 
           {stage === "captured" && shot && (
@@ -232,7 +322,7 @@ export default function SelfieCapture() {
           )}
 
           {(stage === "idle" || stage === "starting") && (
-            <div className="px-6 text-center">
+            <div className="relative px-6 text-center">
               <svg
                 className="mx-auto mb-3 h-10 w-10 text-slate-600"
                 fill="none"
@@ -261,9 +351,10 @@ export default function SelfieCapture() {
         </div>
 
         {cameraError && (
-          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3.5 py-2.5">
-            {cameraError}
-          </p>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5">
+            <p className="text-xs text-red-600">{cameraError}</p>
+            {detail && <p className="mt-1 font-mono text-[10px] text-red-400">{detail}</p>}
+          </div>
         )}
         {state?.errors?.selfie && <p className="text-[11px] text-red-600">{state.errors.selfie}</p>}
 
@@ -276,7 +367,7 @@ export default function SelfieCapture() {
           >
             {stage === "starting" ? "Opening camera..." : "Open camera"}
           </button>
-        ) : stage === "live" ? (
+        ) : live ? (
           <button
             type="button"
             onClick={capture}

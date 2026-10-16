@@ -24,6 +24,7 @@ import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/re
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { decryptSecret } from "@/lib/crypto";
 import { runNinLookup } from "./kyc";
+import { lookupIsStale } from "@/lib/kyc";
 import { PoolProductSchema, PaymentSettingsSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
@@ -1052,13 +1053,20 @@ export async function recheckKycNin(_prev: FormState, formData: FormData): Promi
   const { data } = await admin
     .from("kyc_submissions")
     .select(
-      "id, user_id, id_number_encrypted, lookup_status, profiles!kyc_submissions_user_id_fkey(full_name)"
+      "id, user_id, id_number_encrypted, lookup_status, lookup_at, profiles!kyc_submissions_user_id_fkey(full_name)"
     )
     .eq("id", submissionId)
     .maybeSingle();
 
   if (!data) return { message: ERRORS.ADMIN_KYC_NOT_FOUND };
-  if (data.lookup_status === "checking") return { message: ERRORS.ADMIN_KYC_LOOKUP_RUNNING };
+
+  // A check in flight is left alone — but only while it is plausibly still
+  // running. If the request that started it died (a deploy mid-flight, a cold
+  // start killed), the row would otherwise sit at 'checking' forever with
+  // nothing able to move it.
+  if (data.lookup_status === "checking" && !lookupIsStale(data.lookup_at)) {
+    return { message: ERRORS.ADMIN_KYC_LOOKUP_RUNNING };
+  }
 
   let nin: string;
   try {
@@ -1070,7 +1078,11 @@ export async function recheckKycNin(_prev: FormState, formData: FormData): Promi
 
   await admin
     .from("kyc_submissions")
-    .update({ lookup_status: "checking", lookup_error: null })
+    .update({
+      lookup_status: "checking",
+      lookup_error: null,
+      lookup_at: new Date().toISOString(),
+    })
     .eq("id", submissionId);
 
   const profile = data.profiles as unknown as { full_name: string | null } | null;

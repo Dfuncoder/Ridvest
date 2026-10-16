@@ -12,8 +12,17 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Don't leak full URLs to other origins.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // We don't use these browser features at all.
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // The camera is allowed to OUR OWN pages and nowhere else — KYC takes a
+  // selfie at /dashboard/verify.
+  //
+  // ⚠ This read `camera=()` until identity verification was added. An empty
+  //   allowlist denies the camera to every origin INCLUDING this one, so
+  //   getUserMedia was rejected on every device before the browser even asked
+  //   the user for permission. `(self)` is what makes the capture possible.
+  //   Do not shorten it back to `()`.
+  //
+  // Microphone and geolocation stay fully denied: nothing here uses them.
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
   // Force HTTPS for two years once visited over HTTPS (Vercel serves HTTPS).
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];

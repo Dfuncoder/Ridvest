@@ -105,6 +105,12 @@ export const ERRORS = {
   KYC_CAMERA_BLOCKED:
     "We can't reach your camera. Allow camera access in your browser settings, then reload this page.",
   KYC_CAMERA_MISSING: "We couldn't find a camera on this device. Try again on your phone.",
+  KYC_CAMERA_INSECURE:
+    "Your browser only allows the camera on a secure page. Open this site with https:// and try again.",
+  KYC_CAMERA_IN_USE:
+    "Another app is already using your camera. Close it, then tap Open camera again.",
+  KYC_CAMERA_NOT_READY: "The camera hasn't finished starting. Give it a second and try again.",
+  KYC_PHOTO_FAILED: "That photo didn't save. Please take it again.",
   KYC_ALREADY_PENDING: "Your details are already with us. We'll email you when they've been checked.",
   KYC_CHECKING:
     "We're checking your NIN now. This usually takes a few minutes — we'll email you as soon as it's done.",

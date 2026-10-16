@@ -119,7 +119,10 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
       id_number_last4: idNumber.slice(-4),
       selfie_path: path,
       // The NIMC lookup starts as soon as the response is on its way.
+      // lookup_at marks when it STARTED, so a check that never finishes can
+      // be spotted as stale and run again.
       lookup_status: "checking",
+      lookup_at: new Date().toISOString(),
     })
     .select("id")
     .single();
