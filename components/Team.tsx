@@ -87,14 +87,18 @@ export default function Team() {
         <FadeUp>
           <div className="mx-auto mb-14 max-w-2xl text-center">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#2563a8]">
-              Who we are
+              Leadership
             </p>
             <h1 className="mb-4 text-[clamp(28px,5.5vw,42px)] font-extrabold leading-[1.1] tracking-[-0.02em] text-slate-900">
-              The people behind Rydvest
+              The team behind Rydvest
             </h1>
+            {/* States what the team does. The earlier version leaned on "our
+                names and faces are on it", which reads as reassurance rather
+                than fact — and reassurance nobody asked for invites the doubt
+                it is trying to answer. */}
             <p className="text-base leading-relaxed text-slate-500">
-              Three co-founders, building a transport investment platform on Nigerian roads —
-              with our names and faces on it.
+              Rydvest is led by its three co-founders, who between them run operations, growth
+              and partnerships, and the day-to-day of the platform.
             </p>
           </div>
         </FadeUp>
@@ -130,17 +134,21 @@ export default function Team() {
           ))}
         </div>
 
-        {/* ── Why this page exists ── */}
+        {/* ── Get in touch ──
+            Was: "Money is easy to ask for and hard to trust." Clever, and
+            exactly wrong for this page — it raised the one doubt a reader
+            might not have had, on the page meant to settle it. A company does
+            not argue for its own credibility; it states what it does and makes
+            itself reachable. */}
         <FadeUp delay={360}>
           <div className="mx-auto mt-14 max-w-2xl rounded-2xl border border-slate-200/80 bg-slate-50/70 px-6 py-6 text-center">
             <p className="text-sm leading-relaxed text-slate-600">
-              Money is easy to ask for and hard to trust. You can see who we are, and you can
-              reach us.{" "}
+              Questions about how Rydvest works, or interested in partnering with us?{" "}
               <a
                 href="/contact"
                 className="font-semibold text-[#2563a8] underline-offset-2 hover:underline"
               >
-                Talk to us
+                Get in touch
               </a>
               .
             </p>
