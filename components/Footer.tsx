@@ -17,7 +17,7 @@ export function CTABanner() {
           Your asset is waiting.
         </h2>
         <p className="text-lg text-blue-200 leading-relaxed mb-10 max-w-xl mx-auto">
-          Join early investors earning from Nigeria's busiest transport sector. Start with a minimum of ₦100,000 today.
+          Join early owners earning from Nigeria's busiest transport sector. Start with a minimum of ₦100,000 today.
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <Link href="/register" className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20">
@@ -80,7 +80,7 @@ const socials = [
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "How it works", href: "/how-it-works" },
-  { label: "Invest now", href: "/register" },
+  { label: "Own one now", href: "/register" },
   { label: "Returns calculator", href: "/#calc" },
   { label: "About us", href: "/about" },
   { label: "Our team", href: "/team" },
@@ -91,7 +91,7 @@ const resources = [
   { label: "Terms of service", href: "/terms" },
   { label: "Privacy policy", href: "/privacy" },
   { label: "FAQ", href: "/faq" },
-  { label: "Investment risks", href: "/terms#risk-disclosure" },
+  { label: "Ownership risks", href: "/terms#risk-disclosure" },
 ];
 
 const contact = [
@@ -153,10 +153,10 @@ export function Footer() {
               <span className="text-2xl font-black text-white tracking-tight">
                 Ryd<span className="text-amber-400">vest</span>
               </span>
-              <p className="text-xs text-slate-500 mt-1 tracking-widest uppercase">Invest. Ride. Earn.</p>
+              <p className="text-xs text-slate-500 mt-1 tracking-widest uppercase">Own. Ride. Earn.</p>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
-              Rydvest lets everyday Nigerians co-invest in transport vehicles and earn consistent weekly returns.
+              Rydvest lets everyday Nigerians co-own transport vehicles and earn consistent weekly earnings.
             </p>
             <div className="flex gap-3 flex-wrap">
               {socials.map((s) => (

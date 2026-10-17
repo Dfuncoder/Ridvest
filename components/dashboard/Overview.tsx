@@ -128,7 +128,7 @@ export default function Overview({ data }: { data: OverviewData }) {
     : "bg-white border-slate-200/80 text-slate-700 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50";
 
   const stats: Array<{ label: string; amount: number | null; tone: string }> = [
-    { label: "Total invested", amount: data.totalInvested, tone: heading },
+    { label: "Total put in", amount: data.totalInvested, tone: heading },
     { label: "Total earned", amount: data.totalEarned, tone: "text-green-500" },
     {
       label: "Next payout",
@@ -247,7 +247,7 @@ export default function Overview({ data }: { data: OverviewData }) {
       {/* ── INVESTMENTS ── */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className={`${sectionTitle} ${heading}`}>My investments</h2>
+          <h2 className={`${sectionTitle} ${heading}`}>My assets</h2>
           <Link
             href="/dashboard/portfolio"
             className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors"
@@ -258,7 +258,7 @@ export default function Overview({ data }: { data: OverviewData }) {
 
         {data.investments.length === 0 ? (
           <div className={`rounded-2xl p-10 text-center ${card}`}>
-            <p className={`text-sm ${muted} mb-5`}>You haven&apos;t invested yet.</p>
+            <p className={`text-sm ${muted} mb-5`}>Nothing here yet.</p>
             <Link
               href="/dashboard/pools"
               className="inline-block bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-amber-400/20"
@@ -298,7 +298,7 @@ export default function Overview({ data }: { data: OverviewData }) {
                       <p className={`text-lg font-extrabold tabular-nums tracking-tight ${heading}`}>
                         {fmtNaira(inv.amount)}
                       </p>
-                      <p className={`text-[11px] ${faint}`}>invested</p>
+                      <p className={`text-[11px] ${faint}`}>put in</p>
                     </div>
                   </div>
 

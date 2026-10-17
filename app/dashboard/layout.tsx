@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <DashboardShell
-      name={profile?.full_name ?? "Investor"}
+      name={profile?.full_name ?? "Owner"}
       email={profile?.email ?? user.email}
       isAdmin={profile?.role === "admin"}
     >

@@ -68,7 +68,7 @@ export function Logo() {
         <div className="text-2xl font-extrabold text-white tracking-tight leading-none">
           Ryd<span className="text-amber-400">vest</span>
         </div>
-        <p className="text-[10px] text-slate-500 mt-1 tracking-widest uppercase">Invest. Ride. Earn.</p>
+        <p className="text-[10px] text-slate-500 mt-1 tracking-widest uppercase">Own. Ride. Earn.</p>
       </div>
     </Link>
   );

@@ -54,7 +54,7 @@ function NeedsPin({ action }: { action: "invest" | "withdraw" }) {
   return (
     <div className="mt-3 flex flex-col gap-2">
       <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 leading-relaxed">
-        Set a 4-digit transaction PIN before you {action === "invest" ? "invest" : "withdraw"}. It
+        Set a 4-digit transaction PIN before you {action === "invest" ? "own a vehicle" : "withdraw"}. It
         takes a moment and protects everything in your balance.
       </p>
       <Link href="/dashboard/profile" className={`block text-center px-5 py-2.5 ${primaryBtn}`}>
@@ -162,7 +162,7 @@ export function CreatePoolForm({
     <form action={formAction} className="flex flex-col gap-3">
       <Banner state={state} />
       <div>
-        <label htmlFor="new-pool-product" className={label}>Investment option</label>
+        <label htmlFor="new-pool-product" className={label}>Ownership option</label>
         <select id="new-pool-product" name="productId" required defaultValue="" className={input}>
           <option value="" disabled>Choose an option</option>
           {products.map((p) => (

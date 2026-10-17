@@ -5,7 +5,7 @@ import Team from "@/components/Team";
 export const metadata = {
   title: "Our Team — Rydvest",
   description:
-    "Meet the three co-founders behind Rydvest, Nigeria's transport co-investment platform.",
+    "Meet the three co-founders behind Rydvest, Nigeria's transport co-ownership platform.",
 };
 
 export default function TeamPage() {

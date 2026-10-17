@@ -50,8 +50,8 @@ export default function Counters() {
       {/* Amber strip */}
       <div style={{ background: "#f59e0b", padding: "20px 20px", display: "flex", justifyContent: "center", gap: "20px 60px", flexWrap: "wrap" }}>
         {[
-          { label: "TOTAL INVESTED", value: fmtCurrency(invested) },
-          { label: "INVESTORS ONBOARDED", value: teams.toLocaleString() },
+          { label: "TOTAL FUNDED", value: fmtCurrency(invested) },
+          { label: "OWNERS ONBOARDED", value: teams.toLocaleString() },
           { label: "KEKES DEPLOYED", value: kekes.toLocaleString() },
           { label: "TOTAL PAYOUTS MADE", value: fmtCurrency(payouts) },
         ].map((s) => (
@@ -67,13 +67,13 @@ export default function Counters() {
         <div style={{ textAlign: "center", marginBottom: 52 }}>
           <div style={{ fontSize: 12, color: "#2563a8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>By the numbers</div>
           <h2 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Growing every day</h2>
-          <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>Real numbers from real investors earning real returns on Nigeria's roads.</p>
+          <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>Real numbers from real owners earning real returns on Nigeria's roads.</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24, maxWidth: 1000, margin: "0 auto" }}>
           {[
-            { icon: "💰", value: fmtCurrency(invested), label: "TOTAL MONEY INVESTED" },
-            { icon: "👥", value: teams.toLocaleString(), label: "TEAMS / INVESTORS FORMED" },
+            { icon: "💰", value: fmtCurrency(invested), label: "TOTAL MONEY FUNDED" },
+            { icon: "👥", value: teams.toLocaleString(), label: "TEAMS / OWNERS FORMED" },
             { icon: "📈", value: fmtCurrency(payouts), label: "INTEREST PAYOUTS MADE" },
           ].map((c) => (
             <div

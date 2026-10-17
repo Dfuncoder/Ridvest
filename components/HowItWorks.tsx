@@ -58,7 +58,7 @@ const steps = [
   },
   {
     n: "03",
-    title: "Fund your investment",
+    title: "Fund your share",
     desc: "Transfer your amount directly from your bank. Once confirmed, we get to work immediately — no waiting around.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
@@ -69,7 +69,7 @@ const steps = [
   {
     n: "04",
     title: "We deploy",
-    desc: "We vet and assign a verified driver, and handle all operations from day one. You just get updates.",
+    desc: "We vet our partners and handle all operations from day one, and you get the updates.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
@@ -78,7 +78,7 @@ const steps = [
   },
   {
     n: "05",
-    title: "Collect weekly returns",
+    title: "Collect weekly earnings",
     desc: "Every week, your interest and capital are paid directly to your dashboard — steadily, over 78 Weeks. Track every payout live on your dashboard.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
@@ -88,8 +88,8 @@ const steps = [
   },
   {
     n: "06",
-    title: "Reinvest",
-    desc: "Once your 78 Weeks cycle is complete, choose what's next — reinvest or join a new pool.",
+    title: "Own another",
+    desc: "Once your 78 Weeks cycle is complete, choose what's next — own another or join a new pool.",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -126,10 +126,10 @@ const poolTypes = [
 ];
 
 const timeline = [
-  { when: "Day 1", title: "Investment confirmed", sub: "Vehicle acquired, driver assigned" },
-  { when: "Week 1–78", title: "Weekly returns paid", sub: "Directly to your dashboard, every 7 days" },
+  { when: "Day 1", title: "Payment confirmed", sub: "Vehicle acquired, driver assigned" },
+  { when: "Week 1–78", title: "Weekly earnings paid", sub: "Directly to your dashboard, every 7 days" },
   { when: "Week 78", title: "Final payout", sub: "Your last payment. Cycle complete." },
-  { when: "After 1.5 years", title: "Your choice", sub: "Reinvest or join a new pool." },
+  { when: "After 1.5 years", title: "Your choice", sub: "Own another or join a new pool." },
 ];
 
 export default function HowItWorks() {
@@ -181,7 +181,7 @@ export default function HowItWorks() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             <div className="bg-white border border-slate-100 rounded-2xl p-8">
-              <h3 className="text-lg font-extrabold text-slate-900 mb-2">Three ways to invest</h3>
+              <h3 className="text-lg font-extrabold text-slate-900 mb-2">Three ways to own</h3>
               <p className="text-sm text-slate-500 mb-6 leading-relaxed">
                 Whether you want full ownership or prefer to pool with others, the returns and the structure work the same way.
               </p>
@@ -195,7 +195,7 @@ export default function HowItWorks() {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-slate-900 mb-1">Full ownership</div>
-                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full cost yourself. You own it alone and keep all the returns.</div>
+                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full cost yourself. You own it alone and keep all the earnings.</div>
                   </div>
                 </div>
 
@@ -223,7 +223,7 @@ export default function HowItWorks() {
               <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(251,191,36,0.07) 0%, transparent 65%)" }} />
 
               <h3 className="text-lg font-extrabold text-white mb-2">The 78 Weeks Cycle</h3>
-              <p className="text-slate-400 text-sm leading-relaxed mb-8">Every investment — pool or full ownership — runs for exactly 1.5 years.</p>
+              <p className="text-slate-400 text-sm leading-relaxed mb-8">Every pool — shared or full ownership — runs for exactly 1.5 years.</p>
 
               <div className="flex flex-col">
                 {timeline.map((t, i) => (
@@ -245,7 +245,7 @@ export default function HowItWorks() {
                 href="/register"
                 className="mt-4 block text-center w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200"
               >
-                Start investing →
+                Start earning →
               </Link>
             </div>
 

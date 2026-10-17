@@ -41,7 +41,7 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
       </svg>
     ),
-    title: "Structured returns",
+    title: "Structured earnings",
     desc: "No informal arrangements. Every naira is tracked, every payout is scheduled and transparent.",
   },
   {
@@ -60,7 +60,7 @@ const features = [
       </svg>
     ),
     title: "Capital protected",
-    desc: "After 78 Weeks of earning, your original investment is returned to you in full.",
+    desc: "After 78 Weeks of earning, your original capital is returned to you in full.",
   },
   {
     icon: (
@@ -70,7 +70,7 @@ const features = [
       </svg>
     ),
     title: "Real, physical asset",
-    desc: "Your investment is backed by an actual transportation vehicle —  on actual Nigerian roads — not a digital promise.",
+    desc: "What you own is an actual transportation vehicle — on actual Nigerian roads — not a digital promise.",
   },
 ];
 
@@ -157,7 +157,7 @@ export default function AboutUs() {
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8">
                   <div className="flex items-center justify-between">
                     {[
-                      { who: "You", action: "Invest" },
+                      { who: "You", action: "Acquire" },
                       { who: "We", action: "Deploy" },
                       { who: "You", action: "Earn" },
                     ].map((item, i) => (
@@ -180,7 +180,7 @@ export default function AboutUs() {
                   onClick={() => document.getElementById("invest")?.scrollIntoView({ behavior: "smooth" })}
                   className="w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20"
                 >
-                  See investment plans →
+                  See ownership plans →
                 </button>
               </div>
             </FadeUp>

@@ -168,7 +168,7 @@ export default async function HistoryPage() {
         kind,
         label:
           kind === "investment"
-            ? "Pool investment"
+            ? "Pool purchase"
             : kind === "payout"
               ? "Weekly payout"
               : kind === "withdrawal"

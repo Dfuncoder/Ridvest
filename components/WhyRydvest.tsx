@@ -4,7 +4,7 @@ const items = [
   { icon: "🔧", title: "Fully managed operations", desc: "Driver vetting, maintenance, fuel, insurance — all on us." },
   { icon: "💳", title: "Consistent payouts", desc: "Scheduled payments directly to your bank. No delays, no excuses." },
   { icon: "📍", title: "Local roots", desc: "Based in Anambra. We know Nigerian roads and the keke economy." },
-  { icon: "🚀", title: "Expanding fleet", desc: "Keke is live. Buses and motorcycles coming — early investors first." },
+  { icon: "🚀", title: "Expanding fleet", desc: "Keke is live. Buses and motorcycles coming — early owners first." },
 ];
 
 export default function WhyRydvest() {
@@ -13,7 +13,7 @@ export default function WhyRydvest() {
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 10, color: "#1d4ed8", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 7 }}>Why choose us</div>
-          <h2 style={{ fontSize: "clamp(22px,4vw,32px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 8 }}>Built for Nigerian investors</h2>
+          <h2 style={{ fontSize: "clamp(22px,4vw,32px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 8 }}>Built for Nigerian owners</h2>
           <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.65, maxWidth: 420, margin: "0 auto" }}>Fintech meets transport to protect and grow your money.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 16 }}>

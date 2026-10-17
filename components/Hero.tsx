@@ -61,8 +61,8 @@ export default function Hero() {
               maxWidth: 480,
             }}
           >
-            Rydvest lets everyday Nigerians co-invest in transport vehicles and earn consistent
-            weekly returns — fully managed, asset-backed, and transparent.
+            Rydvest lets everyday Nigerians co-own transport vehicles and earn consistent
+            weekly earnings — fully managed, asset-backed, and transparent.
           </p>
 
           <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -85,7 +85,7 @@ export default function Hero() {
                 textDecoration: "none",
               }}
             >
-              Start investing →
+              Start earning →
             </Link>
             <button
               onClick={() => document.getElementById("calc")?.scrollIntoView({ behavior: "smooth" })}
@@ -144,7 +144,7 @@ export default function Hero() {
           >
             {/*<div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Weekly Payout</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>₦2,400</div>
-            <div style={{ fontSize: 11, color: "#f59e0b" }}>↑ on ₦100k invested</div>
+            <div style={{ fontSize: 11, color: "#f59e0b" }}>↑ on ₦100k</div>
           </div>*/}
 
           {/* Floating card 2 */}
@@ -162,9 +162,9 @@ export default function Hero() {
               animationDelay: "1.5s",
             }}
           >
-            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Annual ROI</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Annual earnings</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>50%</div>
-            <div style={{ fontSize: 11, color: "#f59e0b" }}>Fixed rate · Asset-backed</div>
+            <div style={{ fontSize: 11, color: "#f59e0b" }}>Asset-backed</div>
           </div>
         </div>
       </div>

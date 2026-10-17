@@ -53,7 +53,7 @@ export default function RegisterPage() {
         {/* ── STEP 1 — Personal details (hidden, not unmounted, on step 2) ── */}
         <div className={step === 1 ? "bg-[#0f2e52] border border-white/10 rounded-2xl p-7" : "hidden"}>
           <h1 className="text-xl font-extrabold text-white mb-1">Create your account</h1>
-          <p className="text-sm text-slate-400 mb-6">Start investing in minutes</p>
+          <p className="text-sm text-slate-400 mb-6">Start earning in minutes</p>
 
           <div className="flex flex-col gap-4">
             <div>

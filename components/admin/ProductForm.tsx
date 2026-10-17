@@ -57,7 +57,7 @@ export default function ProductForm() {
 
       <div>
         <label htmlFor="pp-desc" className={label}>Description (optional)</label>
-        <input id="pp-desc" name="description" type="text" maxLength={500} placeholder="Short description shown to investors" className={input} />
+        <input id="pp-desc" name="description" type="text" maxLength={500} placeholder="Short description shown to owners" className={input} />
       </div>
 
       {/* The photo investors see on the pool card. Left on "Match the name"
@@ -245,7 +245,7 @@ export default function ProductForm() {
           <FieldErr msg={state?.errors?.durationWeeks} />
         </div>
         <div>
-          <label htmlFor="pp-roi" className={label}>Total ROI (%)</label>
+          <label htmlFor="pp-roi" className={label}>Total earnings (%)</label>
           <input id="pp-roi" name="roiPercent" type="number" min={0} max={1000} step="0.1" required placeholder="50" className={input} />
           <FieldErr msg={state?.errors?.roiPercent} />
         </div>

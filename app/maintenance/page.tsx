@@ -9,7 +9,7 @@ import Image from "next/image";
 export const metadata: Metadata = {
   title: "Rydvest — launching October 2026",
   description:
-    "Rydvest lets everyday Nigerians co-invest in commercial transport vehicles and earn weekly returns. Launching October 2026.",
+    "Rydvest lets everyday Nigerians co-own commercial transport vehicles and earn weekly earnings. Launching October 2026.",
   // Nothing here should be what search engines remember the site for.
   robots: { index: false, follow: false },
 };
@@ -52,8 +52,8 @@ export default function MaintenancePage() {
           </h1>
 
           <p className="text-base text-slate-300/90 leading-relaxed max-w-md mx-auto lg:mx-0 mb-9">
-            Rydvest lets everyday Nigerians co-invest in commercial transport vehicles and earn
-            weekly returns. We&apos;re putting the finishing touches to the platform — it opens this
+            Rydvest lets everyday Nigerians co-own commercial transport vehicles and earn
+            weekly earnings. We&apos;re putting the finishing touches to the platform — it opens this
             October.
           </p>
 

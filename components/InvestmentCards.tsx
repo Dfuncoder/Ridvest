@@ -2,16 +2,16 @@ const vehicles = [
   {
     name: "Keke Napep — Starter",
     weeklyRate: "0.48% / wk",
-    minInvestment: "₦100,000 min. investment",
+    minInvestment: "₦100,000 min. to own",
     soldPct: 12,
-    sub: "25% annual ROI · Weekly payouts · Fully managed",
+    sub: "25% annual earnings · Weekly payouts · Fully managed",
     bg: "linear-gradient(135deg,#0d2137,#1a3a5c)",
     live: true,
   },
   {
     name: "Keke Napep — Growth",
     weeklyRate: "0.48% / wk",
-    minInvestment: "₦200,000 min. investment",
+    minInvestment: "₦200,000 min. to own",
     soldPct: 7,
     sub: "Full keke co-ownership · Weekly payouts",
     bg: "linear-gradient(135deg,#0f2e52,#1a4a7c)",
@@ -22,7 +22,7 @@ const vehicles = [
     weeklyRate: null,
     minInvestment: "₦500,000+",
     soldPct: 0,
-    sub: "Launching soon — early investors get priority access",
+    sub: "Launching soon — early owners get priority access",
     bg: "linear-gradient(135deg,#1a1a2e,#252538)",
     live: false,
   },
@@ -49,8 +49,8 @@ export default function InvestmentCards() {
     <section id="invest" style={{ padding: "52px 20px", background: "#f8faff" }}>
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 10, color: "#1d4ed8", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 7 }}>Invest now</div>
-          <h2 style={{ fontSize: "clamp(22px,4vw,32px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 8 }}>Choose a vehicle to invest in</h2>
+          <div style={{ fontSize: 10, color: "#1d4ed8", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 7 }}>Own one now</div>
+          <h2 style={{ fontSize: "clamp(22px,4vw,32px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 8 }}>Choose a vehicle to own</h2>
           <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.65, maxWidth: 420, margin: "0 auto" }}>Pick a keke, fund your stake, and start earning. Buses and motorcycles coming soon.</p>
         </div>
 
@@ -113,7 +113,7 @@ export default function InvestmentCards() {
                     color: v.live ? "#0d2137" : "#94a3b8",
                   }}
                 >
-                  {v.live ? "Invest now" : "Not yet available"}
+                  {v.live ? "Own one now" : "Not yet available"}
                 </button>
 
                 <div style={{ fontSize: 12, color: "#64748b", textAlign: "center", marginTop: 10 }}>{v.sub}</div>

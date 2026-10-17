@@ -9,7 +9,7 @@
  * second is what that turns into. Mixing them would invite reading the payout
  * as part of the cost.
  *
- * ROI applies to the TOTAL PACKAGE, not to the asset value alone — the total
+ * The earnings rate applies to the TOTAL PACKAGE, not to the asset value alone — the total
  * is what an investor actually puts in, so it is what the return is measured
  * against. (Worth knowing: the competitor page this was modelled on shows a
  * profit figure taken from the asset value while charging for the package,
@@ -106,8 +106,8 @@ export default function AssetBreakdown({ product }: { product: Product }) {
 
       <dl className="rounded-xl bg-slate-50/80 border border-slate-100 px-4 py-2">
         {!itemised && <Line label="Total package" value={fmtNaira(total)} />}
-        <Line label="Return on investment" value={`${roi}%`} tone="text-green-600" />
-        <Line label="Profit on investment" value={fmtNaira(profit)} tone="text-green-600" />
+        <Line label="Total earnings" value={`${roi}%`} tone="text-green-600" />
+        <Line label="Your profit" value={fmtNaira(profit)} tone="text-green-600" />
         <Line label="Total payout" value={fmtNaira(totalPayout)} strong tone="text-green-600" />
       </dl>
 

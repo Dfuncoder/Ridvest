@@ -10,9 +10,9 @@ import Calculator from "@/components/Calculator";
 import { CTABanner, Footer } from "@/components/Footer";
 
 export const metadata = {
-  title: "Rydvest — Invest in Keke. Earn Weekly.",
+  title: "Rydvest — Co-own a Keke. Earn Weekly.",
   description:
-    "Rydvest lets everyday Nigerians co-invest in tricycles and earn consistent returns. Asset-backed, fully managed, starting from ₦100,000.",
+    "Rydvest lets everyday Nigerians co-own tricycles and earn consistent earnings. Asset-backed, fully managed, starting from ₦100,000.",
 };
 
 export default function Home() {

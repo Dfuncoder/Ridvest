@@ -66,7 +66,7 @@ export default function ContactForm() {
           required
           rows={5}
           maxLength={3000}
-          placeholder="Tell us what you'd like to know — investment plans, how pools work, partnership, anything."
+          placeholder="Tell us what you'd like to know — ownership plans, how pools work, partnership, anything."
           className={`${input} resize-y min-h-28`}
         />
         {state?.errors?.message && <p className="text-xs text-red-400 mt-1">{state.errors.message}</p>}
