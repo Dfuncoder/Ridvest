@@ -40,30 +40,6 @@ function looksLikeJpeg(bytes: Uint8Array): boolean {
   return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
 }
 
-/**
- * The generic failure message — with the technical reason appended, but only
- * for admins.
- *
- * A user gets "Couldn't submit your details" and nothing more: the cause is a
- * missing key or a database constraint, which is ours to fix and theirs to be
- * spared. An admin testing the form is the person who has to fix it, so they
- * see what actually broke instead of going to read the server logs.
- *
- * This means there is nothing to switch on for debugging and nothing to
- * remember to switch off afterwards — the detail is simply never shown to
- * anyone who is not an admin.
- *
- * The role lookup happens only on the failure path, so a normal submission
- * never pays for the extra query.
- */
-async function submitFailed(userId: string, detail: string): Promise<FormState> {
-  const admin = createSupabaseAdminClient();
-  const { data } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
-
-  if (data?.role !== "admin") return { message: ERRORS.KYC_SUBMIT_FAILED };
-  return { message: `${ERRORS.KYC_SUBMIT_FAILED}  [admin only] ${detail}` };
-}
-
 export async function submitKyc(_prev: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser();
   const admin = createSupabaseAdminClient();
@@ -120,7 +96,7 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     console.error("[kyc] cannot encrypt ID number —", detail);
-    return submitFailed(user.id, `Encrypting the NIN failed — ${detail}`);
+    return { message: ERRORS.KYC_SUBMIT_FAILED };
   }
 
   // ── Store the photo first; a row without its image is worse than the
@@ -132,7 +108,7 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
 
   if (uploadError) {
     console.error("[kyc] selfie upload failed", uploadError);
-    return submitFailed(user.id, `Storing the photo failed — ${uploadError.message}`);
+    return { message: ERRORS.KYC_SUBMIT_FAILED };
   }
 
   const { data: inserted, error: insertError } = await admin
@@ -162,11 +138,7 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
       return { message: ERRORS.KYC_ALREADY_PENDING };
     }
     console.error("[kyc] insert failed", insertError);
-    return submitFailed(
-      user.id,
-      `Saving the submission failed (${insertError.code}) — ${insertError.message}` +
-        (insertError.details ? ` · ${insertError.details}` : "")
-    );
+    return { message: ERRORS.KYC_SUBMIT_FAILED };
   }
 
   revalidatePath("/dashboard/verify");

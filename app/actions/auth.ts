@@ -404,6 +404,16 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { message: ERRORS.RESET_PASSWORD_FAILED };
 
+  // No password-change notice is sent from here on purpose.
+  //
+  // Supabase has a "Password changed" security notification that fires on
+  // EVERY password change, including ones that never reach this action — an
+  // admin changing it from the Supabase dashboard, or any other path through
+  // GoTrue. Sending our own as well would mean two emails for one event, and
+  // sending ONLY our own would quietly miss those other paths.
+  //
+  // The template lives at supabase/email-templates/password-changed.html.
+  // ⚠ It only goes out if the notification is enabled at project level.
   // Force a fresh login with the new password.
   await supabase.auth.signOut();
   redirect("/login?reset=1");

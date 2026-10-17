@@ -22,6 +22,10 @@ import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monni
 import { fmtNaira } from "@/lib/format";
 import { totalPackage } from "@/lib/economics";
 import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
+import {
+  kycApprovedSubject, kycApprovedText, kycApprovedHtml,
+  kycRejectedSubject, kycRejectedText, kycRejectedHtml,
+} from "@/lib/notices";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { decryptSecret } from "@/lib/crypto";
 import { runNinLookup } from "./kyc";
@@ -903,44 +907,28 @@ async function pendingSubmission(submissionId: string) {
   return { submission: { id: data.id, userId: data.user_id, profile } };
 }
 
+/**
+ * Tells the user what was decided.
+ *
+ * A rejection carries the admin's reason verbatim — that is the whole value of
+ * the email. "Declined" with nothing attached just means the same photo comes
+ * back again.
+ */
 async function emailDecision(
   to: string,
   name: string,
   outcome: "approved" | "rejected",
   reason?: string
 ) {
-  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/+$/, "");
-  const first = (name || "there").split(/\s+/)[0];
-
-  const text =
-    outcome === "approved"
-      ? [
-          `Hi ${first},`,
-          ``,
-          `Your identity has been confirmed. Withdrawals are now open on your account.`,
-          ``,
-          `${site}/dashboard/payouts`,
-          ``,
-          `Rydvest`,
-        ].join("\n")
-      : [
-          `Hi ${first},`,
-          ``,
-          `We could not confirm your identity from what you sent.`,
-          ``,
-          reason ? `${reason}` : ``,
-          ``,
-          `You can send it again here:`,
-          `${site}/dashboard/verify`,
-          ``,
-          `Rydvest`,
-        ].join("\n");
+  const approved = outcome === "approved";
+  const why = (reason ?? "").trim() || "No reason was recorded.";
 
   const res = await sendEmail({
     from: noReplyFrom(),
     to,
-    subject: outcome === "approved" ? "Your Rydvest account is verified" : "About your Rydvest verification",
-    text,
+    subject: approved ? kycApprovedSubject : kycRejectedSubject,
+    text: approved ? kycApprovedText(name) : kycRejectedText(name, why),
+    html: approved ? kycApprovedHtml(name) : kycRejectedHtml(name, why),
   });
   if (!res.ok) console.error("[admin] kyc decision email failed", res.body);
 }
