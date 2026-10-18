@@ -22,7 +22,10 @@ export default function Calculator() {
 
   useEffect(() => { fetchRate().then(setRate); }, []);
 
+  // State holds digits only; the field displays them grouped. A number input
+  // cannot show separators at all, which is why this is a text input.
   const amt = parseFloat(amount) || 0;
+  const display = amount === "" ? "" : Number(amount).toLocaleString("en-NG");
   const yearly = amt + amt * rate;
   const monthly = yearly / 18;
   const weekly = yearly / 78;
@@ -41,11 +44,11 @@ export default function Calculator() {
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: "#64748b", marginBottom: 8, display: "block" }}>Amount (₦)</label>
             <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 100000"
-              min={100000}
+              type="text"
+              inputMode="numeric"
+              value={display}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="e.g. 100,000"
               style={{ width: "100%", padding: "16px 20px", border: "1.5px solid #e2e8f0", borderRadius: 14, fontSize: 20, fontWeight: 700, color: "#0d2137", fontFamily: "inherit", outline: "none" }}
             />
           </div>

@@ -9,6 +9,22 @@ const input =
 const fieldLabel =
   "text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1";
 
+/**
+ * Groups the naira figure while it is typed, and keeps any kobo.
+ *
+ * Unlike the user-side amounts, this is what an admin reads off a bank alert,
+ * and a bank alert can carry kobo — so the decimal part is preserved exactly
+ * as typed rather than stripped to whole naira. Only the part before the
+ * point gets separators.
+ */
+function groupNaira(raw: string): string {
+  if (raw === "") return "";
+  const [whole, ...rest] = raw.split(".");
+  const grouped = whole === "" ? "" : Number(whole).toLocaleString("en-NG");
+  // A trailing "." while typing has to survive, or the key press is eaten.
+  return rest.length ? `${grouped}.${rest.join("")}` : grouped;
+}
+
 function Banner({ state }: { state: FormState }) {
   if (!state?.message) return null;
   return (
@@ -51,6 +67,7 @@ export function DepositActions({
     undefined
   );
   const [showReject, setShowReject] = useState(false);
+  const [amount, setAmount] = useState("");
 
   const busy = confirming || rejecting;
   const done = confirmState?.success || rejectState?.success;
@@ -83,14 +100,18 @@ export function DepositActions({
               <label htmlFor={`amt-${depositId}`} className={fieldLabel}>
                 Amount received
               </label>
+              {/* The visible box carries no name: it holds "250,000", and the
+                  server would coerce that to NaN. The hidden field beside it
+                  carries the raw figure under the real name. */}
+              <input type="hidden" name="actualAmount" value={amount} />
               <input
                 id={`amt-${depositId}`}
-                name="actualAmount"
-                type="number"
-                min={1}
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 required
                 autoComplete="off"
+                value={groupNaira(amount)}
+                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
                 placeholder="0.00"
                 className={input}
               />

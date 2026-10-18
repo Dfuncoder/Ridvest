@@ -16,6 +16,54 @@ const input =
   "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-amber-400 transition-colors";
 const label = "text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1.5";
 
+/**
+ * A naira input that reads like money while you type.
+ *
+ * The visible box carries NO name — it holds "2,500,000", and a server action
+ * receiving that would coerce it to NaN. The hidden field beside it carries
+ * the raw digits under the real name, so nothing downstream has to know this
+ * formatting happened. Same contract as MoneyInput on the user side.
+ */
+function NairaField({
+  id,
+  name,
+  value,
+  onChange,
+  placeholder,
+  required,
+  readOnly,
+  className,
+}: {
+  id?: string;
+  name: string;
+  value: string;
+  onChange: (raw: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  readOnly?: boolean;
+  className?: string;
+}) {
+  const display = value === "" ? "" : Number(value).toLocaleString("en-NG");
+
+  return (
+    <>
+      <input type="hidden" name={name} value={value} />
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        value={display}
+        onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
+        placeholder={placeholder}
+        required={required}
+        readOnly={readOnly}
+        className={className}
+      />
+    </>
+  );
+}
+
 function FieldErr({ msg }: { msg?: string }) {
   if (!msg) return null;
   return <p className="text-xs text-red-600 mt-1">{msg}</p>;
@@ -26,6 +74,8 @@ export default function ProductForm() {
   const [picked, setPicked] = useState("");
   const [availability, setAvailability] = useState("both");
   const [targetAmount, setTargetAmount] = useState("");
+  const [minContribution, setMinContribution] = useState("");
+  const [privateMin, setPrivateMin] = useState("");
   const [parts, setParts] = useState<Record<string, string>>({
     assetValue: "",
     vat: "",
@@ -162,14 +212,11 @@ export default function ProductForm() {
               <label htmlFor={`pp-${f.key}`} className="mb-1 block text-[10px] font-bold text-slate-500">
                 {f.label} (₦)
               </label>
-              <input
+              <NairaField
                 id={`pp-${f.key}`}
                 name={f.key}
-                type="number"
-                min={0}
-                step="0.01"
                 value={parts[f.key] ?? ""}
-                onChange={(e) => setParts({ ...parts, [f.key]: e.target.value })}
+                onChange={(raw) => setParts({ ...parts, [f.key]: raw })}
                 placeholder="0"
                 className={input}
               />
@@ -192,18 +239,15 @@ export default function ProductForm() {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor="pp-target" className={label}>Pool price (₦)</label>
-          <input
+          {/* Driven by the breakdown when there is one, so the two can never
+              disagree; typed directly when there is not. */}
+          <NairaField
             id="pp-target"
             name="targetAmount"
-            type="number"
-            min={1}
-            step="0.01"
             required
-            placeholder="2500000"
-            // Driven by the breakdown when there is one, so the two can never
-            // disagree; typed directly when there is not.
+            placeholder="2,500,000"
             value={itemised ? String(breakdownTotal) : targetAmount}
-            onChange={(e) => setTargetAmount(e.target.value)}
+            onChange={setTargetAmount}
             readOnly={itemised}
             className={`${input} ${itemised ? "bg-slate-100 text-slate-500" : ""}`}
           />
@@ -211,7 +255,15 @@ export default function ProductForm() {
         </div>
         <div>
           <label htmlFor="pp-min" className={label}>Min contribution (₦)</label>
-          <input id="pp-min" name="minContribution" type="number" min={1} step="0.01" required placeholder="50000" className={input} />
+          <NairaField
+            id="pp-min"
+            name="minContribution"
+            required
+            placeholder="50,000"
+            value={minContribution}
+            onChange={setMinContribution}
+            className={input}
+          />
           <FieldErr msg={state?.errors?.minContribution} />
         </div>
       </div>
@@ -221,13 +273,12 @@ export default function ProductForm() {
           <label htmlFor="pp-privmin" className={label}>
             Min contribution in a private pool (₦)
           </label>
-          <input
+          <NairaField
             id="pp-privmin"
             name="privateMinContribution"
-            type="number"
-            min={1}
-            step="0.01"
             placeholder={`Leave blank for ${fmtNaira(PRIVATE_POOL_MINIMUM)}`}
+            value={privateMin}
+            onChange={setPrivateMin}
             className={input}
           />
           <FieldErr msg={state?.errors?.privateMinContribution} />
