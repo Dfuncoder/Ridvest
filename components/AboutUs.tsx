@@ -60,7 +60,7 @@ const features = [
       </svg>
     ),
     title: "Capital protected",
-    desc: "After 78 Weeks of earning, your original capital is returned to you in full.",
+    desc: "You get your capital alongside your profit, weekly for 78 weeks.",
   },
   {
     icon: (

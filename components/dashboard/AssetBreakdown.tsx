@@ -62,7 +62,18 @@ function Line({
   );
 }
 
-export default function AssetBreakdown({ product }: { product: Product }) {
+export default function AssetBreakdown({
+  product,
+  compact = false,
+}: {
+  product: Product;
+  /**
+   * Inside a pool card rather than alone on a page: drops the outer card
+   * chrome and the heading, because the disclosure it sits in already says
+   * what it is and a card inside a card reads as a mistake.
+   */
+  compact?: boolean;
+}) {
   const total = Number(product.target_amount);
   const roi = Number(product.roi_percent);
   const { profit, totalPayout } = assetReturns(total, roi);
@@ -71,7 +82,8 @@ export default function AssetBreakdown({ product }: { product: Product }) {
   const itemised = product.asset_value !== null;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6">
+    <div className={compact ? "" : "bg-white border border-slate-200 rounded-2xl p-6"}>
+      {!compact && (
       <div className="mb-4 flex items-center gap-2">
         <svg
           className="h-4 w-4 shrink-0 text-amber-500"
@@ -85,6 +97,7 @@ export default function AssetBreakdown({ product }: { product: Product }) {
         </svg>
         <h2 className="text-sm font-extrabold text-slate-900">About this asset</h2>
       </div>
+      )}
 
       {/* The product name is deliberately NOT repeated here — the page header
           above already carries it under the pool's own name, and printing it
@@ -111,7 +124,7 @@ export default function AssetBreakdown({ product }: { product: Product }) {
         <Line label="Total payout" value={fmtNaira(totalPayout)} strong tone="text-green-600" />
       </dl>
 
-      <p className="mt-4 text-xs text-slate-500">
+      <p className={`${compact ? "mt-3" : "mt-4"} text-xs text-slate-500`}>
         Hire purchase duration:{" "}
         <span className="font-semibold text-slate-900">{product.duration_weeks} weeks</span>
       </p>

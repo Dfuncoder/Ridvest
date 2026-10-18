@@ -16,6 +16,7 @@ import { InvestForm, CreatePoolForm, JoinByInviteForm } from "@/components/dashb
 import { CopyCode } from "@/components/dashboard/CopyCode";
 import { fmtNaira, poolProgressPct } from "@/lib/format";
 import { vehicleImage } from "@/lib/vehicles";
+import AssetBreakdown from "@/components/dashboard/AssetBreakdown";
 import { PRIVATE_POOL_MINIMUM, poolMinimum } from "@/lib/economics";
 import { ResponsiveMoney } from "@/components/BalanceToggle";
 
@@ -32,12 +33,19 @@ type OpenPool = {
   created_by: string | null;
   product: {
     name: string;
+    description: string | null;
     target_amount: number;
     min_contribution: number;
     duration_weeks: number;
     roi_percent: number;
     active: boolean;
     image_path: string | null;
+    // All five together or all null — the breakdown is all-or-nothing.
+    asset_value: number | null;
+    vat: number | null;
+    service_charge: number | null;
+    maintenance_fee: number | null;
+    company_charge: number | null;
   } | null;
 };
 
@@ -58,7 +66,7 @@ export default async function PoolsPage() {
     supabase
       .from("pools")
       .select(
-        "id, name, amount_raised, is_private, invite_code, created_by, product:pool_products(name, target_amount, min_contribution, duration_weeks, roi_percent, active, image_path)"
+        "id, name, amount_raised, is_private, invite_code, created_by, product:pool_products(name, description, target_amount, min_contribution, duration_weeks, roi_percent, active, image_path, asset_value, vat, service_charge, maintenance_fee, company_charge)"
       )
       .eq("status", "open")
       .order("created_at", { ascending: false }),
@@ -124,42 +132,43 @@ export default async function PoolsPage() {
                 className="bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden flex flex-col"
               >
                 {/* ── THE VEHICLE ──
-                    Leads the card so the fleet is readable at a glance: a keke
-                    pool and a minibus pool look different before any text is
-                    read. */}
+                    A thumbnail beside the name rather than a banner above it.
+                    Full-width photos pushed the actual decision — the figures
+                    and the amount box — below the fold on a phone, and the
+                    picture only has to say "keke, not minibus". */}
                 <Link
                   href={`/dashboard/pools/${pool.id}`}
-                  className="relative block aspect-16/9 bg-slate-900 group"
+                  className="flex items-center gap-3.5 p-3.5 group hover:bg-slate-50/70 transition-colors"
                 >
-                  <Image
-                    src={vehicleImage(product.name, product.image_path)}
-                    alt={product.name}
-                    fill
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {/* Keeps the title legible over any photo. */}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-black/10" />
+                  <span className="relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-900">
+                    <Image
+                      src={vehicleImage(product.name, product.image_path)}
+                      alt={product.name}
+                      fill
+                      sizes="80px"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-base font-extrabold text-slate-900 tracking-tight leading-tight group-hover:text-amber-600 transition-colors">
+                      {pool.name}
+                    </h3>
+                    <p className="truncate text-xs text-slate-500">{product.name}</p>
+                  </div>
 
                   <span
-                    className={`absolute top-3 right-3 ${eyebrow} px-2.5 py-1 rounded-full backdrop-blur-sm ${
+                    className={`${eyebrow} shrink-0 px-2.5 py-1 rounded-full border ${
                       pool.is_private
-                        ? "bg-white/15 text-white"
-                        : "bg-amber-400 text-[#0d2137]"
+                        ? "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                        : "bg-amber-400/15 text-amber-600 border-amber-400/30"
                     }`}
                   >
                     {pool.is_private ? "Private" : "Filling"}
                   </span>
-
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    <h3 className="text-base font-extrabold text-white tracking-tight leading-tight">
-                      {pool.name}
-                    </h3>
-                    <p className="text-xs font-semibold text-white/70">{product.name}</p>
-                  </div>
                 </Link>
 
-                <div className="p-5 flex flex-col flex-1">
+                <div className="px-5 pb-5 flex flex-col flex-1">
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {[
                       { label: "ROI", value: `${Number(product.roi_percent)}%`, tone: "text-green-600" },
@@ -208,6 +217,31 @@ export default async function PoolsPage() {
                       hasPin={Boolean(hasPin)}
                     />
                   </div>
+
+                  {/* ── DETAILS, WITHOUT LEAVING THE PAGE ──
+                      What the money buys, opened in place. Someone comparing
+                      three pools should not have to visit three pages and come
+                      back twice. Native <details>, so no client component and
+                      it works with JavaScript off. */}
+                  <details className="group/d mt-3 border-t border-slate-100 pt-3">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-bold text-slate-500 transition-colors hover:text-slate-700">
+                      Details
+                      <svg
+                        className="h-3.5 w-3.5 transition-transform group-open/d:rotate-180"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </summary>
+
+                    <div className="mt-3">
+                      <AssetBreakdown product={product} compact />
+                    </div>
+                  </details>
 
                   {isCreator && pool.is_private && pool.invite_code && (
                     <div className="mt-3 pt-3 border-t border-slate-100">
