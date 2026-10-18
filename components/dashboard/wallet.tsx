@@ -1,7 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { startKorapayDeposit, declareManualTransfer } from "@/app/actions/wallet";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  startKorapayDeposit,
+  declareManualTransfer,
+  latestDepositStatus,
+  type DepositStatus,
+} from "@/app/actions/wallet";
 import type { FormState } from "@/app/actions/auth";
 import { MoneyInput } from "./MoneyInput";
 import { fmtNaira } from "@/lib/format";
@@ -51,11 +57,131 @@ function CopyRow({ labelText, value }: { labelText: string; value: string }) {
 }
 
 /**
- * The moment right after a user says they've sent a transfer. It confirms the
- * action, then gets out of the way — the transfer lives on in the history list
- * below, and sending another one is never blocked by it.
+ * The moment right after a user says they've sent a transfer.
+ *
+ * This used to be a spinner and nothing else: local state, set once, never
+ * revisited. The admin would confirm the money and this card would carry on
+ * spinning, because a Server Component does not re-render on its own and
+ * nothing here was asking. The only way to learn the outcome was to leave.
+ *
+ * Now it asks. It polls the deposit's status and shows the real answer —
+ * credited, with the amount, or turned down with the reason — then refreshes
+ * the page data so the balance above is right.
+ *
+ * Polling stops the moment there is an answer, and gives up after
+ * POLL_LIMIT_MS so a forgotten tab is not asking forever. It also pauses while
+ * the tab is hidden: nobody needs the result painted on a screen they are not
+ * looking at, and phones throttle background timers anyway.
  */
+const POLL_EVERY_MS = 5000;
+const POLL_LIMIT_MS = 15 * 60 * 1000;
+
 function ProcessingCard({ onDone }: { onDone: () => void }) {
+  const router = useRouter();
+  const [status, setStatus] = useState<DepositStatus>({
+    state: "waiting",
+    amount: null,
+    note: null,
+  });
+  const [gaveUp, setGaveUp] = useState(false);
+  // Stamped inside the effect, not at render: calling Date.now() during
+  // render makes the component non-idempotent, and the value is only ever
+  // needed once polling has actually begun.
+  const startedAt = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    startedAt.current = Date.now();
+
+    async function check() {
+      if (cancelled) return;
+
+      if (Date.now() - startedAt.current > POLL_LIMIT_MS) {
+        setGaveUp(true);
+        return;
+      }
+
+      // Skip the round trip while nobody is looking, but keep the loop alive.
+      if (typeof document !== "undefined" && document.hidden) {
+        timer = setTimeout(check, POLL_EVERY_MS);
+        return;
+      }
+
+      try {
+        const next = await latestDepositStatus();
+        if (cancelled) return;
+
+        if (next.state === "credited" || next.state === "rejected") {
+          setStatus(next);
+          // The balance and history above this card are server-rendered, so
+          // they need telling too.
+          router.refresh();
+          return;
+        }
+      } catch {
+        // A failed poll is not an outcome — try again on the next tick.
+      }
+
+      timer = setTimeout(check, POLL_EVERY_MS);
+    }
+
+    timer = setTimeout(check, POLL_EVERY_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [router]);
+
+  // ── Confirmed ──
+  if (status.state === "credited") {
+    return (
+      <div className="bg-white border border-green-200 rounded-2xl p-6 text-center">
+        <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+        <h2 className="text-base font-extrabold text-slate-900 mb-1.5">Transfer confirmed</h2>
+        <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
+          {status.amount
+            ? `${fmtNaira(status.amount)} has been added to your balance.`
+            : "The money has been added to your balance."}
+        </p>
+        <button type="button" onClick={onDone} className={`w-full mt-6 py-3 ${primaryBtn}`}>
+          Done
+        </button>
+      </div>
+    );
+  }
+
+  // ── Turned down ──
+  if (status.state === "rejected") {
+    return (
+      <div className="bg-white border border-red-200 rounded-2xl p-6 text-center">
+        <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-red-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h2 className="text-base font-extrabold text-slate-900 mb-1.5">
+          We couldn&apos;t confirm this transfer
+        </h2>
+        <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
+          {status.note || "Nothing was added to your balance. Contact us and we'll sort it out."}
+        </p>
+        <button
+          type="button"
+          onClick={onDone}
+          className="w-full mt-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
+        >
+          Back
+        </button>
+      </div>
+    );
+  }
+
+  // ── Still waiting ──
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center">
       <div className="relative w-16 h-16 mx-auto mb-5">
@@ -67,24 +193,27 @@ function ProcessingCard({ onDone }: { onDone: () => void }) {
 
       <h2 className="text-base font-extrabold text-slate-900 mb-1.5">Confirming your transfer</h2>
       <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
-        Transfers usually take a few minutes. Your balance updates automatically — you don&apos;t
-        need to wait here. If nothing has changed after 30 minutes, contact us.
+        {gaveUp
+          ? "This is taking longer than usual. Your transfer is still with us — check History in a few minutes, or contact us if nothing has changed."
+          : "Transfers usually take a few minutes. Your balance updates automatically — you don't need to wait here."}
       </p>
 
-      <div className="flex items-center justify-center gap-2 mt-5 mb-6">
-        {[0, 1, 2].map((i) => (
-          <span
-            key={i}
-            className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce"
-            style={{ animationDelay: `${i * 140}ms`, animationDuration: "1s" }}
-          />
-        ))}
-      </div>
+      {!gaveUp && (
+        <div className="flex items-center justify-center gap-2 mt-5 mb-6">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce"
+              style={{ animationDelay: `${i * 140}ms`, animationDuration: "1s" }}
+            />
+          ))}
+        </div>
+      )}
 
       <button
         type="button"
         onClick={onDone}
-        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
+        className={`w-full ${gaveUp ? "mt-6" : ""} py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors`}
       >
         Send another transfer
       </button>

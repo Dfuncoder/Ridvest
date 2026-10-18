@@ -115,6 +115,7 @@ export default async function AdminTransfersPage({
       .from("code_lookups")
       .select("user_id, found, created_at")
       .eq("found", false)
+      // eslint-disable-next-line react-hooks/purity -- server render, read once
       .gte("created_at", new Date(Date.now() - 24 * 3600_000).toISOString()),
   ]);
 
@@ -123,6 +124,10 @@ export default async function AdminTransfersPage({
   const all = (raw ?? []) as unknown as TransferRow[];
 
   // ── The numbers ──────────────────────────────────────────────────────────
+  // This is an async Server Component: it runs once per request, so the clock
+  // is read once and the value is stable for the whole render. The purity rule
+  // is written for client components, where a re-render would change it.
+  // eslint-disable-next-line react-hooks/purity
   const dayAgo = Date.now() - 24 * 3600_000;
   const recent = all.filter((t) => new Date(t.created_at).getTime() >= dayAgo);
   const movedAll = all.reduce((s, t) => s + Number(t.amount), 0);
