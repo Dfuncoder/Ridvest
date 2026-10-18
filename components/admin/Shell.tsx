@@ -14,6 +14,7 @@ const navItems = [
   { label: "Pool options", href: "/admin/products" },
   { label: "Pools", href: "/admin/pools" },
   { label: "Investments", href: "/admin/investments" },
+  { label: "Refunds", href: "/admin/refunds" },
   { label: "Payouts", href: "/admin/payouts" },
   { label: "Deposits", href: "/admin/deposits" },
   { label: "Withdrawals", href: "/admin/withdrawals" },
@@ -24,7 +25,7 @@ const navItems = [
   { label: "Settings", href: "/admin/settings" },
 ];
 
-/** A flat list of twelve links reads as a wall; three named groups do not. */
+/** A flat list of thirteen links reads as a wall; three named groups do not. */
 const NAV_GROUPS: Array<{ title: string; hrefs: string[] }> = [
   { title: "Overview", hrefs: ["/admin"] },
   {
@@ -35,6 +36,7 @@ const NAV_GROUPS: Array<{ title: string; hrefs: string[] }> = [
       "/admin/payouts",
       "/admin/withdrawals",
       "/admin/transfers",
+      "/admin/refunds",
     ],
   },
   {
