@@ -43,7 +43,7 @@ export default function ContactForm() {
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="ct-name" className={label}>Your name</label>
-          <input id="ct-name" name="name" type="text" required placeholder="Jude Mbakwe" autoComplete="name" className={input} />
+          <input id="ct-name" name="name" type="text" required placeholder="John Doe" autoComplete="name" className={input} />
           {state?.errors?.name && <p className="text-xs text-red-400 mt-1">{state.errors.name}</p>}
         </div>
         <div>

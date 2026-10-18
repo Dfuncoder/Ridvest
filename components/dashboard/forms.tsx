@@ -175,7 +175,7 @@ export function CreatePoolForm({
       </div>
       <div>
         <label htmlFor="new-pool-name" className={label}>Pool name</label>
-        <input id="new-pool-name" name="name" type="text" required minLength={3} maxLength={80} placeholder="e.g. Jude & friends" className={input} />
+        <input id="new-pool-name" name="name" type="text" required minLength={3} maxLength={80} placeholder="e.g. John & friends" className={input} />
         <FieldErr msg={state?.errors?.name} />
       </div>
       <button type="submit" disabled={pending} className={`py-3 ${primaryBtn}`}>

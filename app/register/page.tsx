@@ -60,7 +60,7 @@ export default function RegisterPage() {
               <label htmlFor="fullName" className={labelClass}>Full name</label>
               <div className="relative">
                 <FieldIcon path={icons.user} />
-                <input id="fullName" name="fullName" type="text" placeholder="Jude Mbakwe" autoComplete="name" required className={inputClass} onChange={() => clearOn("fullName")} />
+                <input id="fullName" name="fullName" type="text" placeholder="John Doe" autoComplete="name" required className={inputClass} onChange={() => clearOn("fullName")} />
               </div>
               <FieldError message={errorFor("fullName")} />
             </div>
