@@ -1128,3 +1128,62 @@ export async function recheckKycNin(_prev: FormState, formData: FormData): Promi
   }
   return { success: true, message: "Checked." };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFUND ONE PERSON OUT OF A POOL
+//
+// For "I've changed my mind, can I have my money back" on a pool that is still
+// filling. Their contribution returns to their Rydvest balance; everyone else
+// in the pool is untouched and the pool stays open.
+//
+// All of the money logic lives in refund_investment() so it happens in one
+// transaction under a lock on the pool — this only checks who is asking and
+// says what happened.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function refundInvestment(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const investmentId = String(formData.get("investmentId") ?? "");
+  if (!investmentId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!reason) return { errors: { reason: ERRORS.REFUND_REASON_REQUIRED } };
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("refund_investment", {
+    p_investment_id: investmentId,
+    p_admin_id: user.id,
+    p_reason: reason,
+  });
+
+  if (error) {
+    console.error("[admin] refund_investment failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as
+    | { ok?: boolean; reason?: string; amount?: number; user_id?: string }
+    | null;
+
+  if (!result?.ok) {
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "investment.refund", investmentId, {
+    amount: result.amount,
+    user_id: result.user_id,
+    reason,
+  });
+
+  revalidatePath("/admin/investments");
+  revalidatePath("/admin/pools");
+  revalidatePath("/admin");
+
+  return {
+    success: true,
+    message: `Refunded ${fmtNaira(Number(result.amount ?? 0))} to their Rydvest balance.`,
+  };
+}

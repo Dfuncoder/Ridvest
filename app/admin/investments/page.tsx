@@ -18,6 +18,7 @@
  */
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import RefundControls from "@/components/admin/RefundControls";
 import { markInvestmentRefunded } from "@/app/actions/admin";
 import { platformFee, PLATFORM_FEE_LABEL } from "@/lib/economics";
 import { fmtNaira, fmtDateTime } from "@/lib/format";
@@ -340,6 +341,18 @@ export default async function AdminInvestmentsPage() {
                     </td>
 
                     <td className={td}>
+                      {/* Refunding one person out of a pool that is still
+                          filling. Only offered while the pool is open: once it
+                          is funded the vehicle is bought and a payout schedule
+                          exists, and SQL refuses it anyway. */}
+                      {r.inv.status === "paid" && r.inv.pool?.status === "open" && (
+                        <RefundControls
+                          investmentId={r.inv.id}
+                          amount={Number(r.inv.amount)}
+                          investorName={r.inv.user?.full_name || "this user"}
+                        />
+                      )}
+
                       {r.inv.status === "refund_pending" && (
                         // Refund the charge in the payment dashboard first,
                         // then record it here.

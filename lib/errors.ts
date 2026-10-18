@@ -162,7 +162,11 @@ export const ERRORS = {
   ADMIN_DELETE_CONFIRM: "Type the user's email exactly to confirm.",
   ADMIN_DELETE_HAS_RECORDS:
     "This account has money records, so it cannot be deleted without breaking the ledger. Lock it instead.",
+  REFUND_REASON_REQUIRED: "Say why this is being refunded — it goes on the audit record.",
   PAYOUT_REASON_REQUIRED: "Say why this payout is being reverted — it goes on the audit record.",
+  REFUND_NOT_POSSIBLE: "That contribution has already been refunded, or was never paid.",
+  REFUND_POOL_RUNNING:
+    "This pool is already funded and running, so money cannot be taken back out of it.",
   ADMIN_KYC_NOT_FOUND: "That verification request no longer exists.",
   ADMIN_KYC_ALREADY_REVIEWED: "Somebody has already decided this one.",
   ADMIN_KYC_REASON_REQUIRED: "Say why this is being rejected — the user is shown your reason.",
@@ -238,7 +242,7 @@ export const DB_REASON_TO_ERROR: Record<string, string> = {
   pool_full_refund_pending: ERRORS.POOL_AMOUNT_TOO_LARGE,
   too_many_pending_deposits: ERRORS.DEPOSIT_TOO_MANY_PENDING,
   pool_not_found: ERRORS.POOL_NOT_FOUND,
-  pool_not_open: ERRORS.POOL_NOT_OPEN,
+  pool_not_open: ERRORS.REFUND_POOL_RUNNING,
   product_inactive: ERRORS.POOL_PRODUCT_INACTIVE,
   amount_too_large: ERRORS.POOL_AMOUNT_TOO_LARGE,
   amount_too_small: ERRORS.POOL_AMOUNT_TOO_SMALL,
@@ -246,5 +250,8 @@ export const DB_REASON_TO_ERROR: Record<string, string> = {
   payout_not_found: ERRORS.ADMIN_ACTION_FAILED,
   not_paid: ERRORS.ADMIN_ACTION_FAILED,
   not_reverted: ERRORS.ADMIN_ACTION_FAILED,
+  not_admin: ERRORS.AUTH_NOT_ADMIN,
+  investment_not_found: ERRORS.ADMIN_ACTION_FAILED,
+  not_refundable: ERRORS.REFUND_NOT_POSSIBLE,
   unexpected_status: ERRORS.ADMIN_ACTION_FAILED,
 };
