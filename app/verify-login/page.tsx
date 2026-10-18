@@ -71,7 +71,7 @@ export default function VerifyLoginPage() {
 
   return (
     <AuthShell>
-      <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
+      <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7">
         <div className="text-center mb-7">
           <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-4">
             <svg
@@ -114,13 +114,13 @@ export default function VerifyLoginPage() {
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 style={{ height: 52 }}
-                className={`w-11 text-center text-xl font-bold rounded-xl border transition-all duration-150 outline-none bg-white/5 text-white
+                className={`w-11 text-center text-xl font-bold rounded-xl border transition-all duration-150 outline-none bg-[#1b385b] text-white
                   ${
                     verifyState?.message
                       ? "border-red-500 bg-red-500/5"
                       : digit
                         ? "border-amber-400 bg-amber-400/8"
-                        : "border-white/10 focus:border-amber-400"
+                        : "border-[#274363] focus:border-amber-400"
                   }`}
               />
             ))}

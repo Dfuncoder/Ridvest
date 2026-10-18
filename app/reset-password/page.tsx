@@ -20,11 +20,11 @@ export default function ResetPasswordPage() {
   const [state, formAction, pending] = useActionState<FormState, FormData>(resetPassword, undefined);
 
   const pwdInput =
-    "w-full pl-9 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors";
+    "w-full pl-9 pr-10 py-3 bg-[#1b385b] border border-[#274363] rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors";
 
   return (
     <AuthShell>
-      <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
+      <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7">
         <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mb-5">
           <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />

@@ -24,7 +24,7 @@ function LoginForm() {
   const { clearOn, message } = useStaleErrors(state);
 
   return (
-    <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
+    <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7">
       <h1 className="text-xl font-extrabold text-white mb-1">Welcome back</h1>
       <p className="text-sm text-slate-400 mb-6">Login to your Rydvest account</p>
 
@@ -53,7 +53,7 @@ function LoginForm() {
               autoComplete="current-password"
               required
               onChange={() => clearOn("form")}
-              className="w-full pl-9 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
+              className="w-full pl-9 pr-10 py-3 bg-[#1b385b] border border-[#274363] rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
             />
             <EyeToggle show={showPwd} onToggle={() => setShowPwd(!showPwd)} />
           </div>

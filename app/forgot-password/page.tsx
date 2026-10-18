@@ -22,7 +22,7 @@ function ForgotPasswordForm() {
 
   if (state?.success) {
     return (
-      <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7 text-center">
+      <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7 text-center">
         <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-5">
           <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -38,7 +38,7 @@ function ForgotPasswordForm() {
   }
 
   return (
-    <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
+    <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7">
       <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mb-5">
         <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
