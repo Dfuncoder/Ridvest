@@ -15,7 +15,9 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import RefundControls from "@/components/admin/RefundControls";
+import Image from "next/image";
 import { fmtNaira, fmtDateTime, poolProgressPct } from "@/lib/format";
+import { vehicleImage } from "@/lib/vehicles";
 
 export const metadata = { title: "Refunds · Rydvest admin" };
 
@@ -107,7 +109,7 @@ export default async function AdminRefundsPage({
         admin
           .from("pools")
           .select(
-            "id, name, status, amount_raised, is_private, created_at, product:pool_products(name, target_amount)"
+            "id, name, status, amount_raised, is_private, created_at, product:pool_products(name, target_amount, image_path)"
           )
           .in("id", poolIds)
           .order("created_at", { ascending: false }),
@@ -176,11 +178,12 @@ export default async function AdminRefundsPage({
           </p>
         </Card>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {(pools ?? []).map((pool) => {
             const product = pool.product as unknown as {
               name: string;
               target_amount: number;
+              image_path: string | null;
             } | null;
             const members = byPool.get(pool.id) ?? [];
             const open = pool.status === "open";
@@ -189,43 +192,100 @@ export default async function AdminRefundsPage({
               Number(product?.target_amount ?? 0)
             );
 
+            const refundable = members.filter((m) => m.status === "paid");
+            const refundableTotal = refundable.reduce((s, m) => s + Number(m.amount), 0);
+            const people = new Set(members.map((m) => m.user_id)).size;
+
             return (
-              <Card key={pool.id} className="overflow-hidden">
-                {/* ── The pool ── */}
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200/80 px-5 py-3.5">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/dashboard/pools/${pool.id}`}
-                      className="text-sm font-extrabold text-slate-900 transition-colors hover:text-amber-600"
-                    >
-                      {pool.name}
-                    </Link>
-                    <p className="text-xs text-slate-500">
-                      {product?.name ?? "—"} · {fmtNaira(pool.amount_raised)} of{" "}
-                      {fmtNaira(product?.target_amount ?? 0)} ({pct}%)
-                      {pool.is_private && " · private"}
-                    </p>
-                  </div>
-                  <span
-                    className={`${eyebrow} shrink-0 rounded-full border px-2.5 py-1 capitalize ${
-                      open
-                        ? "border-blue-500/20 bg-blue-500/10 text-blue-500"
-                        : "border-slate-500/20 bg-slate-500/10 text-slate-500"
-                    }`}
-                  >
-                    {open ? "Filling" : pool.status}
+              // <details> rather than a React toggle: native disclosure needs
+              // no client component, works without JavaScript, and is keyboard
+              // accessible for free. A single result opens itself — making
+              // somebody click once to see the only answer is silly.
+              <details
+                key={pool.id}
+                open={(pools ?? []).length === 1}
+                className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/40"
+              >
+                <summary className="flex cursor-pointer list-none items-center gap-3 p-3 transition-colors hover:bg-slate-50/80 sm:gap-4 sm:p-4">
+                  {/* The vehicle. Several pools are hard to tell apart by name
+                      alone; by photo they are not. */}
+                  <span className="relative hidden h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-900 sm:block">
+                    <Image
+                      src={vehicleImage(product?.name, product?.image_path)}
+                      alt=""
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
                   </span>
-                </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="truncate text-sm font-extrabold text-slate-900">
+                        {pool.name}
+                      </span>
+                      <span
+                        className={`${eyebrow} shrink-0 rounded-full border px-2 py-0.5 capitalize ${
+                          open
+                            ? "border-blue-500/20 bg-blue-500/10 text-blue-500"
+                            : "border-slate-500/20 bg-slate-500/10 text-slate-500"
+                        }`}
+                      >
+                        {open ? "Filling" : pool.status}
+                      </span>
+                      {pool.is_private && (
+                        <span className={`${eyebrow} shrink-0 text-slate-400`}>Private</span>
+                      )}
+                    </div>
+
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {product?.name ?? "—"} · {people} {people === 1 ? "person" : "people"}
+                      {refundable.length > 0 && open && (
+                        <>
+                          {" · "}
+                          <span className="font-semibold text-slate-700">
+                            {fmtNaira(refundableTotal)} refundable
+                          </span>
+                        </>
+                      )}
+                    </p>
+
+                    {/* Fill level, so one pool is told from another at a glance
+                        rather than by reading two numbers. */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-1.5 w-full max-w-48 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className={`h-full rounded-full ${open ? "bg-amber-400" : "bg-slate-300"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="shrink-0 text-[11px] tabular-nums text-slate-400">
+                        {fmtNaira(pool.amount_raised)} / {fmtNaira(product?.target_amount ?? 0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <svg
+                    className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-open:rotate-90"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </summary>
 
                 {!open && (
-                  <p className="border-b border-slate-200/80 bg-amber-50/70 px-5 py-2.5 text-xs leading-relaxed text-amber-800">
+                  <p className="border-t border-slate-200/80 bg-amber-50/70 px-5 py-2.5 text-xs leading-relaxed text-amber-800">
                     This pool is {pool.status} — the vehicle is bought and payouts are scheduled,
                     so money cannot be taken back out of it.
                   </p>
                 )}
 
                 {/* ── Everyone in it ── */}
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto border-t border-slate-200/80">
                   <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="border-b border-slate-200/80 bg-slate-50/60">
@@ -302,7 +362,7 @@ export default async function AdminRefundsPage({
                     </tbody>
                   </table>
                 </div>
-              </Card>
+              </details>
             );
           })}
         </div>
