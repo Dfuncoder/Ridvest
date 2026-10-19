@@ -51,7 +51,7 @@ export default function RegisterPage() {
 
       <form action={formAction}>
         {/* ── STEP 1 — Personal details (hidden, not unmounted, on step 2) ── */}
-        <div className={step === 1 ? "bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7" : "hidden"}>
+        <div className={step === 1 ? "bg-[#0f2e52] border border-white/10 rounded-2xl p-7" : "hidden"}>
           <h1 className="text-xl font-extrabold text-white mb-1">Create your account</h1>
           <p className="text-sm text-slate-400 mb-6">Start earning in minutes</p>
 
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                   }}
                   autoComplete="new-password"
                   required
-                  className="w-full pl-9 pr-10 py-3 bg-[#1b385b] border border-[#274363] rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
+                  className="w-full pl-9 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
                 />
                 <EyeToggle show={showPwd} onToggle={() => setShowPwd(!showPwd)} />
               </div>
@@ -128,7 +128,7 @@ export default function RegisterPage() {
         </div>
 
         {/* ── STEP 2 — Residence & consent ── */}
-        <div className={step === 2 ? "bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7" : "hidden"}>
+        <div className={step === 2 ? "bg-[#0f2e52] border border-white/10 rounded-2xl p-7" : "hidden"}>
           <h1 className="text-xl font-extrabold text-white mb-1">Almost there</h1>
           <p className="text-sm text-slate-400 mb-5">A few details required to verify your identity</p>
 
@@ -192,7 +192,7 @@ export default function RegisterPage() {
             <FieldError message={errorFor("agreedToTerms")} />
 
             <div className="flex gap-3 mt-1">
-              <button type="button" onClick={() => setStep(1)} className="px-5 py-3 bg-[#1b385b] border border-[#274363] rounded-xl text-sm font-medium text-slate-300 hover:bg-[#274363] transition-colors">
+              <button type="button" onClick={() => setStep(1)} className="px-5 py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/10 transition-colors">
                 ← Back
               </button>
               <button
@@ -201,7 +201,7 @@ export default function RegisterPage() {
                 className={`flex-1 py-3 font-extrabold text-sm rounded-xl transition-all duration-150 ${
                   agreed && !pending
                     ? "bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] shadow-lg shadow-amber-400/20"
-                    : "bg-[#1b385b] text-slate-600 cursor-not-allowed border border-[#1b385b]"
+                    : "bg-white/5 text-slate-600 cursor-not-allowed border border-white/5"
                 }`}
               >
                 {pending ? "Creating account..." : "Create account →"}

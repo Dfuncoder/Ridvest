@@ -56,6 +56,11 @@ export const ERRORS = {
   RESET_LINK_INVALID: "This reset link is invalid or has expired. Please request a new one.",
   RESET_PASSWORD_FAILED: "Couldn't update your password. Please request a new reset link.",
 
+  // ── Changing the password from inside the account ─────────────────────────
+  PASSWORD_CURRENT_WRONG: "That's not your current password.",
+  PASSWORD_SAME_AS_CURRENT: "Choose a password you aren't already using.",
+  PASSWORD_CHANGE_FAILED: "Couldn't change your password. Please try again.",
+
   // ── Profile & withdrawal accounts ─────────────────────────────────────────
   PROFILE_UPDATE_FAILED: "Couldn't save your profile changes. Please try again.",
   ACCOUNT_NUMBER_INVALID: "Account number must be exactly 10 digits.",

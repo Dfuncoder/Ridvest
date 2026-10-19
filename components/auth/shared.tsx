@@ -76,9 +76,7 @@ export function Logo() {
 
 // ── Input styling shared across auth forms ──────────────────────────────────
 export const inputClass =
-  // Solid #1b385b / #274363 are exactly white/5 and white/10 flattened over
-  // the card (#0f2e52). Identical to look at, nothing to blend per paint.
-  "w-full pl-9 pr-4 py-3 bg-[#1b385b] border border-[#274363] rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors";
+  "w-full pl-9 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors";
 export const labelClass =
   "text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5";
 
@@ -177,14 +175,7 @@ export function FieldError({ message }: { message?: string }) {
 /** Full-page dark background used by every auth screen. */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    // min-h-dvh, not min-h-screen: 100vh changes as the phone address bar
-    // hides and shows, and relaying the whole page mid-scroll is what some
-    // Android GPUs fail to repaint cleanly.
-    //
-    // overflow-hidden only from md up. It exists to clip the two glows, and
-    // those are hidden below md anyway — so on phones it was a clipping and
-    // stacking context that cost a composited layer and clipped nothing.
-    <main className="min-h-dvh bg-[#0d2137] flex flex-col items-center justify-center px-5 py-12 relative md:overflow-hidden">
+    <main className="min-h-screen bg-[#0d2137] flex flex-col items-center justify-center px-5 py-12 relative overflow-hidden">
       {/* Decorative glows as radial gradients — NOT filter:blur, which causes
           severe paint artifacts (ghosting/black bands) on low-end mobile GPUs.
           Hidden on phones entirely: old/unupdatable WebViews (e.g. devices

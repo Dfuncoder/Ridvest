@@ -1,7 +1,20 @@
 "use client";
 import Link from "next/link";
 
-export function CTABanner() {
+const ctaPrimary =
+  "bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20";
+const ctaGhost =
+  "bg-white/5 hover:bg-white/10 border border-white/15 text-white font-semibold text-sm px-8 py-4 rounded-xl transition-all duration-200";
+
+/**
+ * The closing call to action on every public page.
+ *
+ * It says two different things depending on who is reading. Telling somebody
+ * who is already signed in to "create a free account" is the kind of detail
+ * that makes a platform look like it does not know its own members, so a
+ * member gets pointed at the pools instead.
+ */
+export function CTABanner({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <section className="relative bg-[#0d2137] py-24 px-6 overflow-hidden">
       {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts. */}
@@ -16,17 +29,36 @@ export function CTABanner() {
         <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight mb-5">
           Your asset is waiting.
         </h2>
-        <p className="text-lg text-blue-200 leading-relaxed mb-10 max-w-xl mx-auto">
-          Join early owners earning from Nigeria's busiest transport sector. Start with a minimum of ₦100,000 today.
-        </p>
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Link href="/register" className="bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20">
-            Create free account →
-          </Link>
-          <Link href="/contact" className="bg-white/5 hover:bg-white/10 border border-white/15 text-white font-semibold text-sm px-8 py-4 rounded-xl transition-all duration-200">
-            Talk to us first
-          </Link>
-        </div>
+
+        {isLoggedIn ? (
+          <>
+            <p className="text-lg text-blue-200 leading-relaxed mb-10 max-w-xl mx-auto">
+              Pools fill as people join them. Pick the one you want a share of.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link href="/dashboard/pools" className={ctaPrimary}>
+                See open pools →
+              </Link>
+              <Link href="/dashboard" className={ctaGhost}>
+                My dashboard
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-lg text-blue-200 leading-relaxed mb-10 max-w-xl mx-auto">
+              Join early owners earning from Nigeria&apos;s busiest transport sector. Start with a minimum of ₦100,000 today.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link href="/register" className={ctaPrimary}>
+                Create free account →
+              </Link>
+              <Link href="/contact" className={ctaGhost}>
+                Talk to us first
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

@@ -69,7 +69,7 @@ function OtpForm() {
   // No email in the URL → we can't verify anything; send them back.
   if (!email) {
     return (
-      <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7 text-center">
+      <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7 text-center">
         <p className="text-sm text-slate-400 mb-4">
           We couldn't tell which email to verify.
         </p>
@@ -81,7 +81,7 @@ function OtpForm() {
   }
 
   return (
-    <div className="bg-[#0f2e52] border border-[#25374b] rounded-2xl p-7">
+    <div className="bg-[#0f2e52] border border-white/10 rounded-2xl p-7">
       <div className="text-center mb-7">
         <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-4">
           <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -110,12 +110,12 @@ function OtpForm() {
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
               style={{ height: 52 }}
-              className={`w-11 text-center text-xl font-bold rounded-xl border transition-all duration-150 outline-none bg-[#1b385b] text-white
+              className={`w-11 text-center text-xl font-bold rounded-xl border transition-all duration-150 outline-none bg-white/5 text-white
                 ${verifyState?.message
                   ? "border-red-500 bg-red-500/5"
                   : digit
                   ? "border-amber-400 bg-amber-400/8"
-                  : "border-[#274363] focus:border-amber-400"
+                  : "border-white/10 focus:border-amber-400"
                 }`}
             />
           ))}

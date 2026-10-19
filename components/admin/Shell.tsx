@@ -8,6 +8,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions/auth";
+import AccountMenu, { MenuIcons, type MenuItem } from "@/components/AccountMenu";
 
 const navItems = [
   { label: "Overview", href: "/admin", exact: true },
@@ -120,7 +121,22 @@ function SidebarContent({ name, onClose }: { name: string; onClose?: () => void 
     </>
   );
 }
-export default function AdminShell({ name, children }: { name: string; children: React.ReactNode }) {
+// ── The account menu, behind the avatar in the topbar ───────────────────────
+const ADMIN_MENU: MenuItem[] = [
+  { label: "Console settings", href: "/admin/settings", icon: MenuIcons.settings },
+  { label: "Change password", href: "/admin/security", icon: MenuIcons.password },
+  { label: "User dashboard", href: "/dashboard", icon: MenuIcons.switch },
+];
+
+export default function AdminShell({
+  name,
+  email,
+  children,
+}: {
+  name: string;
+  email: string;
+  children: React.ReactNode;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -156,7 +172,7 @@ export default function AdminShell({ name, children }: { name: string; children:
       {/* Main content */}
       <div className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
         {/* Solid background — backdrop-filter blurs are costly on mobile GPUs. */}
-        <header className="sticky top-0 z-20 bg-white/95 border-b border-slate-200/80 px-5 lg:px-8 h-16 flex items-center gap-3">
+        <header className="sticky top-0 z-40 bg-white/95 border-b border-slate-200/80 px-5 lg:px-8 h-16 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-500"
@@ -165,6 +181,9 @@ export default function AdminShell({ name, children }: { name: string; children:
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
           </button>
           <p className="text-sm font-bold text-slate-900 tracking-tight">Admin console</p>
+          <div className="ml-auto">
+            <AccountMenu name={name} email={email} items={ADMIN_MENU} badge="Administrator" />
+          </div>
         </header>
         <main className="flex-1 min-w-0 px-5 lg:px-8 py-7">
           {children}

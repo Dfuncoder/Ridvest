@@ -132,7 +132,7 @@ const timeline = [
   { when: "After 1.5 years", title: "Your choice", sub: "Own another or join a new pool." },
 ];
 
-export default function HowItWorks() {
+export default function HowItWorks({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <section id="hiw" className="relative bg-[#f8faff] py-24 sm:py-32 overflow-hidden">
       {/* Radial gradient instead of filter:blur — avoids mobile GPU artifacts. */}
@@ -242,10 +242,10 @@ export default function HowItWorks() {
               </div>
 
               <Link
-                href="/register"
+                href={isLoggedIn ? "/dashboard" : "/register"}
                 className="mt-4 block text-center w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200"
               >
-                Start earning →
+                {isLoggedIn ? "Go to my dashboard →" : "Start earning →"}
               </Link>
             </div>
 

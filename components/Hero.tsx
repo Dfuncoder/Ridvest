@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Hero() {
+export default function Hero({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <section
       style={{
@@ -66,9 +66,11 @@ export default function Hero() {
           </p>
 
           <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {/* Straight to signup — this is the primary conversion action. */}
+            {/* Signed out, this is the primary conversion action. Signed in,
+                "start earning" would send a member back to a signup form they
+                have already filled in, so it points at their dashboard. */}
             <Link
-              href="/register"
+              href={isLoggedIn ? "/dashboard" : "/register"}
               style={{
                 background: "#f59e0b",
                 color: "#0d2137",
@@ -85,7 +87,7 @@ export default function Hero() {
                 textDecoration: "none",
               }}
             >
-              Start earning →
+              {isLoggedIn ? "Go to my dashboard →" : "Start earning →"}
             </Link>
             <button
               onClick={() => document.getElementById("calc")?.scrollIntoView({ behavior: "smooth" })}

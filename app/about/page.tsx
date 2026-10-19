@@ -1,4 +1,5 @@
 import SiteNavbar from "@/components/SiteNavbar";
+import { getSessionUser } from "@/lib/auth";
 import { CTABanner, Footer } from "@/components/Footer";
 import AboutUs from "@/components/AboutUs";
 
@@ -7,12 +8,14 @@ export const metadata = {
   description: "Learn how Rydvest works, what we stand for, and why we built Nigeria's first keke napep co-ownership platform.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const isLoggedIn = Boolean(await getSessionUser());
+
   return (
     <main>
       <SiteNavbar />
       <AboutUs />
-      <CTABanner />
+      <CTABanner isLoggedIn={isLoggedIn} />
       <Footer />
     </main>
   );

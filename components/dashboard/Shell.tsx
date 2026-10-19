@@ -10,6 +10,7 @@ import { useState, createContext, useContext } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/actions/auth";
+import AccountMenu, { MenuIcons, type MenuItem } from "@/components/AccountMenu";
 
 // ── Theme context ──────────────────────────────────────────
 type Theme = "light" | "dark";
@@ -205,6 +206,15 @@ function BottomNavLink({ item }: { item: typeof navItems[0] }) {
   );
 }
 
+// ── The account menu ───────────────────────────────────────
+// Admins get the way back to the console from here too: the topbar is the one
+// thing on every page, and the sidebar switch is behind a hamburger on phones.
+const accountMenu = (isAdmin: boolean): MenuItem[] => [
+  { label: "My profile", href: "/dashboard/profile", icon: MenuIcons.profile },
+  { label: "Change password", href: "/dashboard/security", icon: MenuIcons.password },
+  ...(isAdmin ? [{ label: "Admin dashboard", href: "/admin", icon: MenuIcons.switch }] : []),
+];
+
 // ── Main shell ─────────────────────────────────────────────
 export default function DashboardShell({
   name,
@@ -264,7 +274,7 @@ export default function DashboardShell({
 
           {/* Topbar */}
           {/* Solid background — backdrop-filter blurs are costly on mobile GPUs. */}
-          <header className={`sticky top-0 z-20 border-b px-5 lg:px-8 h-16 flex items-center justify-between gap-4 transition-colors duration-300 ${topbarBg}`}>
+          <header className={`sticky top-0 z-40 border-b px-5 lg:px-8 h-16 flex items-center justify-between gap-4 transition-colors duration-300 ${topbarBg}`}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -280,9 +290,7 @@ export default function DashboardShell({
 
             <div className="flex items-center gap-1.5">
               <ThemeToggle />
-              <Link href="/dashboard/profile" className="w-9 h-9 rounded-full bg-[#0d2137] flex items-center justify-center text-amber-400 font-extrabold text-sm">
-                {(name || email || "R").charAt(0).toUpperCase()}
-              </Link>
+              <AccountMenu name={name} email={email} items={accountMenu(isAdmin)} />
             </div>
           </header>
 

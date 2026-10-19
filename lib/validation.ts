@@ -95,6 +95,28 @@ export const ResetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+
+/**
+ * Changing the password while signed in.
+ *
+ * The current password is required because a session is not proof that the
+ * person at the keyboard is the owner — a borrowed phone left open is exactly
+ * the case this stops.
+ */
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { error: ERRORS.PASSWORD_CURRENT_WRONG }),
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: ERRORS.SIGNUP_PASSWORDS_DONT_MATCH,
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.password !== data.currentPassword, {
+    error: ERRORS.PASSWORD_SAME_AS_CURRENT,
+    path: ["password"],
+  });
 // ── Profile update ──────────────────────────────────────────────────────────
 export const ProfileUpdateSchema = z.object({
   fullName: z.string().trim().min(3, { error: ERRORS.SIGNUP_NAME_REQUIRED }).max(120),
