@@ -55,6 +55,34 @@ export default function RegisterPage() {
           <h1 className="text-xl font-extrabold text-white mb-1">Create your account</h1>
           <p className="text-sm text-slate-400 mb-6">Start earning in minutes</p>
 
+          {/* Said before the first field rather than after a rejected form:
+              the name and phone typed here are the ones checked against the
+              ID later, and a mismatch only surfaces at verification, by which
+              point the account is already waiting. */}
+          <div className="mb-6 flex gap-3 rounded-xl border border-amber-400/25 bg-amber-400/8 px-3.5 py-3">
+            <svg
+              className="h-5 w-5 shrink-0 text-amber-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              />
+            </svg>
+            <p className="text-xs leading-relaxed text-amber-200/90">
+              Use your details{" "}
+              <strong className="font-bold text-amber-300">
+                exactly as they appear on your government-issued ID
+              </strong>
+              . Your name and phone are required for KYC verification — incorrect details will
+              delay your account.
+            </p>
+          </div>
+
           <div className="flex flex-col gap-4">
             <div>
               <label htmlFor="fullName" className={labelClass}>Full name</label>

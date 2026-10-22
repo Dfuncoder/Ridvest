@@ -123,7 +123,6 @@ const resources = [
   { label: "Terms of service", href: "/terms" },
   { label: "Privacy policy", href: "/privacy" },
   { label: "FAQ", href: "/faq" },
-  { label: "Ownership risks", href: "/terms#risk-disclosure" },
 ];
 
 const contact = [
