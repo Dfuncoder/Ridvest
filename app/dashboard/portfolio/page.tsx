@@ -5,11 +5,13 @@
  * positions.
  */
 import Link from "next/link";
+import Image from "next/image";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fmtNaira, fmtDate } from "@/lib/format";
+import { vehicleImage } from "@/lib/vehicles";
 
-export const metadata = { title: "Investments · Rydvest" };
+export const metadata = { title: "My assets · Rydvest" };
 
 const eyebrow = "text-[10px] font-bold uppercase tracking-[0.14em]";
 
@@ -29,7 +31,7 @@ export default async function InvestmentsPage() {
     supabase
       .from("investments")
       .select(
-        "id, amount, status, paid_at, created_at, pool:pools(id, name, status, product:pool_products(name, roi_percent, duration_weeks))"
+        "id, amount, status, paid_at, created_at, pool:pools(id, name, status, product:pool_products(name, roi_percent, duration_weeks, image_path))"
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
@@ -69,13 +71,13 @@ export default async function InvestmentsPage() {
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Investments</h1>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">My assets</h1>
         <p className="text-sm text-slate-500 mt-1">Every pool you have money in.</p>
       </div>
 
       {rows.length === 0 ? (
         <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 p-10 text-center">
-          <p className="text-sm text-slate-500 mb-5">No investments yet.</p>
+          <p className="text-sm text-slate-500 mb-5">Nothing here yet.</p>
           <Link
             href="/dashboard/pools"
             className="inline-block bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-amber-400/20"
@@ -92,7 +94,12 @@ export default async function InvestmentsPage() {
               id: string;
               name: string;
               status: string;
-              product: { name: string; roi_percent: number; duration_weeks: number } | null;
+              product: {
+                name: string;
+                roi_percent: number;
+                duration_weeks: number;
+                image_path: string | null;
+              } | null;
             } | null;
             if (!pool) return null;
 
@@ -111,7 +118,19 @@ export default async function InvestmentsPage() {
                 className="bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 p-5 block transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300"
               >
                 <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="min-w-0">
+                  {/* A thumbnail rather than a full-width photo: this list gets
+                      long, and it only has to say which vehicle at a glance. */}
+                  <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-slate-900">
+                    <Image
+                      src={vehicleImage(product?.name, product?.image_path)}
+                      alt={product?.name ?? "Vehicle"}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  </span>
+
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
                       {pool.name}
                     </p>
@@ -132,7 +151,7 @@ export default async function InvestmentsPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
                   <div className="bg-slate-50/80 border border-slate-100 rounded-xl px-3 py-2.5">
-                    <p className={`${eyebrow} text-slate-400 mb-1 leading-tight`}>Invested</p>
+                    <p className={`${eyebrow} text-slate-400 mb-1 leading-tight`}>Put in</p>
                     <p className="text-sm font-extrabold text-slate-900 tabular-nums">
                       {fmtNaira(inv.amount)}
                     </p>

@@ -10,7 +10,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { updateInterestRate } from "@/app/actions/admin";
-import { platformFee, PLATFORM_FEE_LABEL } from "@/lib/economics";
+import { BalancePrivacy, BalanceToggle, Money, ResponsiveMoney } from "@/components/BalanceToggle";
+import { platformFee, PLATFORM_FEE_LABEL, TRANSFER_FEE } from "@/lib/economics";
 import { fmtNaira } from "@/lib/format";
 
 export const metadata = { title: "Overview · Rydvest admin" };
@@ -40,6 +41,7 @@ export default async function AdminOverviewPage() {
     { data: withdrawals },
     { data: pools },
     { data: deposits },
+    { data: feeIncome },
     { data: rateSetting },
   ] = await Promise.all([
     admin.from("profiles").select("id", { count: "exact", head: true }),
@@ -48,6 +50,7 @@ export default async function AdminOverviewPage() {
     admin.from("withdrawals").select("amount, status"),
     admin.from("pools").select("status, amount_raised"),
     admin.from("deposits").select("status"),
+    admin.rpc("transfer_fee_income"),
     admin.from("app_settings").select("value").eq("key", "interest_rate_percent").single(),
   ]);
 
@@ -77,6 +80,19 @@ export default async function AdminOverviewPage() {
     .reduce((s, p) => s + Number(p.amount_raised), 0);
   const earnedFee = platformFee(fundedRaised);
 
+  // The second income stream: a flat charge on each internal transfer.
+  // Totalled in SQL rather than by pulling every transfer row back here.
+  const transferFees = (feeIncome ?? {}) as {
+    total?: number;
+    count?: number;
+    today?: number;
+    this_month?: number;
+    last_30d?: number;
+    volume?: number;
+  };
+  const transferFeeTotal = Number(transferFees.total ?? 0);
+  const totalEarnings = earnedFee + transferFeeTotal;
+
   // Still filling: what the fee becomes if these pools reach target.
   const fillingRaised = (pools ?? [])
     .filter((p) => p.status === "open")
@@ -90,18 +106,15 @@ export default async function AdminOverviewPage() {
     { label: "Money in", value: fmtNaira(totalInvested), hint: "Confirmed investments" },
     { label: "Promised to investors", value: fmtNaira(totalPromised), hint: "Full payout schedule" },
     { label: "Paid out so far", value: fmtNaira(totalPaidOut), hint: "Payouts marked paid" },
-    {
-      label: "Still owed",
-      value: fmtNaira(outstanding),
-      hint: "Scheduled but not yet paid",
-      tone: "text-slate-900",
-    },
+    { label: "Still owed", value: fmtNaira(outstanding), hint: "Scheduled but not yet paid" },
   ];
 
   const needsYou = [
     {
       label: "Transfers to confirm",
       value: String(awaitingDeposits),
+      // A count, not a figure — stays readable while amounts are hidden.
+      isCount: true,
       detail: awaitingDeposits === 1 ? "1 waiting" : `${awaitingDeposits} waiting`,
       href: "/admin/deposits",
       tone: awaitingDeposits > 0 ? "text-amber-500" : "text-slate-300",
@@ -123,7 +136,12 @@ export default async function AdminOverviewPage() {
   ];
 
   return (
+    <BalancePrivacy initialHidden={Boolean(profile.hide_balance)}>
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
+      {/* No eye on this line. There is one beside the earnings figure below,
+          and both drove the same page-wide toggle — two controls for one
+          setting, the second of them sitting next to a heading with no money
+          on it. The toggle belongs next to what it hides. */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
           Business overview
@@ -140,27 +158,100 @@ export default async function AdminOverviewPage() {
           style={{ background: "radial-gradient(circle, rgba(250,204,21,0.16) 0%, transparent 68%)" }}
         />
         <div className="relative z-10">
-          <p className={`${eyebrow} text-white/40 mb-2`}>
-            Rydvest earnings · {PLATFORM_FEE_LABEL} of funded pools
-          </p>
-          <p className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
-            {fmtNaira(earnedFee)}
+          <p className={`${eyebrow} text-white/40 mb-2`}>Rydvest earnings · all sources</p>
+          <div className="flex items-center gap-3">
+            <p className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
+              <Money value={fmtNaira(totalEarnings)} />
+            </p>
+            <BalanceToggle />
+          </div>
+          <p className="mt-1.5 text-xs text-white/40">
+            {PLATFORM_FEE_LABEL} of every funded pool, plus {fmtNaira(TRANSFER_FEE)} on each
+            internal transfer.
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-7">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-7">
             {[
-              { label: "Funded pools", value: fmtNaira(fundedRaised) },
-              { label: "In the pipeline", value: fmtNaira(pipelineFee), hint: "If filling pools close" },
-              { label: "Registered users", value: String(userCount ?? 0) },
+              { label: "From pools", amount: earnedFee, hint: PLATFORM_FEE_LABEL + " of funded" },
+              {
+                label: "From transfers",
+                amount: transferFees.total,
+                hint: `${transferFees.count} transfer${transferFees.count === 1 ? "" : "s"}`,
+              },
+              { label: "In the pipeline", amount: pipelineFee, hint: "If filling pools close" },
+              { label: "Registered users", count: userCount ?? 0 },
             ].map((s) => (
-              <div key={s.label} className="bg-white/[0.07] border border-white/10 rounded-xl px-3.5 py-3">
+              <div
+                key={s.label}
+                className="bg-white/[0.07] border border-white/10 rounded-xl px-3 sm:px-3.5 py-3 min-w-0"
+              >
                 <p className={`${eyebrow} text-white/35 mb-1 leading-tight`}>{s.label}</p>
-                <p className="text-sm font-extrabold text-white tabular-nums">{s.value}</p>
+                <p className="text-sm font-extrabold text-white tabular-nums">
+                  {s.count !== undefined ? s.count : <ResponsiveMoney value={s.amount!} />}
+                </p>
                 {s.hint && <p className="text-[10px] text-white/30 mt-0.5">{s.hint}</p>}
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── TRANSFER FEE INCOME ──
+          Broken out by period rather than shown as one total, because a
+          single lifetime figure cannot tell you whether the stream is growing
+          or has stopped. */}
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+            Transfer fees
+          </h2>
+          <Link
+            href="/admin/transfers"
+            className="text-xs font-bold text-amber-500 transition-colors hover:text-amber-400"
+          >
+            Every transfer →
+          </Link>
+        </div>
+
+        <Card className="overflow-hidden">
+          <div className="grid grid-cols-2 divide-slate-100 sm:grid-cols-4 sm:divide-x">
+            {[
+              { label: "Today", amount: Number(transferFees.today ?? 0) },
+              { label: "This month", amount: Number(transferFees.this_month ?? 0) },
+              { label: "Last 30 days", amount: Number(transferFees.last_30d ?? 0) },
+              { label: "All time", amount: transferFeeTotal, strong: true },
+            ].map((s) => (
+              <div key={s.label} className="min-w-0 px-4 py-4">
+                <p className={`${eyebrow} text-slate-400 mb-1`}>{s.label}</p>
+                <p
+                  className={`truncate text-base font-extrabold tabular-nums tracking-tight ${
+                    s.strong ? "text-green-600" : "text-slate-900"
+                  }`}
+                >
+                  <Money value={fmtNaira(s.amount)} />
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-1 border-t border-slate-200/80 bg-slate-50/60 px-4 py-3 text-xs text-slate-500">
+            <span>
+              <span className="font-bold text-slate-900 tabular-nums">
+                {Number(transferFees.count ?? 0).toLocaleString()}
+              </span>{" "}
+              transfers
+            </span>
+            <span>
+              <span className="font-bold text-slate-900 tabular-nums">
+                <Money value={fmtNaira(Number(transferFees.volume ?? 0))} />
+              </span>{" "}
+              moved between accounts
+            </span>
+            <span>
+              {fmtNaira(TRANSFER_FEE)} per transfer
+            </span>
+          </div>
+        </Card>
       </section>
 
       {/* ── NEEDS YOU ── */}
@@ -172,7 +263,7 @@ export default async function AdminOverviewPage() {
               <Card className="p-5 h-full transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-slate-300">
                 <p className={`${eyebrow} text-slate-400 mb-2`}>{n.label}</p>
                 <p className={`text-xl font-extrabold tabular-nums tracking-tight ${n.tone}`}>
-                  {n.value}
+                  {n.isCount ? n.value : <Money value={n.value} />}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1.5">{n.detail} →</p>
               </Card>
@@ -189,7 +280,7 @@ export default async function AdminOverviewPage() {
             <Card key={s.label} className="p-5">
               <p className={`${eyebrow} text-slate-400 mb-2 leading-tight`}>{s.label}</p>
               <p className="text-lg font-extrabold text-slate-900 tabular-nums tracking-tight">
-                {s.value}
+                <Money value={s.value} />
               </p>
               <p className="text-[11px] text-slate-400 mt-1.5">{s.hint}</p>
             </Card>
@@ -205,7 +296,7 @@ export default async function AdminOverviewPage() {
                   assetBurden > 0 ? "text-slate-900" : "text-green-600"
                 }`}
               >
-                {fmtNaira(Math.max(0, assetBurden))}
+                <Money value={fmtNaira(Math.max(0, assetBurden))} />
               </p>
             </div>
             <p className="text-[11px] text-slate-400 max-w-sm">
@@ -277,5 +368,6 @@ export default async function AdminOverviewPage() {
         </form>
       </Card>
     </div>
+    </BalancePrivacy>
   );
 }

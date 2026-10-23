@@ -250,3 +250,57 @@ ${row("Email", params.userEmail)}${row("Phone", params.userPhone || "—")}${row
 </td></tr></table>
 </body></html>`;
 }
+
+/**
+ * The status of this user's most recent bank transfer.
+ *
+ * The waiting screen after "I've sent it" had no way of learning that an admin
+ * had confirmed the money: it was local component state, and a Server
+ * Component does not re-render on its own. So it span forever, and the only
+ * way to find out was to leave the page. This is what it polls.
+ *
+ * No reference is passed in — the newest row for this user IS the one they
+ * just declared, and looking it up server-side means the client cannot ask
+ * about somebody else's deposit.
+ */
+export type DepositStatus = {
+  state: "waiting" | "credited" | "rejected" | "none";
+  amount: number | null;
+  note: string | null;
+};
+
+export async function latestDepositStatus(): Promise<DepositStatus> {
+  const user = await requireUser();
+  const supabase = await createSupabaseServerClient();
+
+  // RLS limits this to the caller's own deposits.
+  const { data, error } = await supabase
+    .from("deposits")
+    .select("status, amount, credited_amount, admin_note, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[wallet] latestDepositStatus failed", error.message);
+    // Treated as "still waiting" so a blip does not show a false outcome.
+    return { state: "waiting", amount: null, note: null };
+  }
+
+  if (!data) return { state: "none", amount: null, note: null };
+
+  if (data.status === "credited") {
+    return {
+      state: "credited",
+      amount: Number(data.credited_amount ?? data.amount ?? 0),
+      note: null,
+    };
+  }
+
+  if (data.status === "rejected") {
+    return { state: "rejected", amount: null, note: data.admin_note ?? null };
+  }
+
+  return { state: "waiting", amount: null, note: null };
+}

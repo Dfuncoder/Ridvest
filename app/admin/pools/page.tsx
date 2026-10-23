@@ -27,6 +27,8 @@ export default async function AdminPoolsPage() {
       .from("pool_products")
       .select("id, name, target_amount")
       .eq("active", true)
+      // Official pools are public, so private-only options do not belong here.
+      .in("availability", ["public", "both"])
       .order("name"),
   ]);
 
@@ -39,15 +41,26 @@ export default async function AdminPoolsPage() {
 
       {/* Open an official pool */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5">
-        <h2 className="text-sm font-extrabold text-slate-900 mb-3">Open an official pool</h2>
-        <form action={createOfficialPool} className="flex gap-2 max-w-md">
-          <select name="productId" required defaultValue="" className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 outline-none focus:border-amber-400">
+        <h2 className="text-sm font-extrabold text-slate-900 mb-1">Open an official pool</h2>
+        <p className="text-xs text-slate-500 mb-3">
+          Name it after the vehicle if you like — leave it blank to use the pool option&apos;s own
+          name.
+        </p>
+        <form action={createOfficialPool} className="flex flex-col sm:flex-row gap-2 max-w-2xl">
+          <select name="productId" required defaultValue="" className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 outline-none focus:border-amber-400">
             <option value="" disabled>Choose a pool option</option>
             {(products ?? []).map((p) => (
               <option key={p.id} value={p.id}>{p.name} — {fmtNaira(p.target_amount)}</option>
             ))}
           </select>
-          <button type="submit" className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-sm rounded-xl transition-all">
+          <input
+            name="name"
+            type="text"
+            maxLength={80}
+            placeholder="Pool name (optional)"
+            className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-amber-400"
+          />
+          <button type="submit" className="shrink-0 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-sm rounded-xl transition-all">
             Open pool
           </button>
         </form>

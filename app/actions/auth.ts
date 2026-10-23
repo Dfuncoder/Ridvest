@@ -17,16 +17,40 @@
  */
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { noReplyFrom, sendEmail, supportEmail } from "@/lib/email";
+import { getPaymentSettings } from "@/lib/settings";
+import { requestInfo } from "@/lib/request-info";
+import {
+  loginNoticeSubject,
+  loginNoticeText,
+  loginNoticeHtml,
+  adminLoginAlertSubject,
+  adminLoginAlertText,
+  adminLoginAlertHtml,
+  type SignIn,
+} from "@/lib/notices";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { createSupabaseServerClient, createSupabaseCheckClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ERRORS } from "@/lib/errors";
 import { safeNextPath } from "@/lib/redirects";
+import {
+  CHALLENGE_COOKIE,
+  CHALLENGE_TTL_MS,
+  createChallenge,
+  readChallenge,
+  loginOtpDisabled,
+} from "@/lib/login-challenge";
 import {
   SignupSchema,
   LoginSchema,
   OtpSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
+  ChangePasswordSchema,
   fieldErrors,
 } from "@/lib/validation";
 
@@ -118,6 +142,10 @@ export async function verifyOtp(_prev: FormState, formData: FormData): Promise<F
 
   if (error) return { message: ERRORS.OTP_INVALID };
 
+  const { data: verified } = await supabase.auth.getClaims();
+  const verifiedId = verified?.claims?.sub as string | undefined;
+  if (verifiedId) await startIdleClock(verifiedId);
+
   redirect("/dashboard");
 }
 
@@ -138,6 +166,96 @@ export async function resendOtp(_prev: FormState, formData: FormData): Promise<F
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGIN — redirects admins to /admin, everyone else to /dashboard
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Starts the idle clock for an account that has just authenticated.
+ *
+ * Signing in does not touch profiles.last_active_at by itself, so a user who
+ * had been away longer than the idle window would authenticate successfully
+ * and then be thrown straight back out by requireUser() — and again on the
+ * next attempt, for ever. Stamping it here is what makes a fresh login mean a
+ * fresh clock.
+ *
+ * Deliberately uses the service role and an explicit id rather than the
+ * caller's session: if this write were to fail, the user would walk into that
+ * same loop, so it must not depend on auth.uid() being readable in the moment
+ * right after sign-in.
+ */
+async function startIdleClock(userId: string) {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { error } = await admin
+      .from("profiles")
+      .update({ last_active_at: new Date().toISOString() })
+      .eq("id", userId);
+    if (error) console.error("[auth] could not start idle clock:", error.message);
+  } catch (err) {
+    // Never block a successful login over this; the idle check fails open too.
+    console.error("[auth] could not start idle clock:", err);
+  }
+}
+
+/**
+ * Tells the account owner that somebody just signed in to their account, and
+ * tells the notification list when that somebody was an admin.
+ *
+ * The request details have to be read HERE, before after() is scheduled — the
+ * callback runs once the response is gone, and in a Server Function it is the
+ * only safe moment to be sure headers() still describes this sign-in and not
+ * nothing at all. The flat object is then carried into the callback.
+ *
+ * Nothing in here can fail the sign-in. A person who has just typed the right
+ * password and the right code is getting in whether or not Resend answers, so
+ * every failure is logged and swallowed. The alternative — a mail outage that
+ * locks everybody out of their own accounts — is far worse than a missing
+ * notice.
+ */
+async function announceSignIn(params: { email: string; name: string; isAdmin: boolean }) {
+  let session: SignIn;
+  try {
+    const info = await requestInfo();
+    session = { at: new Date(), ip: info.ip, location: info.location, device: info.device };
+  } catch (err) {
+    console.error("[auth] could not read sign-in details", err);
+    return;
+  }
+
+  const who = params.name.trim() || params.email;
+
+  after(async () => {
+    try {
+      const res = await sendEmail({
+        from: noReplyFrom(),
+        to: params.email,
+        // The email invites a reply; it has to reach a person.
+        replyTo: supportEmail(),
+        subject: loginNoticeSubject,
+        text: loginNoticeText(who, session),
+        html: loginNoticeHtml(who, session),
+      });
+      if (!res.ok) console.error("[auth] sign-in notice failed", res.body);
+
+      if (!params.isAdmin) return;
+
+      // An admin session can read verification documents and move money, so
+      // the rest of the list hears about it too.
+      const account = `${who} (${params.email})`;
+      const { notifyEmails } = await getPaymentSettings();
+      for (const to of notifyEmails) {
+        const alert = await sendEmail({
+          from: noReplyFrom(),
+          to,
+          subject: adminLoginAlertSubject(who),
+          text: adminLoginAlertText(account, session),
+          html: adminLoginAlertHtml(account, session),
+        });
+        if (!alert.ok) console.error("[auth] admin sign-in alert failed for", to, alert.body);
+      }
+    } catch (err) {
+      console.error("[auth] sign-in notice failed", err);
+    }
+  });
+}
+
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
   // Where the user was headed before the login wall (e.g. a transfer
   // confirmation link). Validated, never trusted verbatim.
@@ -150,8 +268,13 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   // Same vague message for bad input and bad credentials — no account probing.
   if (!parsed.success) return { message: ERRORS.AUTH_INVALID_LOGIN };
 
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  // ── Step 1: the password ────────────────────────────────────────────────
+  //
+  // Checked with a client that does NOT persist the session, so a correct
+  // password proves identity without signing the browser in. The session is
+  // established only by the code step below.
+  const check = createSupabaseCheckClient();
+  const { error } = await check.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   });
@@ -159,6 +282,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   if (error) {
     // Registered but never confirmed the email → push them through OTP again.
     if (error.code === "email_not_confirmed") {
+      const supabase = await createSupabaseServerClient();
       await supabase.auth.resend({ type: "signup", email: parsed.data.email });
       redirect(`/verify-otp?email=${encodeURIComponent(parsed.data.email)}`);
     }
@@ -166,17 +290,164 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     return { message: ERRORS.AUTH_INVALID_LOGIN };
   }
 
-  // Route by role (RLS lets the user read their own profile row).
+  // That sign-in minted tokens nobody will use. Drop them rather than leave
+  // a live refresh token behind for a session that never existed.
+  await check.auth.signOut();
+
+  // ── Locked accounts stop here ───────────────────────────────────────────
+  //
+  // Before the code is sent, not after: there is no reason to email a code to
+  // an account that cannot be used.
+  const service = createSupabaseAdminClient();
+  const { data: profile } = await service
+    .from("profiles")
+    .select("id, locked_at, role, full_name")
+    .eq("email", parsed.data.email)
+    .maybeSingle();
+
+  if (profile?.locked_at) return { message: ERRORS.ACCOUNT_LOCKED };
+
+  // ── The escape hatch ────────────────────────────────────────────────────
+  //
+  // With LOGIN_OTP_DISABLED=1 the second step is skipped entirely and the
+  // password alone signs them in — there to get everyone back in if email
+  // delivery breaks.
+  if (loginOtpDisabled()) {
+    const supabase = await createSupabaseServerClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    });
+    if (signInError) return { message: ERRORS.AUTH_INVALID_LOGIN };
+    if (profile?.id) await startIdleClock(profile.id);
+    await announceSignIn({
+      email: parsed.data.email,
+      name: profile?.full_name ?? "",
+      isAdmin: profile?.role === "admin",
+    });
+    if (next) redirect(next);
+    redirect(profile?.role === "admin" ? "/admin" : "/dashboard");
+  }
+
+  // ── Step 2: send the code ───────────────────────────────────────────────
+  const supabase = await createSupabaseServerClient();
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    // Never create an account from this path; the password already proved one
+    // exists. Without this a typo'd address could register somebody new.
+    options: { shouldCreateUser: false },
+  });
+
+  if (otpError) {
+    if (otpError.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
+    console.error("[auth] could not send login code", otpError.message);
+    return { message: ERRORS.LOGIN_CODE_SEND_FAILED };
+  }
+
+  // The proof that the password step happened. Short-lived, signed, and
+  // worthless on its own — see lib/login-challenge.ts.
+  const jar = await cookies();
+  jar.set(CHALLENGE_COOKIE, createChallenge(parsed.data.email, next ?? ""), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor(CHALLENGE_TTL_MS / 1000),
+  });
+
+  redirect("/verify-login");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP 2 OF LOGIN — the emailed code.
+//
+// The email comes from the signed challenge cookie, never from the form: a
+// posted address could be swapped for somebody else's after the password step.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function verifyLoginOtp(_prev: FormState, formData: FormData): Promise<FormState> {
+  const jar = await cookies();
+  const challenge = readChallenge(jar.get(CHALLENGE_COOKIE)?.value);
+  if (!challenge) return { message: ERRORS.LOGIN_CHALLENGE_EXPIRED };
+
+  const token = String(formData.get("token") ?? "").trim();
+  if (!/^[0-9]{6}$/.test(token)) return { message: ERRORS.OTP_INVALID };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: challenge.email,
+    token,
+    type: "email",
+  });
+
+  if (error) {
+    if (error.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
+    return { message: ERRORS.OTP_INVALID };
+  }
+
+  // Spent. Clearing it stops a second login being completed from the same
+  // password check.
+  jar.delete(CHALLENGE_COOKIE);
+
   const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub as string | undefined;
+
+  // Re-checked after the session exists: an account locked during the minute
+  // between password and code must not get in.
+  if (userId) {
+    const service = createSupabaseAdminClient();
+    const { data: locked } = await service
+      .from("profiles")
+      .select("locked_at")
+      .eq("id", userId)
+      .single();
+
+    if (locked?.locked_at) {
+      await supabase.auth.signOut();
+      return { message: ERRORS.ACCOUNT_LOCKED };
+    }
+  }
+
+  if (userId) await startIdleClock(userId);
+
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
-    .eq("id", claims?.claims?.sub ?? "")
+    .select("role, full_name")
+    .eq("id", userId ?? "")
     .single();
 
-  if (next) redirect(next);
+  // The address comes from the challenge, which is where the password was
+  // checked — the same one the code was just sent to.
+  await announceSignIn({
+    email: challenge.email,
+    name: profile?.full_name ?? "",
+    isAdmin: profile?.role === "admin",
+  });
+
+  if (challenge.next) redirect(challenge.next);
   redirect(profile?.role === "admin" ? "/admin" : "/dashboard");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESEND THE LOGIN CODE
+// ─────────────────────────────────────────────────────────────────────────────
+export async function resendLoginOtp(_prev: FormState): Promise<FormState> {
+  const jar = await cookies();
+  const challenge = readChallenge(jar.get(CHALLENGE_COOKIE)?.value);
+  if (!challenge) return { message: ERRORS.LOGIN_CHALLENGE_EXPIRED };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: challenge.email,
+    options: { shouldCreateUser: false },
+  });
+
+  if (error) {
+    if (error.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
+    return { message: ERRORS.OTP_RESEND_FAILED };
+  }
+  return { success: true, message: "A new code has been sent to your email." };
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGOUT
@@ -224,7 +495,66 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { message: ERRORS.RESET_PASSWORD_FAILED };
 
+  // No password-change notice is sent from here on purpose.
+  //
+  // Supabase has a "Password changed" security notification that fires on
+  // EVERY password change, including ones that never reach this action — an
+  // admin changing it from the Supabase dashboard, or any other path through
+  // GoTrue. Sending our own as well would mean two emails for one event, and
+  // sending ONLY our own would quietly miss those other paths.
+  //
+  // The template lives at supabase/email-templates/password-changed.html.
+  // ⚠ It only goes out if the notification is enabled at project level.
   // Force a fresh login with the new password.
   await supabase.auth.signOut();
   redirect("/login?reset=1");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE PASSWORD — from inside the account, with the current one
+//
+// Different from resetPassword above, which runs off an emailed link and has
+// no session to speak of. Here there IS a session, and that is exactly why the
+// current password is asked for: a signed-in tab proves the browser, not the
+// person. Without it, a phone left unlocked on a desk is a password change.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function changePassword(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+
+  const parsed = ChangePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+
+  // Checked with the non-persisting client, so a correct password proves
+  // identity without touching the session the user is already holding.
+  const check = createSupabaseCheckClient();
+  const { error: wrongPassword } = await check.auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data.currentPassword,
+  });
+  if (wrongPassword) {
+    // Somebody mistyping their own password is who this protects, not an
+    // event worth logging.
+    return { errors: { currentPassword: ERRORS.PASSWORD_CURRENT_WRONG } };
+  }
+  // Drop the tokens that check minted; nothing is going to use them.
+  await check.auth.signOut();
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    console.error("[auth] password change failed", error.message);
+    return { message: ERRORS.PASSWORD_CHANGE_FAILED };
+  }
+
+  // Supabase's own "Password changed" security notification covers the email,
+  // as it does for the reset path above — see the note in resetPassword().
+  //
+  // The session is deliberately left alone. Signing them out here would throw
+  // somebody straight back to the login wall for doing the responsible thing,
+  // and the session they keep is the one they just proved they own.
+  return { success: true, message: "Your password has been changed." };
 }

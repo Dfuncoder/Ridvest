@@ -4,8 +4,8 @@ const plans = [
   {
     name: "STARTER",
     amount: "₦100,000",
-    sub: "Minimum investment",
-    roi: "20–22% ROI/yr",
+    sub: "Minimum to own",
+    roi: "20–22% earnings/yr",
     features: [
       "Partial keke ownership stake",
       "Weekly payout to your bank",
@@ -13,14 +13,14 @@ const plans = [
       "Verified driver management",
     ],
     featured: false,
-    cta: "Invest now →",
+    cta: "Own one now →",
     href: "/register",
   },
   {
     name: "GROWTH",
     amount: "₦200,000",
     sub: "Co-own one full keke",
-    roi: "25–28% ROI/yr",
+    roi: "25–28% earnings/yr",
     features: [
       "Full keke co-ownership",
       "Weekly payout",
@@ -29,14 +29,14 @@ const plans = [
       "Real-time earnings tracker",
     ],
     featured: true,
-    cta: "Invest now →",
+    cta: "Own one now →",
     href: "/register",
   },
   {
     name: "FLEET",
     amount: "₦500,000+",
     sub: "Own multiple kekes",
-    roi: "30–35% ROI/yr",
+    roi: "30–35% earnings/yr",
     features: [
       "Multi-keke ownership",
       "Flexible payout schedule",
@@ -54,7 +54,7 @@ export default function Plans() {
   return (
     <section id="plans" style={{ padding: "clamp(40px, 8vw, 72px) 20px", background: "#f0f6ff" }}>
       <div style={{ textAlign: "center", marginBottom: 52 }}>
-        <div style={{ fontSize: 12, color: "#2563a8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>Investment plans</div>
+        <div style={{ fontSize: 12, color: "#2563a8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>Ownership plans</div>
         <h2 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 12 }}>Choose your stake</h2>
         <p style={{ fontSize: 16, color: "#64748b", lineHeight: 1.65, maxWidth: 480, margin: "0 auto" }}>All plans include full asset management, verified drivers, and weekly payouts.</p>
       </div>

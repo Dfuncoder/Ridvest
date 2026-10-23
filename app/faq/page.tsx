@@ -9,11 +9,11 @@ const faqs = [
     questions: [
       {
         q: "What is Rydvest?",
-        a: "Rydvest is a Nigerian co-investment platform that lets you own a stake in a commercial vehicle and earn weekly returns for the duration of your investment pool. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You invest, we run it, you earn.",
+        a: "Rydvest is a Nigerian co-ownership platform that lets you own a stake in a commercial transport vehicle and earn weekly earnings for the duration of your ownership pool. We handle everything on the ground — vehicle acquisition, driver management, maintenance, and operations. You acquire, we run it, you earn.",
       },
       {
-        q: "Who can invest on Rydvest?",
-        a: "Any Nigerian resident aged 18 and above with a valid bank account can invest on Rydvest. Sign-up takes a few minutes — you provide your personal details and confirm your email with a verification code.",
+        q: "Who can own on Rydvest?",
+        a: "Any Nigerian resident aged 18 and above with a valid bank account can take part on Rydvest. Sign-up takes a few minutes — you provide your personal details and confirm your email with a verification code.",
       },
       {
         q: "How do I create an account?",
@@ -21,53 +21,53 @@ const faqs = [
       },
       {
         q: "Is Rydvest safe?",
-        a: "Yes. Every investment is backed by a real, physical vehicle on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the pool's duration. Your capital plus your full return are paid back to you through your weekly payouts across the life of the pool.",
+        a: "Yes. Every ownership is backed by a real, physical vehicle on the road — not a digital token or paper promise. We vet our drivers, insure our vehicles, and maintain them throughout the pool's duration. Your capital plus your full return are paid back to you through your weekly payouts across the life of the pool.",
       },
     ],
   },
   {
-    category: "Investing",
+    category: "Taking part",
     questions: [
       {
-        q: "What is the minimum amount I can invest?",
-        a: "The minimum investment on Rydvest is ₦100,000. You can invest any amount from ₦100,000 upwards, and you can also fund an entire pool by yourself if you want full ownership — the target amount is the full cost shown on the pool.",
+        q: "What is the minimum amount I can put in?",
+        a: "The minimum ownership on Rydvest is ₦100,000. You can put in any amount from ₦100,000 upwards, and you can also fund an entire pool by yourself if you want full ownership — the target amount is the full cost shown on the pool.",
       },
       {
-        q: "What are my investment options?",
-        a: "You have three options:\n\n1. Full Ownership — you fund the entire target of a pool and own it alone.\n\n2. Public Pool — you join an open pool with other investors on the platform. Once the pool hits its target, the vehicle is deployed.\n\n3. Private Pool — you create a pool and share its invite code with people you choose, like family, friends, or your cooperative.",
+        q: "What are my ownership options?",
+        a: "You have three options:\n\n1. Full Ownership — you fund the entire target of a pool and own it alone.\n\n2. Public Pool — you join an open pool with other owners on the platform. Once the pool hits its target, the vehicle is deployed.\n\n3. Private Pool — you create a pool and share its invite code with people you choose, like family, friends, or your cooperative.",
       },
       {
-        q: "What is the return on my investment?",
-        a: "Every pool displays its total return (ROI) and duration upfront before you invest — for example, a pool might offer a 50% total return over 78 weeks. The rate that applies to your investment is locked in at the time you fund it, and your dashboard shows exactly how much you'll receive in total.",
+        q: "What is the return on my ownership?",
+        a: "Every pool displays its total return (earnings) and duration upfront before you acquire — for example, a pool might offer a 50% total return over 78 weeks. The rate that applies to your stake is locked in at the time you fund it, and your dashboard shows exactly how much you'll receive in total.",
       },
       {
-        q: "How long does my money stay invested?",
-        a: "Each pool runs for its own fixed duration, shown on the pool before you invest. The clock starts the moment the pool is fully funded, your first payout lands two weeks later, and you collect weekly returns for the rest of the duration.",
+        q: "How long does my money stay committed?",
+        a: "Each pool runs for its own fixed duration, shown on the pool before you acquire. The clock starts the moment the pool is fully funded, your first payout lands two weeks later, and you collect weekly earnings for the rest of the duration.",
       },
       {
         q: "What happens when my pool's duration ends?",
-        a: "By the end of the pool's duration, you will have received your capital plus your full return through your weekly payouts. After that, it is entirely your choice — reinvest in a new pool, start your own, or withdraw everything and walk away.",
+        a: "By the end of the pool's duration, you will have received your capital plus your full return through your weekly payouts. After that, it is entirely your choice — own another in a new pool, start your own, or withdraw everything and walk away.",
       },
       {
-        q: "Can I invest more than once?",
-        a: "Yes. You can hold as many investments as you like across different pools. The one limit is on creating pools: while a pool you started is still filling up, you cannot start another one. Once it is fully funded and running, you can create your next.",
+        q: "Can I own more than one?",
+        a: "Yes. You can hold as many holdings as you like across different pools. The one limit is on creating pools: while a pool you started is still filling up, you cannot start another one. Once it is fully funded and running, you can create your next.",
       },
     ],
   },
   {
-    category: "Payouts and returns",
+    category: "Payouts and earnings",
     questions: [
       {
-        q: "When do I start receiving returns?",
-        a: "Your weekly payout schedule is created the moment your pool is fully funded, and your first payout arrives two weeks after that — the vehicle needs that time to be deployed and start working. After the first payout, returns come in weekly for the rest of the pool’s duration. Until a pool fills, your money is simply held in the pool; the earning clock only starts at 100% funding.",
+        q: "When do I start receiving earnings?",
+        a: "Your weekly payout schedule is created the moment your pool is fully funded, and your first payout arrives two weeks after that — the vehicle needs that time to be deployed and start working. After the first payout, earnings come in weekly for the rest of the pool’s duration. Until a pool fills, your money is simply held in the pool; the earning clock only starts at 100% funding.",
       },
       {
-        q: "How are my returns paid?",
-        a: "Returns are paid weekly. Each payout is credited to your Rydvest balance, which you can withdraw at any time to the verified bank account on your profile. The account name must match your Rydvest account name — this protects your money from being diverted to someone else.",
+        q: "How are my earnings paid?",
+        a: "Earnings are paid weekly. Each payout is credited to your Rydvest balance, which you can withdraw at any time to the verified bank account on your profile. The account name must match your Rydvest account name — this protects your money from being diverted to someone else.",
       },
       {
         q: "Can I track my earnings?",
-        a: "Yes. Your Rydvest dashboard shows your investment activity, weekly returns, payout schedule, payout history, and pool progress in real time.",
+        a: "Yes. Your Rydvest dashboard shows your stake activity, weekly earnings, payout schedule, payout history, and pool progress in real time.",
       },
       {
         q: "What if a payout is delayed?",
@@ -80,11 +80,11 @@ const faqs = [
     questions: [
       {
         q: "What is a public pool?",
-        a: "A public pool is an open investment opportunity visible to all Rydvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the vehicle is acquired and deployed.",
+        a: "A public pool is an open ownership opportunity visible to all Rydvest users. You browse the available pools, choose one, and contribute your amount. Once the pool reaches its funding target, the vehicle is acquired and deployed.",
       },
       {
         q: "Can I create more than one pool?",
-        a: "You can create public pools and private pools, but only one at a time. While a pool you created is still filling up, you cannot start another — this keeps pools filling instead of splitting the same investors across several half-empty ones. As soon as your pool is fully funded and running, you can create your next.",
+        a: "You can create public pools and private pools, but only one at a time. While a pool you created is still filling up, you cannot start another — this keeps pools filling instead of splitting the same owners across several half-empty ones. As soon as your pool is fully funded and running, you can create your next.",
       },
       {
         q: "What is a private pool?",
@@ -92,11 +92,11 @@ const faqs = [
       },
       {
         q: "How long does it take for a pool to fill?",
-        a: "It depends on how many investors join. Public pools are open to the entire platform so they fill faster. Private pools depend on how quickly your invited group contributes. You can track the pool's progress in real time on your dashboard.",
+        a: "It depends on how many owners join. Public pools are open to the entire platform so they fill faster. Private pools depend on how quickly your invited group contributes. You can track the pool's progress in real time on your dashboard.",
       },
       {
         q: "What happens if a pool does not fill up?",
-        a: "Your money never starts a countdown until the pool is 100% funded. If a pool is closed without reaching its target, all contributions are returned to investors in full with no deductions.",
+        a: "Your money never starts a countdown until the pool is 100% funded. If a pool is closed without reaching its target, all contributions are returned to owners in full with no deductions.",
       },
     ],
   },
@@ -104,8 +104,8 @@ const faqs = [
     category: "Vehicles and operations",
     questions: [
       {
-        q: "What vehicles can I invest in right now?",
-        a: "Currently, only Keke Napep (commercial tricycles) are available for investment. Mini buses and motorcycles are coming soon — early investors on the platform will get priority access when they launch.",
+        q: "What vehicles can I own right now?",
+        a: "Currently, only Keke Napep (commercial tricycles) are available for ownership. Mini buses and motorcycles are coming soon — early owners on the platform will get priority access when they launch.",
       },
       {
         q: "Who manages the vehicle?",
@@ -117,7 +117,7 @@ const faqs = [
       },
       {
         q: "Can I see which vehicle my money is in?",
-        a: "Yes. Once your investment is confirmed and the vehicle is deployed, your dashboard will show details about the vehicle associated with your investment, including operational updates.",
+        a: "Yes. Once your stake is confirmed and the vehicle is deployed, your dashboard will show details about the vehicle associated with your stake, including operational updates.",
       },
     ],
   },
@@ -126,7 +126,7 @@ const faqs = [
     questions: [
       {
         q: "Can I withdraw my capital before the pool ends?",
-        a: "Investments are designed to run for the pool's full duration. Early withdrawal requests can be submitted through your dashboard and are handled on a case-by-case basis. Processing timelines and conditions will be communicated at the time of your request.",
+        a: "Holdings are designed to run for the pool's full duration. Early withdrawal requests can be submitted through your dashboard and are handled on a case-by-case basis. Processing timelines and conditions will be communicated at the time of your request.",
       },
       {
         q: "Is my personal and financial information safe?",
@@ -184,7 +184,7 @@ export default function FAQPage() {
          
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">Frequently asked questions</h1>
           <p className="text-slate-400 text-base leading-relaxed max-w-xl">
-            Everything you need to know about investing on Rydvest. Can't find your answer? Reach us on WhatsApp at +234 706 528 4100.
+            Everything you need to know about taking part on Rydvest. Can't find your answer? Reach us on WhatsApp at +234 706 528 4100.
           </p>
         </div>
       </div>

@@ -12,6 +12,7 @@
  */
 import { z } from "zod";
 import { ERRORS } from "./errors";
+import { isKnownVehicleImage } from "./vehicles";
 
 /** The 36 Nigerian states + FCT — used for the signup dropdown and validation. */
 export const NIGERIAN_STATES = [
@@ -94,6 +95,28 @@ export const ResetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+
+/**
+ * Changing the password while signed in.
+ *
+ * The current password is required because a session is not proof that the
+ * person at the keyboard is the owner — a borrowed phone left open is exactly
+ * the case this stops.
+ */
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { error: ERRORS.PASSWORD_CURRENT_WRONG }),
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    error: ERRORS.SIGNUP_PASSWORDS_DONT_MATCH,
+    path: ["confirmPassword"],
+  })
+  .refine((data) => data.password !== data.currentPassword, {
+    error: ERRORS.PASSWORD_SAME_AS_CURRENT,
+    path: ["password"],
+  });
 // ── Profile update ──────────────────────────────────────────────────────────
 export const ProfileUpdateSchema = z.object({
   fullName: z.string().trim().min(3, { error: ERRORS.SIGNUP_NAME_REQUIRED }).max(120),
@@ -119,6 +142,78 @@ export const WithdrawalRequestSchema = z.object({
   amount: z.coerce.number().positive({ error: ERRORS.WITHDRAW_INVALID_AMOUNT }).max(1_000_000_000),
 });
 
+// ── Transaction PIN ─────────────────────────────────────────────────────────
+// Four digits exactly. The obvious ones are rejected in SQL as well, because
+// this schema is only the first gate.
+const OBVIOUS_PINS = new Set([
+  "0000", "1111", "2222", "3333", "4444", "5555", "6666", "7777", "8888", "9999",
+  "1234", "4321", "1212", "2121", "0123", "9876", "1004", "2580",
+]);
+
+export const PinSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9]{4}$/, { error: ERRORS.PIN_INVALID });
+
+export const NewPinSchema = PinSchema.refine((v) => !OBVIOUS_PINS.has(v), {
+  error: ERRORS.PIN_TOO_SIMPLE,
+});
+
+export const SetPinSchema = z
+  .object({
+    pin: NewPinSchema,
+    confirmPin: z.string().trim(),
+    currentPin: z.string().trim().optional().default(""),
+  })
+  .refine((v) => v.pin === v.confirmPin, {
+    error: ERRORS.PIN_MISMATCH,
+    path: ["confirmPin"],
+  });
+
+// ── Sending to another account ──────────────────────────────────────────────
+// The account ID is normalised the same way as normalise_user_code() in SQL:
+// strip anything that is not a letter or digit, then uppercase. People retype
+// these with spaces and hyphens, and the alphabet has no I, L, O, U, 0 or 1 to
+// confuse. The server re-checks all of this; these rules only mean the user
+// hears about a typo without a round trip.
+const USER_CODE_REGEX = /^RYD[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
+
+export const normaliseUserCode = (v: string): string =>
+  v.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+export const TransferSchema = z.object({
+  code: z
+    .string()
+    .transform(normaliseUserCode)
+    .refine((v) => USER_CODE_REGEX.test(v), { error: ERRORS.TRANSFER_CODE_INVALID }),
+  amount: z.coerce
+    .number()
+    .int({ error: ERRORS.TRANSFER_INVALID_AMOUNT })
+    .positive({ error: ERRORS.TRANSFER_INVALID_AMOUNT })
+    .max(1_000_000_000, { error: ERRORS.TRANSFER_INVALID_AMOUNT }),
+  note: z.string().trim().max(140).optional().default(""),
+});
+
+export const UserCodeSchema = z
+  .string()
+  .transform(normaliseUserCode)
+  .refine((v) => USER_CODE_REGEX.test(v), { error: ERRORS.TRANSFER_CODE_INVALID });
+
+// ── Identity verification ───────────────────────────────────────────────────
+// The selfie is NOT validated here — a Zod schema cannot tell an image from a
+// renamed executable. submitKyc checks the bytes themselves.
+// NIN only. BVN was dropped: the NIN lookup returns the name on the national
+// record, which is what makes the check worth anything, and offering two kinds
+// of number only gave people a way to pick the one nobody would check.
+export const KycSubmissionSchema = z.object({
+  // An NIN is 11 digits. Spaces and hyphens are stripped first, because people
+  // read these off a slip in groups.
+  idNumber: z
+    .string()
+    .transform((v) => v.replace(/[^0-9]/g, ""))
+    .refine((v) => /^[0-9]{11}$/.test(v), { error: ERRORS.KYC_ID_NUMBER_INVALID }),
+});
+
 // ── Investing ───────────────────────────────────────────────────────────────
 export const InvestSchema = z.object({
   poolId: z.uuid({ error: ERRORS.POOL_NOT_FOUND }),
@@ -135,18 +230,70 @@ export const FundWalletSchema = z.object({
     .max(1_000_000_000, { error: ERRORS.DEPOSIT_INVALID_AMOUNT }),
 });
 
-export const PaymentSettingsSchema = z.object({
-  method: z.enum(["korapay", "manual"]),
-  bankName: z.string().trim().min(2).max(60),
-  accountName: z.string().trim().min(2).max(80),
-  accountNumber: z.string().trim().regex(/^d{10}$/, { error: ERRORS.ACCOUNT_NUMBER_INVALID }),
-  notifyEmails: z.string().trim().max(1000),
-});
+/**
+ * The bank fields describe where users send a MANUAL transfer, so they are
+ * only required when that is the method being saved. Validating them
+ * unconditionally meant a blank or odd account number blocked the switch to
+ * Korapay, where those fields are not used at all.
+ */
+export const PaymentSettingsSchema = z
+  .object({
+    method: z.enum(["korapay", "manual"]),
+    bankName: z.string().trim().max(60),
+    accountName: z.string().trim().max(80),
+    accountNumber: z.string().trim().max(20),
+    notifyEmails: z.string().trim().max(1000),
+  })
+  .superRefine((v, ctx) => {
+    if (v.method !== "manual") return;
+
+    if (v.bankName.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["bankName"], message: ERRORS.ACCOUNT_BANK_REQUIRED });
+    }
+    if (v.accountName.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["accountName"], message: ERRORS.ACCOUNT_NAME_REQUIRED });
+    }
+    if (!/^\d{10}$/.test(v.accountNumber)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["accountNumber"],
+        message: ERRORS.ACCOUNT_NUMBER_INVALID,
+      });
+    }
+  });
+
+// A user-created pool is always private, so there is no isPrivate field to
+// accept here (see createPool and the pools_force_private trigger).
+/**
+ * Words a user may not put in their own pool's name.
+ *
+ * A private pool's name is shown to everyone the invite code is shared with,
+ * beside the real pool option. Without this, somebody could name theirs
+ * "Rydvest Official Pool" and pass it off as ours to people they invite —
+ * which is the whole setup for a scam that we would be hosting.
+ */
+const RESERVED_POOL_WORDS = [
+  "rydvest",
+  "official",
+  "admin",
+  "support",
+  "verified",
+];
 
 export const CreatePoolSchema = z.object({
   productId: z.uuid({ error: ERRORS.POOL_PRODUCT_INACTIVE }),
-  name: z.string().trim().min(3).max(80),
-  isPrivate: z.enum(["true", "false"]).transform((v) => v === "true"),
+  name: z
+    .string()
+    .trim()
+    .min(3, { error: ERRORS.POOL_NAME_INVALID })
+    .max(80, { error: ERRORS.POOL_NAME_INVALID })
+    .refine(
+      (v) => {
+        const lower = v.toLowerCase();
+        return !RESERVED_POOL_WORDS.some((w) => lower.includes(w));
+      },
+      { error: ERRORS.POOL_NAME_RESERVED }
+    ),
 });
 
 export const JoinByInviteSchema = z.object({
@@ -161,6 +308,38 @@ export const PoolProductSchema = z.object({
   minContribution: z.coerce.number().positive({ error: ERRORS.ADMIN_PRODUCT_INVALID }),
   durationWeeks: z.coerce.number().int().min(1).max(520, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
   roiPercent: z.coerce.number().min(0).max(1000, { error: ERRORS.ADMIN_PRODUCT_INVALID }),
+  // Must be one of the bundled vehicle photos — never a free-text path, which
+  // would let an admin point a pool card at any URL. Empty means "work it out
+  // from the name" (lib/vehicles.ts).
+  imagePath: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || isKnownVehicleImage(v), { error: ERRORS.ADMIN_PRODUCT_INVALID })
+    .optional()
+    .default(""),
+
+  // Which kind of pool may be built from this option. Public options never
+  // appear when a user starts a private pool, and vice versa.
+  availability: z.enum(["public", "private", "both"]).optional().default("both"),
+
+  // Per-option floor for a private pool. Blank falls back to the global one.
+  privateMinContribution: z
+    .string()
+    .trim()
+    .optional()
+    .default("")
+    .transform((v) => (v === "" ? null : Number(v)))
+    .refine((v) => v === null || (Number.isFinite(v) && v > 0), {
+      error: ERRORS.ADMIN_PRODUCT_INVALID,
+    }),
+
+  // The cost breakdown. All five or none — a half-filled one would display
+  // zeros as if they were real figures.
+  assetValue: z.coerce.number().min(0).optional().default(0),
+  vat: z.coerce.number().min(0).optional().default(0),
+  serviceCharge: z.coerce.number().min(0).optional().default(0),
+  maintenanceFee: z.coerce.number().min(0).optional().default(0),
+  companyCharge: z.coerce.number().min(0).optional().default(0),
 });
 
 // ── Contact form ────────────────────────────────────────────────────────────

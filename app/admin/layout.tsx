@@ -9,5 +9,9 @@ import AdminShell from "@/components/admin/Shell";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile } = await requireAdmin();
 
-  return <AdminShell name={profile.full_name}>{children}</AdminShell>;
+  return (
+    <AdminShell name={profile.full_name} email={profile.email}>
+      {children}
+    </AdminShell>
+  );
 }

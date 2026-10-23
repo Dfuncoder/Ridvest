@@ -22,7 +22,10 @@ export default function Calculator() {
 
   useEffect(() => { fetchRate().then(setRate); }, []);
 
+  // State holds digits only; the field displays them grouped. A number input
+  // cannot show separators at all, which is why this is a text input.
   const amt = parseFloat(amount) || 0;
+  const display = amount === "" ? "" : Number(amount).toLocaleString("en-NG");
   const yearly = amt + amt * rate;
   const monthly = yearly / 18;
   const weekly = yearly / 78;
@@ -34,18 +37,18 @@ export default function Calculator() {
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 11, color: "#1d4ed8", fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 8 }}>Returns calculator</div>
           <h2 style={{ fontSize: "clamp(26px,4vw,34px)", fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, marginBottom: 10 }}>See what you'll earn</h2>
-          <p style={{ fontSize: 15, color: "#64748b", lineHeight: 1.65, maxWidth: 460, margin: "0 auto" }}>Enter your investment amount and see your projected returns instantly.</p>
+          <p style={{ fontSize: 15, color: "#64748b", lineHeight: 1.65, maxWidth: 460, margin: "0 auto" }}>Enter your amount and see your projected earnings instantly.</p>
         </div>
 
         <div style={{ maxWidth: 680, margin: "0 auto", background: "#fff", borderRadius: 24, padding: "clamp(24px, 6vw, 48px)", border: "1px solid #e2e8f0", boxShadow: "0 6px 32px rgba(13,33,55,0.06)" }}>
           <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: "#64748b", marginBottom: 8, display: "block" }}>Investment amount (₦)</label>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "#64748b", marginBottom: 8, display: "block" }}>Amount (₦)</label>
             <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 100000"
-              min={100000}
+              type="text"
+              inputMode="numeric"
+              value={display}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="e.g. 100,000"
               style={{ width: "100%", padding: "16px 20px", border: "1.5px solid #e2e8f0", borderRadius: 14, fontSize: 20, fontWeight: 700, color: "#0d2137", fontFamily: "inherit", outline: "none" }}
             />
           </div>
@@ -55,7 +58,7 @@ export default function Calculator() {
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#dcfce7", color: "#15803d", fontSize: 10, padding: "3px 8px", borderRadius: 100, fontWeight: 700 }}>● LIVE</span>
               Annual rate
             </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{(rate * 100).toFixed(0)}% ROI</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{(rate * 100).toFixed(0)}% earnings</div>
           </div>
 
           {hasValue ? (

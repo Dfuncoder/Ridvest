@@ -1,0 +1,89 @@
+<!--
+  SUPABASE → Authentication → Email Templates → MAGIC LINK
+  Subject: Your Rydvest login code
+
+  This is the second step of login: the user has already given their password,
+  and this code is what completes the sign-in on /verify-login.
+
+  ⚠ {{ .Token }} IS THE SIX-DIGIT CODE, NOT A URL.
+    Putting it in an href — <a href="{{ .Token }}">Sign in</a> — builds a link
+    pointing at "482913", which goes nowhere. That is why the email appeared
+    to send a link instead of a code. It must be printed as TEXT.
+
+  ⚠ There is deliberately NO {{ .ConfirmationURL }} here.
+    A magic link would sign somebody in while skipping the checks /verify-login
+    makes — the challenge proving the password step happened, the re-check that
+    the account was not locked in the meantime, and the idle clock. The app now
+    refuses magiclink callbacks outright (app/auth/confirm/route.ts), so a link
+    would be a dead end anyway.
+
+  Table layout and inline styles throughout: email clients do not do flexbox,
+  grid, or <style> blocks reliably.
+-->
+<!doctype html>
+<html>
+  <body style="margin:0;padding:24px;background:#f1f5f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden" cellpadding="0" cellspacing="0">
+
+            <!-- Brand bar -->
+            <tr>
+              <td style="background:#0d2137;padding:26px 28px">
+                <p style="margin:0;color:#facc15;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase">Rydvest</p>
+              </td>
+            </tr>
+
+            <!-- The code -->
+            <tr>
+              <td style="padding:32px 28px 8px" align="center">
+                <p style="margin:0 0 6px;color:#0f172a;font-size:20px;font-weight:800">Your login code</p>
+                <p style="margin:0 0 22px;color:#64748b;font-size:14px;line-height:1.6">
+                  Enter this code to finish signing in.
+                </p>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto">
+                  <tr>
+                    <td style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 28px">
+                      <span style="color:#0f172a;font-size:34px;font-weight:800;letter-spacing:.22em;font-family:'SF Mono',Menlo,Consolas,monospace">{{ .Token }}</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:18px 0 0;color:#94a3b8;font-size:13px">
+                  It expires in 10 minutes.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Safety note -->
+            <tr>
+              <td style="padding:24px 28px 28px">
+                <table role="presentation" width="100%" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:14px 16px">
+                      <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6">
+                        <strong>Nobody at Rydvest will ever ask you for this code.</strong>
+                        If you did not try to sign in, someone may have your password — change it straight away.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:0 28px 28px;border-top:1px solid #f1f5f9">
+                <p style="margin:18px 0 0;color:#94a3b8;font-size:12px;line-height:1.6">
+                  This email was sent to {{ .Email }} because a sign-in was attempted on your Rydvest account.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -46,20 +46,43 @@ function liveHosts(): string[] {
  * @param host the request's Host header, so a preview domain can be spared
  *             even if the environment variables are identical to production's.
  */
-export function maintenanceEnabled(host?: string | null): boolean {
+export type MaintenanceDecision =
+  /** MAINTENANCE_MODE is not set to anything truthy. */
+  | "off"
+  /** Serving the holding page. */
+  | "hold"
+  /** Spared: this is a Vercel preview deployment. */
+  | "skip:preview"
+  /** Spared: the host is listed in MAINTENANCE_LIVE_HOSTS. */
+  | "skip:host";
+
+/**
+ * Should this request see the holding page, and why?
+ *
+ * The reason is surfaced as the x-rv-maintenance response header, so a single
+ * curl tells you which branch fired instead of guessing at env vars.
+ *
+ * @param host the request's Host header, so a preview domain can be spared
+ *             even if the environment variables are identical to production's.
+ */
+export function maintenanceDecision(host?: string | null): MaintenanceDecision {
   const mode = setting();
-  if (mode !== "1" && mode !== "true" && mode !== "on" && mode !== "all") return false;
+  if (mode !== "1" && mode !== "true" && mode !== "on" && mode !== "all") return "off";
 
   // "all" is the deliberate escape hatch for checking the page itself.
-  if (mode === "all") return true;
+  if (mode === "all") return "hold";
 
   // Vercel sets this to "production" | "preview" | "development".
-  if ((process.env.VERCEL_ENV ?? "").toLowerCase() === "preview") return false;
+  if ((process.env.VERCEL_ENV ?? "").toLowerCase() === "preview") return "skip:preview";
 
   const h = (host ?? "").toLowerCase().split(":")[0];
-  if (h && liveHosts().includes(h)) return false;
+  if (h && liveHosts().includes(h)) return "skip:host";
 
-  return true;
+  return "hold";
+}
+
+export function maintenanceEnabled(host?: string | null): boolean {
+  return maintenanceDecision(host) === "hold";
 }
 
 export function bypassToken(): string | null {
@@ -77,6 +100,7 @@ export function alwaysAllowed(path: string): boolean {
   return (
     path === "/maintenance" ||
     path.startsWith("/api/") ||
+    path.startsWith("/auth/") ||
     path.startsWith("/_next/") ||
     path === "/favicon.svg" ||
     path === "/favicon.ico" ||

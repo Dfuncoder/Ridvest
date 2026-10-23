@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/payouts",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/kyc-cleanup",
+      "schedule": "30 3 * * *"
+    }
+  ]
+}

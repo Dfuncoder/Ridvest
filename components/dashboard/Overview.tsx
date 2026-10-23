@@ -7,10 +7,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useTheme } from "./Shell";
+import { BalancePrivacy, BalanceToggle, Money, ResponsiveMoney } from "@/components/BalanceToggle";
 import { fmtNaira, fmtDate } from "@/lib/format";
 
 export type OverviewData = {
   firstName: string;
+  /** profiles.hide_balance — a saved preference, not per-browser. */
+  hideBalance: boolean;
   userCode: string;
   balance: number;
   totalInvested: number;
@@ -52,6 +55,7 @@ const ICONS = {
     "M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z",
   payouts:
     "M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z",
+  send: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5",
 };
 
 function Icon({ d, className = "w-5 h-5" }: { d: string; className?: string }) {
@@ -108,7 +112,6 @@ function AccountCode({ code }: { code: string }) {
 }
 
 export default function Overview({ data }: { data: OverviewData }) {
-  const [balanceVisible, setBalanceVisible] = useState(true);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -124,17 +127,20 @@ export default function Overview({ data }: { data: OverviewData }) {
     ? "bg-[#0f2e52] border-white/8 text-slate-300 hover:bg-white/10"
     : "bg-white border-slate-200/80 text-slate-700 hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50";
 
-  const stats = [
-    { label: "Total invested", value: fmtNaira(data.totalInvested), tone: heading },
-    { label: "Total earned", value: fmtNaira(data.totalEarned), tone: "text-green-500" },
+  const stats: Array<{ label: string; amount: number | null; tone: string }> = [
+    { label: "Total put in", amount: data.totalInvested, tone: heading },
+    { label: "Total earned", amount: data.totalEarned, tone: "text-green-500" },
     {
       label: "Next payout",
-      value: data.nextPayout ? fmtNaira(data.nextPayout.amount) : "—",
+      // Null renders a dash: it is not a figure, and masking it would only
+      // look broken.
+      amount: data.nextPayout ? data.nextPayout.amount : null,
       tone: "text-amber-500",
     },
   ];
 
   return (
+    <BalancePrivacy initialHidden={data.hideBalance}>
     <div className="max-w-5xl mx-auto flex flex-col gap-6 sm:gap-7">
 
       {/* ── BALANCE ── */}
@@ -158,40 +164,35 @@ export default function Overview({ data }: { data: OverviewData }) {
               </p>
               <div className="flex items-center gap-3">
                 <h1 className="text-[2.5rem] sm:text-5xl leading-[0.95] font-extrabold text-white tracking-[-0.03em] tabular-nums">
-                  {balanceVisible ? fmtNaira(data.balance) : "₦ ••••••"}
+                  <Money value={fmtNaira(data.balance)} />
                 </h1>
-                <button
-                  onClick={() => setBalanceVisible(!balanceVisible)}
-                  className="text-white/35 hover:text-white/80 transition-colors shrink-0 mt-1"
-                  aria-label={balanceVisible ? "Hide balance" : "Show balance"}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    {balanceVisible ? (
-                      <>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </>
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                    )}
-                  </svg>
-                </button>
+                <BalanceToggle className="mt-1" />
               </div>
             </div>
 
             <AccountCode code={data.userCode} />
           </div>
 
+          {/* The three things you do with the figure above it. Padding eases
+              off on phones so three buttons share the row without the labels
+              being squeezed. */}
           <div className="flex flex-wrap gap-2.5">
             <Link
               href="/dashboard/deposit"
-              className="flex-1 sm:flex-none text-center px-6 py-3.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-2xl transition-all duration-150 shadow-lg shadow-amber-400/25"
+              className="flex-1 sm:flex-none text-center px-4 sm:px-6 py-3.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-2xl transition-all duration-150 shadow-lg shadow-amber-400/25"
             >
               Deposit
             </Link>
             <Link
+              href="/dashboard/transfer"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 sm:px-6 py-3.5 bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-white/15 text-white font-extrabold text-sm rounded-2xl transition-all duration-150"
+            >
+              <Icon d={ICONS.send} className="w-4 h-4 shrink-0" />
+              Send
+            </Link>
+            <Link
               href="/dashboard/pools"
-              className="flex-1 sm:flex-none text-center px-6 py-3.5 bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-white/15 text-white font-extrabold text-sm rounded-2xl transition-all duration-150"
+              className="flex-1 sm:flex-none text-center px-4 sm:px-6 py-3.5 bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-white/15 text-white font-extrabold text-sm rounded-2xl transition-all duration-150"
             >
               Invest
             </Link>
@@ -212,21 +213,24 @@ export default function Overview({ data }: { data: OverviewData }) {
       {/* ── STATS ── */}
       <section className="grid grid-cols-3 gap-2.5 sm:gap-4">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl px-4 py-4 sm:px-5 sm:py-5 ${card}`}>
+          <div key={s.label} className={`rounded-2xl px-3 py-4 sm:px-5 sm:py-5 min-w-0 ${card}`}>
             <p className={`${eyebrow} ${faint} mb-2 leading-tight`}>{s.label}</p>
             <p className={`text-base sm:text-xl font-extrabold tabular-nums tracking-tight ${s.tone}`}>
-              {s.value}
+              {s.amount === null ? "—" : <ResponsiveMoney value={s.amount} />}
             </p>
           </div>
         ))}
       </section>
 
       {/* ── QUICK ACTIONS ── */}
-      <section className="grid grid-cols-4 gap-2.5 sm:gap-4">
+      {/* Three across on a phone rather than five: at five, each tile is about
+          57px wide and "Investments" runs outside it. */}
+      <section className="grid grid-cols-3 sm:grid-cols-5 gap-2.5 sm:gap-4">
         {[
           { label: "Deposit", href: "/dashboard/deposit", d: ICONS.deposit },
+          { label: "Send", href: "/dashboard/transfer", d: ICONS.send },
           { label: "Pools", href: "/dashboard/pools", d: ICONS.pools },
-          { label: "Pools", href: "/dashboard/pools", d: ICONS.pools },
+          { label: "Investments", href: "/dashboard/portfolio", d: ICONS.invest },
           { label: "Withdraw", href: "/dashboard/payouts", d: ICONS.payouts },
         ].map((a) => (
           <Link
@@ -243,7 +247,7 @@ export default function Overview({ data }: { data: OverviewData }) {
       {/* ── INVESTMENTS ── */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className={`${sectionTitle} ${heading}`}>My investments</h2>
+          <h2 className={`${sectionTitle} ${heading}`}>My assets</h2>
           <Link
             href="/dashboard/portfolio"
             className="text-xs font-bold text-amber-500 hover:text-amber-400 transition-colors"
@@ -254,7 +258,7 @@ export default function Overview({ data }: { data: OverviewData }) {
 
         {data.investments.length === 0 ? (
           <div className={`rounded-2xl p-10 text-center ${card}`}>
-            <p className={`text-sm ${muted} mb-5`}>You haven&apos;t invested yet.</p>
+            <p className={`text-sm ${muted} mb-5`}>Nothing here yet.</p>
             <Link
               href="/dashboard/pools"
               className="inline-block bg-amber-400 hover:bg-amber-300 text-[#0d2137] font-extrabold text-xs px-6 py-3.5 rounded-2xl transition-all shadow-lg shadow-amber-400/20"
@@ -294,21 +298,21 @@ export default function Overview({ data }: { data: OverviewData }) {
                       <p className={`text-lg font-extrabold tabular-nums tracking-tight ${heading}`}>
                         {fmtNaira(inv.amount)}
                       </p>
-                      <p className={`text-[11px] ${faint}`}>invested</p>
+                      <p className={`text-[11px] ${faint}`}>put in</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2.5 mb-5">
-                    <div className={`rounded-xl px-3 py-2.5 ${cardMuted}`}>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5 mb-5">
+                    <div className={`rounded-xl px-2.5 sm:px-3 py-2.5 min-w-0 ${cardMuted}`}>
                       <p className={`${eyebrow} ${faint} mb-1 leading-tight`}>Earned</p>
                       <p className="text-sm font-extrabold tabular-nums text-green-500">
-                        {fmtNaira(inv.earned)}
+                        <ResponsiveMoney value={inv.earned} />
                       </p>
                     </div>
                     <div className={`rounded-xl px-3 py-2.5 ${cardMuted}`}>
                       <p className={`${eyebrow} ${faint} mb-1 leading-tight`}>Expected</p>
                       <p className={`text-sm font-extrabold tabular-nums ${heading}`}>
-                        {fmtNaira(inv.totalExpected)}
+                        <ResponsiveMoney value={inv.totalExpected} />
                       </p>
                     </div>
                     <div className="rounded-xl px-3 py-2.5 bg-amber-500/10 border border-amber-500/20">
@@ -386,5 +390,6 @@ export default function Overview({ data }: { data: OverviewData }) {
       </section>
 
     </div>
+    </BalancePrivacy>
   );
 }

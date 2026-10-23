@@ -9,6 +9,21 @@ export function fmtNaira(n: number | string | null | undefined): string {
   return "₦" + num.toLocaleString("en-NG", { maximumFractionDigits: 2 });
 }
 
+/**
+ * ₦3.9M — for the narrow stat cards, where a full figure runs out of the box.
+ *
+ * Only kicks in above ₦100,000: below that the exact number is short enough to
+ * fit, and rounding somebody's ₦45,200 to "₦45K" on their own dashboard would
+ * be worse than useless.
+ */
+export function fmtNairaCompact(n: number | string | null | undefined): string {
+  const num = Number(n ?? 0);
+  if (Math.abs(num) < 100_000) return fmtNaira(num);
+  return (
+    "₦" + num.toLocaleString("en-NG", { notation: "compact", maximumFractionDigits: 1 })
+  );
+}
+
 /** "12 Jul 2026" style date. Accepts Date, ISO string or null. */
 export function fmtDate(d: string | Date | null | undefined): string {
   if (!d) return "—";

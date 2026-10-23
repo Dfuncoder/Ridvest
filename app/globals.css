@@ -24,6 +24,10 @@ body {
   color: var(--foreground);
   /* Was hard-coded to Arial, which silently overrode the loaded font. */
   font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "cv11", "ss01";
-  text-rendering: optimizeLegibility;
+  /* text-rendering: optimizeLegibility was removed: on some Android GPUs
+     (MIUI, Magic UI) it makes the text layer repaint badly and the page
+     smears as it scrolls. It also does nothing useful for Latin text.
+     font-feature-settings held Inter-specific features that Plus Jakarta
+     Sans does not have, so they were no-ops. */
 }
+

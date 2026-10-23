@@ -11,15 +11,25 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
 import { parseEmailList } from "@/lib/settings";
+import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
 import { fmtNaira } from "@/lib/format";
+import { totalPackage } from "@/lib/economics";
 import { receiptSubject, receiptText, receiptHtml, type Receipt } from "@/lib/receipt";
+import {
+  kycApprovedSubject, kycApprovedText, kycApprovedHtml,
+  kycRejectedSubject, kycRejectedText, kycRejectedHtml,
+} from "@/lib/notices";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
+import { decryptSecret } from "@/lib/crypto";
+import { runNinLookup } from "./kyc";
+import { lookupIsStale } from "@/lib/kyc";
 import { PoolProductSchema, PaymentSettingsSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
@@ -42,10 +52,40 @@ export async function createProduct(_prev: FormState, formData: FormData): Promi
     minContribution: formData.get("minContribution"),
     durationWeeks: formData.get("durationWeeks"),
     roiPercent: formData.get("roiPercent"),
+    imagePath: formData.get("imagePath") ?? "",
+    availability: formData.get("availability") ?? "both",
+    privateMinContribution: formData.get("privateMinContribution") ?? "",
+    assetValue: formData.get("assetValue") ?? 0,
+    vat: formData.get("vat") ?? 0,
+    serviceCharge: formData.get("serviceCharge") ?? 0,
+    maintenanceFee: formData.get("maintenanceFee") ?? 0,
+    companyCharge: formData.get("companyCharge") ?? 0,
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
   if (parsed.data.minContribution > parsed.data.targetAmount) {
     return { errors: { minContribution: ERRORS.ADMIN_PRODUCT_INVALID } };
+  }
+
+  // The breakdown is all-or-nothing, and when given it has to equal the pool
+  // price. The database enforces this too; failing here just means the admin
+  // is told which number is wrong instead of seeing a constraint error.
+  const parts = {
+    assetValue: parsed.data.assetValue,
+    vat: parsed.data.vat,
+    serviceCharge: parsed.data.serviceCharge,
+    maintenanceFee: parsed.data.maintenanceFee,
+    companyCharge: parsed.data.companyCharge,
+  };
+  const itemised = Object.values(parts).some((v) => v > 0);
+  if (itemised && totalPackage(parts) !== parsed.data.targetAmount) {
+    return { errors: { assetValue: ERRORS.ADMIN_BREAKDOWN_MISMATCH } };
+  }
+
+  if (
+    parsed.data.privateMinContribution !== null &&
+    parsed.data.privateMinContribution > parsed.data.targetAmount
+  ) {
+    return { errors: { privateMinContribution: ERRORS.ADMIN_PRODUCT_INVALID } };
   }
 
   const admin = createSupabaseAdminClient();
@@ -58,6 +98,15 @@ export async function createProduct(_prev: FormState, formData: FormData): Promi
       min_contribution: parsed.data.minContribution,
       duration_weeks: parsed.data.durationWeeks,
       roi_percent: parsed.data.roiPercent,
+      // Empty means the card works the image out from the name instead.
+      image_path: parsed.data.imagePath || null,
+      availability: parsed.data.availability,
+      private_min_contribution: parsed.data.privateMinContribution,
+      asset_value: itemised ? parts.assetValue : null,
+      vat: itemised ? parts.vat : null,
+      service_charge: itemised ? parts.serviceCharge : null,
+      maintenance_fee: itemised ? parts.maintenanceFee : null,
+      company_charge: itemised ? parts.companyCharge : null,
       created_by: user.id,
     })
     .select("id")
@@ -103,16 +152,16 @@ export async function createOfficialPool(formData: FormData): Promise<void> {
     .single();
   if (!product || !product.active) return;
 
-  const { count } = await admin
-    .from("pools")
-    .select("id", { count: "exact", head: true })
-    .eq("product_id", productId);
+  // The admin can name the pool whatever the vehicle is actually called; left
+  // blank it simply takes the product's name. No auto-numbering — a pool is
+  // identified by what it is, not by how many came before it.
+  const name = String(formData.get("name") ?? "").trim().slice(0, 80) || product.name;
 
   const { data: pool } = await admin
     .from("pools")
     .insert({
       product_id: productId,
-      name: `${product.name} Pool #${(count ?? 0) + 1}`,
+      name,
       is_private: false,
     })
     .select("id")
@@ -146,36 +195,11 @@ export async function cancelPool(formData: FormData): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PAYOUTS — marking a payout paid credits the user's withdrawable balance
+// Payouts settle automatically on their due date; the actions for running that
+// by hand and for reverting a bad payout are further down this file. There is
+// deliberately no 'mark this one paid' any more — a single payout credited
+// outside the schedule is exactly the kind of entry nobody can later explain.
 // ─────────────────────────────────────────────────────────────────────────────
-export async function markPayoutPaid(formData: FormData): Promise<void> {
-  const { user } = await requireAdmin();
-  const payoutId = String(formData.get("payoutId") ?? "");
-  if (!payoutId) return;
-
-  const admin = createSupabaseAdminClient();
-  // Guard on current status so a double-click can't double-credit.
-  const { data: updated } = await admin
-    .from("payouts")
-    .update({ status: "paid", paid_at: new Date().toISOString() })
-    .eq("id", payoutId)
-    .eq("status", "scheduled")
-    .select("id, user_id, amount, pool_id")
-    .single();
-
-  if (!updated) return;
-
-  await admin.from("transactions").insert({
-    user_id: updated.user_id,
-    type: "payout",
-    amount: updated.amount,
-    reference: updated.id,
-    status: "success",
-    metadata: { pool_id: updated.pool_id },
-  });
-  await audit(user.id, "payout.mark_paid", payoutId, { amount: updated.amount });
-  revalidatePath("/admin/payouts");
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WITHDRAWALS — pending → approved → paid, or pending → rejected
@@ -187,19 +211,25 @@ async function transitionWithdrawal(
   to: "approved" | "paid" | "rejected",
   note?: string
 ) {
+  const now = new Date().toISOString();
+
+  // Approving and paying are often different people, so each is stamped with
+  // its own actor rather than one "processed by" that the last action wins.
+  const patch: Record<string, unknown> =
+    to === "approved"
+      ? { status: to, admin_note: note ?? null, approved_by: actorId, approved_at: now, processed_at: null }
+      : { status: to, admin_note: note ?? null, processed_by: actorId, processed_at: now };
+
   const admin = createSupabaseAdminClient();
-  const { data: updated } = await admin
+  const { data: updated, error } = await admin
     .from("withdrawals")
-    .update({
-      status: to,
-      admin_note: note ?? null,
-      processed_at: to === "approved" ? null : new Date().toISOString(),
-    })
+    .update(patch)
     .eq("id", withdrawalId)
     .in("status", from)
     .select("id, user_id, amount")
     .single();
 
+  if (error) console.error("[admin] withdrawal transition failed", error.message);
   if (!updated) return;
 
   // Keep the ledger in sync with the withdrawal's fate.
@@ -340,6 +370,7 @@ export async function replyToMessage(_prev: FormState, formData: FormData): Prom
   await audit(user.id, "contact.reply", msg.id, { to: msg.email });
 
   revalidatePath("/admin/messages");
+  revalidatePath(`/admin/messages/${messageId}`);
   return { success: true, message: `Reply sent to ${msg.email}.` };
 }
 
@@ -355,6 +386,7 @@ export async function markMessageHandled(formData: FormData): Promise<void> {
   await admin.from("contact_messages").update({ handled: true }).eq("id", messageId);
   await audit(user.id, "contact.mark_handled", messageId);
   revalidatePath("/admin/messages");
+  revalidatePath(`/admin/messages/${messageId}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -560,4 +592,598 @@ export async function updatePaymentSettings(_prev: FormState, formData: FormData
   revalidatePath("/admin/settings");
   revalidatePath("/dashboard/deposit");
   return { success: true, message: "Payment settings saved." };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANK LOOKUP FOR THE COMPANY ACCOUNT
+//
+// Same Korapay resolve the user-side form uses, minus the profile name check:
+// this is Rydvest's own account, so the name that comes back is "RYDVEST LTD",
+// not the admin's. Lookup is a convenience here, not a security control — the
+// settings are written by an admin either way.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function listBanksForAdmin(): Promise<Bank[]> {
+  await requireAdmin();
+  const { banks } = await monnifyListBanks();
+  return banks;
+}
+
+export type CompanyAccountLookup =
+  | { status: "ok"; accountName: string; bankName?: string }
+  | { status: "not_found" | "unavailable"; message: string };
+
+export async function resolveCompanyAccount(
+  bankCode: string,
+  accountNumber: string
+): Promise<CompanyAccountLookup> {
+  await requireAdmin();
+
+  if (!bankCode || !/^\d{10}$/.test(accountNumber)) {
+    return { status: "not_found", message: ERRORS.ACCOUNT_NUMBER_INVALID };
+  }
+
+  const resolved = await monnifyValidateAccount(bankCode, accountNumber);
+  if (resolved.status === "unavailable") {
+    return { status: "unavailable", message: ERRORS.ACCOUNT_LOOKUP_UNAVAILABLE };
+  }
+  if (resolved.status !== "ok" || !resolved.accountName) {
+    return { status: "not_found", message: ERRORS.ACCOUNT_NOT_FOUND };
+  }
+
+  return { status: "ok", accountName: resolved.accountName, bankName: resolved.bankName };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYOUTS
+//
+// Settlement is automatic (app/api/cron/payouts), so these are the exceptions:
+// running the settlement by hand, and taking back a payout that should not
+// have gone out.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function settleDuePayouts(_prev: FormState): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("settle_due_payouts");
+
+  if (error) {
+    console.error("[admin] settle_due_payouts failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as { count?: number; total?: number } | null;
+  const count = Number(result?.count ?? 0);
+
+  await audit(user.id, "payout.settle_due", "manual", { count, total: result?.total });
+  revalidatePath("/admin/payouts");
+  revalidatePath("/admin");
+
+  return {
+    success: true,
+    message:
+      count === 0
+        ? "Nothing was due — everything is already settled."
+        : `Settled ${count} payout${count === 1 ? "" : "s"} totalling ${fmtNaira(Number(result?.total ?? 0))}.`,
+  };
+}
+
+export async function revertPayout(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const payoutId = String(formData.get("payoutId") ?? "");
+  if (!payoutId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!reason) return { errors: { reason: ERRORS.PAYOUT_REASON_REQUIRED } };
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("revert_payout", {
+    p_payout_id: payoutId,
+    p_admin_id: user.id,
+    p_reason: reason,
+  });
+
+  if (error) {
+    console.error("[admin] revert_payout failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as
+    | { ok?: boolean; reason?: string; amount?: number; balance_after?: number }
+    | null;
+  if (!result?.ok) {
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "payout.revert", payoutId, { amount: result.amount, reason });
+  revalidatePath("/admin/payouts");
+  revalidatePath("/admin");
+
+  const balance = Number(result.balance_after ?? 0);
+  return {
+    success: true,
+    message:
+      balance < 0
+        ? `Reverted ${fmtNaira(Number(result.amount ?? 0))}. This user's balance is now ${fmtNaira(balance)} — they had already withdrawn some of it.`
+        : `Reverted ${fmtNaira(Number(result.amount ?? 0))}.`,
+  };
+}
+
+export async function restorePayout(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const payoutId = String(formData.get("payoutId") ?? "");
+  if (!payoutId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("restore_payout", {
+    p_payout_id: payoutId,
+    p_admin_id: user.id,
+  });
+
+  if (error) {
+    console.error("[admin] restore_payout failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as { ok?: boolean; reason?: string } | null;
+  if (!result?.ok) {
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "payout.restore", payoutId);
+  revalidatePath("/admin/payouts");
+  return { success: true, message: "Back in the queue — it will settle on its due date." };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER ADMINISTRATION
+//
+// Every action here re-checks requireAdmin(), and refuses to act on another
+// admin or on yourself. Locking your own account, or the only other admin,
+// would leave nobody able to undo it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Shared guard: returns the target profile, or a message explaining the no. */
+async function targetUser(actorId: string, userId: string) {
+  if (!userId) return { error: ERRORS.ADMIN_USER_NOT_FOUND };
+  if (userId === actorId) return { error: ERRORS.ADMIN_NOT_ON_SELF };
+
+  const admin = createSupabaseAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, full_name, email, role, locked_at")
+    .eq("id", userId)
+    .single();
+
+  if (!profile) return { error: ERRORS.ADMIN_USER_NOT_FOUND };
+  if (profile.role === "admin") return { error: ERRORS.ADMIN_NOT_ON_ADMIN };
+
+  return { profile };
+}
+
+export async function lockUser(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+  const userId = String(formData.get("userId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+
+  if (!reason) return { errors: { reason: ERRORS.ADMIN_LOCK_REASON_REQUIRED } };
+
+  const { profile, error: guard } = await targetUser(user.id, userId);
+  if (guard || !profile) return { message: guard };
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({ locked_at: new Date().toISOString(), locked_by: user.id, lock_reason: reason })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("[admin] lockUser failed", error.message);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "user.lock", userId, { reason });
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  return { success: true, message: `${profile.full_name ?? "Account"} is locked.` };
+}
+
+export async function unlockUser(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+  const userId = String(formData.get("userId") ?? "");
+
+  const { profile, error: guard } = await targetUser(user.id, userId);
+  if (guard || !profile) return { message: guard };
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("profiles")
+    .update({ locked_at: null, locked_by: null, lock_reason: null })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("[admin] unlockUser failed", error.message);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "user.unlock", userId);
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  return { success: true, message: `${profile.full_name ?? "Account"} can sign in again.` };
+}
+
+/**
+ * Permanently removes an account — but only one that has never touched money.
+ *
+ * Deleting a user with investments, deposits, payouts or withdrawals would
+ * either break the foreign keys those records depend on or, worse, take the
+ * records with it. The ledger has to stay whole: those accounts get locked
+ * instead, which stops the account being used while keeping every row that
+ * explains where the money went.
+ */
+export async function deleteUser(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+  const userId = String(formData.get("userId") ?? "");
+  const typed = String(formData.get("confirmEmail") ?? "").trim().toLowerCase();
+
+  const { profile, error: guard } = await targetUser(user.id, userId);
+  if (guard || !profile) return { message: guard };
+
+  // Typing the address is the only thing standing between a stray click and a
+  // permanent deletion.
+  if (typed !== (profile.email ?? "").toLowerCase()) {
+    return { errors: { confirmEmail: ERRORS.ADMIN_DELETE_CONFIRM } };
+  }
+
+  const admin = createSupabaseAdminClient();
+  const [inv, dep, pay, wd, txn, trfOut, trfIn] = await Promise.all([
+    admin.from("investments").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("deposits").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("payouts").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("withdrawals").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    admin.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    // Counted explicitly rather than left to the foreign key. Deleting one
+    // side of a transfer would gut the other party's statement, and a clear
+    // refusal beats a constraint violation.
+    //
+    // Two .eq() queries rather than one .or(): .or() takes a string, so the id
+    // would be interpolated into a filter expression, and a crafted value
+    // could add filters of its own. .eq() passes it as a value.
+    admin.from("transfers").select("id", { count: "exact", head: true }).eq("sender_id", userId),
+    admin.from("transfers").select("id", { count: "exact", head: true }).eq("recipient_id", userId),
+  ]);
+
+  const records =
+    (inv.count ?? 0) +
+    (dep.count ?? 0) +
+    (pay.count ?? 0) +
+    (wd.count ?? 0) +
+    (txn.count ?? 0) +
+    (trfOut.count ?? 0) +
+    (trfIn.count ?? 0);
+
+  if (records > 0) {
+    return { message: ERRORS.ADMIN_DELETE_HAS_RECORDS };
+  }
+
+  // Remove the auth user; the profile row cascades from it.
+  const { error: authError } = await admin.auth.admin.deleteUser(userId);
+  if (authError) {
+    console.error("[admin] deleteUser failed", authError.message);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await admin.from("profiles").delete().eq("id", userId);
+  await audit(user.id, "user.delete", userId, { email: profile.email });
+
+  revalidatePath("/admin/users");
+  redirect("/admin/users");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IDENTITY VERIFICATION — approve or turn down a submission.
+//
+// Approving is what actually unlocks withdrawals: request_withdrawal() in the
+// database looks for an approved row and refuses without one.
+//
+// Both decisions email the user, because they were told they would hear back.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Loads a submission that is still awaiting a decision, with its user. */
+async function pendingSubmission(submissionId: string) {
+  if (!submissionId) return { error: ERRORS.ADMIN_KYC_NOT_FOUND };
+
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("kyc_submissions")
+    .select("id, user_id, status, profiles!kyc_submissions_user_id_fkey(full_name, email)")
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  if (!data) return { error: ERRORS.ADMIN_KYC_NOT_FOUND };
+  if (data.status !== "pending") return { error: ERRORS.ADMIN_KYC_ALREADY_REVIEWED };
+
+  const profile = data.profiles as unknown as { full_name: string | null; email: string } | null;
+  return { submission: { id: data.id, userId: data.user_id, profile } };
+}
+
+/**
+ * Tells the user what was decided.
+ *
+ * A rejection carries the admin's reason verbatim — that is the whole value of
+ * the email. "Declined" with nothing attached just means the same photo comes
+ * back again.
+ */
+async function emailDecision(
+  to: string,
+  name: string,
+  outcome: "approved" | "rejected",
+  reason?: string
+) {
+  const approved = outcome === "approved";
+  const why = (reason ?? "").trim() || "No reason was recorded.";
+
+  const res = await sendEmail({
+    from: noReplyFrom(),
+    to,
+    subject: approved ? kycApprovedSubject : kycRejectedSubject,
+    text: approved ? kycApprovedText(name) : kycRejectedText(name, why),
+    html: approved ? kycApprovedHtml(name) : kycRejectedHtml(name, why),
+  });
+  if (!res.ok) console.error("[admin] kyc decision email failed", res.body);
+}
+
+export async function approveKyc(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const submissionId = String(formData.get("submissionId") ?? "");
+  const found = await pendingSubmission(submissionId);
+  if (found.error) return { message: found.error };
+  const { submission } = found;
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("kyc_submissions")
+    .update({
+      status: "approved",
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      admin_note: null,
+    })
+    .eq("id", submission!.id)
+    // Only move a row that is still pending, so two admins clicking at once
+    // cannot both write a decision.
+    .eq("status", "pending");
+
+  if (error) {
+    console.error("[admin] approveKyc failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "kyc.approve", submission!.id, { user_id: submission!.userId });
+  revalidatePath("/admin/kyc");
+  revalidatePath("/admin");
+
+  if (submission!.profile?.email) {
+    await emailDecision(
+      submission!.profile.email,
+      submission!.profile.full_name ?? "",
+      "approved"
+    );
+  }
+
+  return { success: true, message: "Verified — they can withdraw now." };
+}
+
+export async function rejectKyc(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const submissionId = String(formData.get("submissionId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!reason) return { errors: { reason: ERRORS.ADMIN_KYC_REASON_REQUIRED } };
+
+  const found = await pendingSubmission(submissionId);
+  if (found.error) return { message: found.error };
+  const { submission } = found;
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("kyc_submissions")
+    .update({
+      status: "rejected",
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      admin_note: reason,
+    })
+    .eq("id", submission!.id)
+    .eq("status", "pending");
+
+  if (error) {
+    console.error("[admin] rejectKyc failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "kyc.reject", submission!.id, { user_id: submission!.userId, reason });
+  revalidatePath("/admin/kyc");
+  revalidatePath("/admin");
+
+  if (submission!.profile?.email) {
+    await emailDecision(
+      submission!.profile.email,
+      submission!.profile.full_name ?? "",
+      "rejected",
+      reason
+    );
+  }
+
+  return { success: true, message: "Turned down — they have been told why." };
+}
+
+/**
+ * Decrypts one ID number for an admin who is looking at the submission.
+ *
+ * Not rendered with the page on purpose. The number is only useful at the
+ * moment of comparison, so it is fetched on demand and every fetch writes an
+ * audit_log row naming the admin — which is the part that makes holding these
+ * numbers defensible at all.
+ */
+export async function revealKycNumber(
+  submissionId: string
+): Promise<{ ok: true; idNumber: string } | { ok: false; message: string }> {
+  const { user } = await requireAdmin();
+  if (!submissionId) return { ok: false, message: ERRORS.ADMIN_KYC_NOT_FOUND };
+
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("kyc_submissions")
+    .select("id, user_id, id_type, id_number_encrypted")
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  if (!data) return { ok: false, message: ERRORS.ADMIN_KYC_NOT_FOUND };
+
+  let idNumber: string;
+  try {
+    // Bound to the owner at encryption time, so this also proves the
+    // ciphertext has not been moved between rows.
+    idNumber = decryptSecret(data.id_number_encrypted, data.user_id);
+  } catch (err) {
+    console.error("[admin] kyc decrypt failed", err instanceof Error ? err.message : err);
+    return { ok: false, message: ERRORS.ADMIN_KYC_DECRYPT_FAILED };
+  }
+
+  await audit(user.id, "kyc.reveal", submissionId, {
+    user_id: data.user_id,
+    id_type: data.id_type,
+  });
+
+  return { ok: true, idNumber };
+}
+
+/**
+ * Re-runs the NIMC lookup on a submission whose check did not complete.
+ *
+ * Exists because the usual reason a check fails is a flat Monnify wallet, and
+ * making the user resubmit their NIN and selfie over our billing problem would
+ * be absurd. Each run is billed, so it is a deliberate button, not a retry
+ * loop.
+ */
+export async function recheckKycNin(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const submissionId = String(formData.get("submissionId") ?? "");
+  if (!submissionId) return { message: ERRORS.ADMIN_KYC_NOT_FOUND };
+
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("kyc_submissions")
+    .select(
+      "id, user_id, id_number_encrypted, lookup_status, lookup_at, profiles!kyc_submissions_user_id_fkey(full_name)"
+    )
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  if (!data) return { message: ERRORS.ADMIN_KYC_NOT_FOUND };
+
+  // A check in flight is left alone — but only while it is plausibly still
+  // running. If the request that started it died (a deploy mid-flight, a cold
+  // start killed), the row would otherwise sit at 'checking' forever with
+  // nothing able to move it.
+  if (data.lookup_status === "checking" && !lookupIsStale(data.lookup_at)) {
+    return { message: ERRORS.ADMIN_KYC_LOOKUP_RUNNING };
+  }
+
+  let nin: string;
+  try {
+    nin = decryptSecret(data.id_number_encrypted, data.user_id);
+  } catch (err) {
+    console.error("[admin] kyc recheck decrypt failed", err instanceof Error ? err.message : err);
+    return { message: ERRORS.ADMIN_KYC_DECRYPT_FAILED };
+  }
+
+  await admin
+    .from("kyc_submissions")
+    .update({
+      lookup_status: "checking",
+      lookup_error: null,
+      lookup_at: new Date().toISOString(),
+    })
+    .eq("id", submissionId);
+
+  const profile = data.profiles as unknown as { full_name: string | null } | null;
+  await runNinLookup(submissionId, data.user_id, nin, profile?.full_name ?? "");
+
+  await audit(user.id, "kyc.recheck", submissionId, { user_id: data.user_id });
+
+  const { data: after } = await admin
+    .from("kyc_submissions")
+    .select("lookup_status")
+    .eq("id", submissionId)
+    .maybeSingle();
+
+  revalidatePath("/admin/kyc");
+
+  if (after?.lookup_status === "failed") {
+    return { message: ERRORS.ADMIN_KYC_LOOKUP_FAILED };
+  }
+  return { success: true, message: "Checked." };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFUND ONE PERSON OUT OF A POOL
+//
+// For "I've changed my mind, can I have my money back" on a pool that is still
+// filling. Their contribution returns to their Rydvest balance; everyone else
+// in the pool is untouched and the pool stays open.
+//
+// All of the money logic lives in refund_investment() so it happens in one
+// transaction under a lock on the pool — this only checks who is asking and
+// says what happened.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function refundInvestment(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const investmentId = String(formData.get("investmentId") ?? "");
+  if (!investmentId) return { message: ERRORS.ADMIN_ACTION_FAILED };
+
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
+  if (!reason) return { errors: { reason: ERRORS.REFUND_REASON_REQUIRED } };
+
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.rpc("refund_investment", {
+    p_investment_id: investmentId,
+    p_admin_id: user.id,
+    p_reason: reason,
+  });
+
+  if (error) {
+    console.error("[admin] refund_investment failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  const result = data as
+    | { ok?: boolean; reason?: string; amount?: number; user_id?: string }
+    | null;
+
+  if (!result?.ok) {
+    return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "investment.refund", investmentId, {
+    amount: result.amount,
+    user_id: result.user_id,
+    reason,
+  });
+
+  revalidatePath("/admin/investments");
+  revalidatePath("/admin/pools");
+  revalidatePath("/admin");
+
+  return {
+    success: true,
+    message: `Refunded ${fmtNaira(Number(result.amount ?? 0))} to their Rydvest balance.`,
+  };
 }

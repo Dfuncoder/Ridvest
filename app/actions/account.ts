@@ -6,7 +6,7 @@
  *
  * Withdrawal accounts are verified with the bank, not typed. The name-match
  * rule is then enforced in THREE places on purpose:
- *   1. Korapay tells us the name on the account, and we reject it here if it
+ *   1. Monnify tells us the name on the account, and we reject it here if it
  *      does not match the profile name (clear, early feedback).
  *   2. The request_withdrawal() SQL function re-checks the match at request
  *      time (can't be bypassed even if server code had a bug).
@@ -18,9 +18,10 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
+import { pinFieldError } from "@/lib/pin";
 import { namesMatch } from "@/lib/names";
-import { korapayListBanks, korapayResolveAccount, type Bank } from "@/lib/korapay";
-import { WithdrawalRequestSchema, fieldErrors } from "@/lib/validation";
+import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
+import { WithdrawalRequestSchema, PinSchema, fieldErrors } from "@/lib/validation";
 import type { FormState } from "./auth";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ import type { FormState } from "./auth";
 // ─────────────────────────────────────────────────────────────────────────────
 export async function listBanks(): Promise<Bank[]> {
   await requireUser();
-  const { banks } = await korapayListBanks();
+  const { banks } = await monnifyListBanks();
   return banks;
 }
 
@@ -60,7 +61,7 @@ export async function lookupBankAccount(
     return { status: "not_found", message: ERRORS.ACCOUNT_NUMBER_INVALID };
   }
 
-  const resolved = await korapayResolveAccount(bankCode, accountNumber);
+  const resolved = await monnifyValidateAccount(bankCode, accountNumber);
   if (resolved.status === "unavailable") {
     return { status: "unavailable", message: ERRORS.ACCOUNT_LOOKUP_UNAVAILABLE };
   }
@@ -116,7 +117,7 @@ export async function addWithdrawalAccount(_prev: FormState, formData: FormData)
   let verified = false;
 
   if (bankCode) {
-    const resolved = await korapayResolveAccount(bankCode, accountNumber);
+    const resolved = await monnifyValidateAccount(bankCode, accountNumber);
     if (resolved.status === "ok" && resolved.accountName) {
       accountName = resolved.accountName;
       verified = true;
@@ -125,7 +126,7 @@ export async function addWithdrawalAccount(_prev: FormState, formData: FormData)
     }
   }
 
-  // Lookup unavailable (no Korapay key, or their API is down). Fall back to the
+  // Lookup unavailable (no Monnify keys, or their API is down). Fall back to the
   // name the user typed so withdrawals are not blocked outright — the profile
   // name check below still applies, and name_verified records that nobody
   // independently confirmed it.
@@ -185,12 +186,18 @@ export async function requestWithdrawal(_prev: FormState, formData: FormData): P
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
+  // Shape-checked here only so an empty box reads as "enter your PIN" rather
+  // than "wrong PIN". Whether it is the RIGHT PIN is decided in SQL.
+  const pin = PinSchema.safeParse(formData.get("pin"));
+  if (!pin.success) return { errors: { pin: ERRORS.PIN_REQUIRED } };
+
   // Called with the USER client so auth.uid() inside the function is the
   // real logged-in user.
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("request_withdrawal", {
     p_account_id: parsed.data.accountId,
     p_amount: parsed.data.amount,
+    p_pin: pin.data,
   });
 
   if (error) {
@@ -198,12 +205,43 @@ export async function requestWithdrawal(_prev: FormState, formData: FormData): P
     return { message: ERRORS.WITHDRAW_FAILED };
   }
 
-  const result = data as { ok: boolean; reason?: string };
+  const result = data as { ok: boolean; reason?: string; attempts_left?: number };
   if (!result?.ok) {
+    // A PIN problem belongs on the PIN box, with the countdown, not as a
+    // banner the user has to work out the cause of.
+    const pinError = pinFieldError(result);
+    if (pinError) return { errors: { pin: pinError } };
+
     return { message: DB_REASON_TO_ERROR[result?.reason ?? ""] ?? ERRORS.WITHDRAW_FAILED };
   }
 
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard/payouts");
   return { success: true, message: "Withdrawal request submitted. You'll be paid once it's approved." };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIDE BALANCE — a saved display preference.
+//
+// Stored on the profile rather than in the browser so the page can render
+// already masked, and so the choice follows the account to any device. Written
+// with the user's own client: the row policy limits it to their row and the
+// column grants limit it to this field.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function setHideBalance(hidden: boolean): Promise<void> {
+  const user = await requireUser();
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ hide_balance: hidden })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("[account] setHideBalance failed", error.message);
+    return;
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/admin");
 }

@@ -19,7 +19,12 @@
 
 alter table public.profiles add column if not exists last_active_at timestamptz;
 
+-- New signups start their clock at creation, so a fresh account is never
+-- judged against a NULL.
+alter table public.profiles alter column last_active_at set default now();
+
 -- Existing sessions start their clock now rather than being logged out at once.
+-- Start everyone's clock at migration time rather than leaving NULLs.
 update public.profiles set last_active_at = now() where last_active_at is null;
 
 create or replace function public.touch_session(p_timeout_minutes int)
@@ -32,14 +37,19 @@ declare
   v_uid  uuid := auth.uid();
   v_last timestamptz;
 begin
-  if v_uid is null then
-    return jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  -- Checked FIRST so a zero window is a true kill switch: it has to let the
+  -- request through even when the caller looks unauthenticated to Postgres.
+  -- Putting the auth check above this made SESSION_IDLE_MINUTES=0 useless as
+  -- an emergency off switch, which is the one moment it matters.
+  if p_timeout_minutes is null or p_timeout_minutes <= 0 then
+    if v_uid is not null then
+      update public.profiles set last_active_at = now() where id = v_uid;
+    end if;
+    return jsonb_build_object('ok', true, 'reason', 'disabled');
   end if;
 
-  -- A zero or negative window disables the timeout entirely.
-  if p_timeout_minutes is null or p_timeout_minutes <= 0 then
-    update public.profiles set last_active_at = now() where id = v_uid;
-    return jsonb_build_object('ok', true, 'reason', 'disabled');
+  if v_uid is null then
+    return jsonb_build_object('ok', false, 'reason', 'not_authenticated');
   end if;
 
   select last_active_at into v_last from public.profiles where id = v_uid;

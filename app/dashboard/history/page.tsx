@@ -12,10 +12,18 @@
 import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fmtNaira, fmtDateTime } from "@/lib/format";
+import { ResponsiveMoney } from "@/components/BalanceToggle";
 
 export const metadata = { title: "History · Rydvest" };
 
-type Kind = "deposit" | "investment" | "payout" | "withdrawal" | "refund";
+type Kind =
+  | "deposit"
+  | "investment"
+  | "payout"
+  | "withdrawal"
+  | "refund"
+  | "transfer_in"
+  | "transfer_out";
 
 type Entry = {
   id: string;
@@ -56,6 +64,16 @@ const KIND: Record<Kind, { sign: "+" | "−"; tint: string; icon: string }> = {
     tint: "bg-slate-500/10 text-slate-500 border-slate-500/20",
     icon: "M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3",
   },
+  transfer_in: {
+    sign: "+",
+    tint: "bg-green-500/10 text-green-600 border-green-500/20",
+    icon: "M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m-6 3.75l3 3m0 0l3-3m-3 3V1.5",
+  },
+  transfer_out: {
+    sign: "−",
+    tint: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+    icon: "M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5",
+  },
 };
 
 const STATUS: Record<Entry["status"], string> = {
@@ -76,8 +94,11 @@ function KindIcon({ kind }: { kind: Kind }) {
 }
 
 function Amount({ entry }: { entry: Entry }) {
+  // A transfer with no figure yet. The status beside it already says
+  // "Processing", so a dash reads better here than a second sentence — and a
+  // long phrase in this column runs out of the row on a phone.
   if (entry.amount === null) {
-    return <span className="text-slate-400">Awaiting confirmation</span>;
+    return <span className="text-slate-400">—</span>;
   }
   const k = KIND[entry.kind] ?? KIND.refund;
   return (
@@ -147,12 +168,16 @@ export default async function HistoryPage() {
         kind,
         label:
           kind === "investment"
-            ? "Pool investment"
+            ? "Pool purchase"
             : kind === "payout"
               ? "Weekly payout"
               : kind === "withdrawal"
                 ? "Withdrawal"
-                : "Refund",
+                : kind === "transfer_in"
+                  ? "Money received"
+                  : kind === "transfer_out"
+                    ? "Money sent"
+                    : "Refund",
         reference: t.reference,
         amount: Number(t.amount),
         at: t.created_at,
@@ -190,19 +215,19 @@ export default async function HistoryPage() {
           {/* Totals, so the statement balances at a glance. */}
           <div className="grid grid-cols-3 gap-2.5">
             {[
-              { label: "In", value: fmtNaira(credited), tone: "text-green-600" },
-              { label: "Out", value: fmtNaira(debited), tone: "text-slate-900" },
-              { label: "Entries", value: String(entries.length), tone: "text-slate-900" },
+              { label: "In", amount: credited, tone: "text-green-600" },
+              { label: "Out", amount: debited, tone: "text-slate-900" },
+              { label: "Entries", count: entries.length, tone: "text-slate-900" },
             ].map((t) => (
               <div
                 key={t.label}
-                className="bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 px-4 py-3.5"
+                className="bg-white border border-slate-200/80 rounded-2xl shadow-sm shadow-slate-200/40 px-3 sm:px-4 py-3.5 min-w-0"
               >
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.14em] mb-1">
                   {t.label}
                 </p>
                 <p className={`text-base font-extrabold tabular-nums tracking-tight ${t.tone}`}>
-                  {t.value}
+                  {t.count !== undefined ? t.count : <ResponsiveMoney value={t.amount!} />}
                 </p>
               </div>
             ))}
@@ -258,17 +283,20 @@ export default async function HistoryPage() {
               </tbody>
             </table>
 
-            {/* ── Mobile: stacked rows ── */}
+            {/* ── Mobile: stacked rows ──
+                The amount leads its own column and is allowed to keep its full
+                width; the label beside it is what truncates, since a clipped
+                word still reads and a clipped figure does not. */}
             <ul className="sm:hidden divide-y divide-slate-100">
               {entries.map((e) => (
-                <li key={e.id} className="flex items-start gap-3 px-4 py-4">
+                <li key={e.id} className="flex items-start gap-2.5 px-3.5 py-4">
                   <KindIcon kind={e.kind} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900">{e.label}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{fmtDateTime(e.at)}</p>
+                    <p className="text-sm font-bold text-slate-900 truncate">{e.label}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{fmtDateTime(e.at)}</p>
                     {e.note && <p className="text-xs text-red-600 mt-1">{e.note}</p>}
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 max-w-32">
                     <p className="text-sm font-extrabold tabular-nums whitespace-nowrap">
                       <Amount entry={e} />
                     </p>

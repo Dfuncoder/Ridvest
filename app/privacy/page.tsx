@@ -8,7 +8,7 @@ export const metadata = {
 const sections = [
   {
     title: "1. Who We Are", 
-    content: `Rydvest Ltd is a transport co-investment platform based in Anambra State, Nigeria. We operate the Rydvest platform, which allows individuals to invest in commercial transport vehicles and earn weekly returns.
+    content: `Rydvest Ltd is a transport co-ownership platform based in Anambra State, Nigeria. We operate the Rydvest platform, which allows individuals to co-own commercial transport vehicles and earn weekly earnings.
 
 This Privacy Policy explains what personal information we collect, why we collect it, how we use it, and your rights regarding that information. If you have questions, contact us at hello@rydvest.com.`,
   },
@@ -20,9 +20,9 @@ Identity Information — Your full name, date of birth, and government-issued ID
 
 Contact Information — Your email address, phone number, and WhatsApp number.
 
-Financial Information — Your bank account name, account number, and bank name, used solely for processing investment payouts and capital returns. We do not store card details.
+Financial Information — Your bank account name, account number, and bank name, used solely for processing ownership payouts and capital earnings. We do not store card details.
 
-Investment Activity — Details of your investments, pool memberships, payout history, and account activity on the platform.
+Ownership Activity — Details of your stakes, pool memberships, payout history, and account activity on the platform.
 
 Device and Usage Data — Your IP address, browser type, device information, and how you navigate the platform. This helps us improve our service and detect fraud.
 
@@ -34,7 +34,7 @@ Communications — Records of messages, emails, or support conversations you hav
 
 — Create and manage your Rydvest account
 — Verify your identity in compliance with Nigerian financial regulations
-— Process your investments, weekly payouts, and capital returns
+— Process your stakes, weekly payouts, and capital earnings
 — Send you important account updates, payout notifications, and platform announcements
 — Detect, prevent, and investigate fraud or suspicious activity
 — Improve the Rydvest platform and user experience
@@ -64,7 +64,7 @@ However, no method of data transmission or storage is completely secure. While w
     title: "6. Data Retention",
     content: `We keep your personal data for as long as your account is active and for a reasonable period afterward to meet legal and regulatory obligations. If you close your account, we will delete or anonymise your data within 90 days, except where we are required by law to retain it longer.
 
-Investment records may be retained for up to 7 years in compliance with Nigerian financial record-keeping requirements.`,
+Ownership records may be retained for up to 7 years in compliance with Nigerian financial record-keeping requirements.`,
   },
   {
     title: "7. Your Rights",

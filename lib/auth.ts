@@ -17,6 +17,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "./supabase/server";
+import { createSupabaseAdminClient } from "./supabase/admin";
 import { idleTimeoutMinutes } from "./session";
 
 export type SessionUser = {
@@ -36,42 +37,93 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 }
 
 /**
- * Stamps the session as active, and reports whether it had already gone idle.
+ * Stamps the session as active, and reports whether it had gone idle.
+ *
+ * Returns true to let the request through. It returns false ONLY when the
+ * database says, in those words, that the session passed the idle window —
+ * never because the check itself could not run. Signing people out on an
+ * inconclusive answer is how you lock everyone out of a platform holding their
+ * money, so every other outcome fails open and is logged instead.
  *
  * Wrapped in React cache() so the several requireUser() calls that happen
- * while rendering one page (layout, page, nested components) cost a single
- * round trip. The write and the check happen together inside touch_session().
+ * while rendering one page cost a single round trip.
  */
-const touchSession = cache(async (): Promise<boolean> => {
+const sessionIsLive = cache(async (): Promise<boolean> => {
+  const minutes = idleTimeoutMinutes();
+
+  // Disabled: do not even make the call, so there is no failure mode at all.
+  if (minutes <= 0) return true;
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("touch_session", {
-    p_timeout_minutes: idleTimeoutMinutes(),
+    p_timeout_minutes: minutes,
   });
 
-  // A failed call must not lock anyone out — if the function is missing
-  // (migration not yet run) or the network blips, treat the session as live.
   if (error) {
-    console.error("[auth] touch_session failed", error.message);
+    // Function missing (migration not run), network blip, bad signature.
+    console.error("[auth] touch_session failed, allowing request:", error.message);
     return true;
   }
 
-  return Boolean((data as { ok?: boolean } | null)?.ok);
+  const result = data as { ok?: boolean; reason?: string } | null;
+  if (result?.ok) return true;
+
+  // The only reason worth ending a session over.
+  if (result?.reason === "idle_timeout") return false;
+
+  // not_authenticated, no_profile, or anything unexpected: our check is
+  // unreliable here, so do not punish the user for it.
+  console.error("[auth] touch_session inconclusive, allowing request:", result?.reason ?? "unknown");
+  return true;
 });
 
 /**
  * Redirects to /login unless someone is logged in AND their session has been
- * used within the idle window. Called by every protected page and every
- * server action, so there is no path that skips the timeout.
+ * used within the idle window. Called by every protected page and every server
+ * action, so there is no path that skips the timeout.
  */
+/**
+ * Is this account locked?
+ *
+ * Read with the service role and the id from the verified session, so it cannot
+ * be dodged by a user whose own reads are restricted. Cached per request.
+ *
+ * Fails OPEN on error, like the idle check: a database blip must not lock
+ * every user out of a platform holding their money. A lock is only ever
+ * applied on a clear answer.
+ */
+const accountLocked = cache(async (userId: string): Promise<boolean> => {
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data, error } = await admin
+      .from("profiles")
+      .select("locked_at")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("[auth] lock check failed, allowing request:", error.message);
+      return false;
+    }
+    return Boolean(data?.locked_at);
+  } catch (err) {
+    console.error("[auth] lock check threw, allowing request:", err);
+    return false;
+  }
+});
+
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  if (!(await touchSession())) {
-    const supabase = await createSupabaseServerClient();
-    await supabase.auth.signOut();
-    redirect("/login");
-  }
+  // Cookies cannot be cleared from here, so hand off to the route handler that
+  // can. Redirecting straight to /login would leave the session cookie valid
+  // and the proxy would bounce it back to the dashboard for ever.
+  if (!(await sessionIsLive())) redirect("/auth/logout");
+
+  // A locked account keeps all its data but cannot use the platform. Same
+  // hand-off, so the session is genuinely ended rather than looping.
+  if (await accountLocked(user.id)) redirect("/auth/logout?locked=1");
 
   return user;
 }
@@ -98,7 +150,7 @@ export async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role")
+    .select("id, full_name, email, role, hide_balance")
     .eq("id", user.id)
     .single();
 
