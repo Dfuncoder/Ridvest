@@ -26,11 +26,21 @@ export const NIGERIAN_STATES = [
 /** Nigerian phone: 0801..., 070..., 090..., or the +234 international form. */
 const NG_PHONE_REGEX = /^(?:\+?234|0)[789][01]\d{8}$/;
 
-/** Strong password: ≥8 chars with a letter, a number and a special character. */
+/**
+ * Strong password: ≥8 characters with a lowercase letter, an uppercase
+ * letter, a number and a symbol.
+ *
+ * These four classes mirror the Password Requirements setting on the Supabase
+ * project, and they have to. Supabase applies its own rule when the account is
+ * created, after this one has already passed — so a rule that is looser here
+ * produces a form that accepts a password and then fails for a reason the user
+ * is never shown. Equal or stricter here is the only safe side to be on.
+ */
 const passwordSchema = z
   .string()
   .min(8, { error: ERRORS.SIGNUP_PASSWORD_WEAK })
-  .regex(/[a-zA-Z]/, { error: ERRORS.SIGNUP_PASSWORD_WEAK })
+  .regex(/[a-z]/, { error: ERRORS.SIGNUP_PASSWORD_WEAK })
+  .regex(/[A-Z]/, { error: ERRORS.SIGNUP_PASSWORD_WEAK })
   .regex(/[0-9]/, { error: ERRORS.SIGNUP_PASSWORD_WEAK })
   .regex(/[^a-zA-Z0-9]/, { error: ERRORS.SIGNUP_PASSWORD_WEAK });
 

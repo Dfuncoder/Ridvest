@@ -19,7 +19,7 @@ export const ERRORS = {
   SIGNUP_NAME_REQUIRED: "Please enter your full name (at least 3 characters).",
   SIGNUP_EMAIL_INVALID: "Please enter a valid email address.",
   SIGNUP_PASSWORD_WEAK:
-    "Password must be at least 8 characters and include a letter, a number and a special character.",
+    "Password must be at least 8 characters and include a small letter, a capital letter, a number and a symbol.",
   SIGNUP_PASSWORDS_DONT_MATCH: "Passwords do not match.",
   SIGNUP_DOB_REQUIRED: "Please enter your date of birth.",
   SIGNUP_UNDERAGE: "You must be at least 18 years old to use Rydvest.",
@@ -34,6 +34,8 @@ export const ERRORS = {
   OTP_INVALID: "Incorrect or expired code. Please check your email and try again.",
   OTP_EMAIL_MISSING: "We couldn't tell which email to verify. Please register or log in again.",
   OTP_RESEND_FAILED: "Couldn't resend the code. Please wait a minute and try again.",
+  OTP_SESSION_EXPIRED:
+    "That confirmation link is no longer active. Please register or log in again.",
 
   // ── Login ─────────────────────────────────────────────────────────────────
   // Deliberately vague: never reveal whether the email exists.

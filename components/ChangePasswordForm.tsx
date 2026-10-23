@@ -101,7 +101,7 @@ export default function ChangePasswordForm() {
         name="password"
         label="New password"
         autoComplete="new-password"
-        hint="At least 8 characters, with a letter, a number and a symbol."
+        hint="At least 8 characters, with a small letter, a capital letter, a number and a symbol."
         error={state?.errors?.password}
       />
 

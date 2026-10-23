@@ -115,9 +115,12 @@ export function EyeToggle({ show, onToggle }: { show: boolean; onToggle: () => v
 
 // ── Password strength meter (UX only — server enforces the real rules) ─────
 export function PasswordStrength({ password }: { password: string }) {
+  // The four bars are the four things the rule actually asks for, so a full
+  // bar and an accepted password mean the same thing. Both cases count as one
+  // bar: five bars for four segments would always leave one looking unmet.
   const score = [
     password.length >= 8,
-    /[A-Z]/.test(password),
+    /[a-z]/.test(password) && /[A-Z]/.test(password),
     /[0-9]/.test(password),
     /[^A-Za-z0-9]/.test(password),
   ].filter(Boolean).length;
