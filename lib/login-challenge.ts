@@ -30,7 +30,7 @@ export const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 
 export const CHALLENGE_COOKIE = "rv_login_challenge";
 
-const LABEL = "rydvest:login-challenge:v1";
+const LOGIN_LABEL = "rydvest:login-challenge:v1";
 
 type Challenge = {
   /** Who is logging in. The code page trusts this, never the query string. */
@@ -41,33 +41,30 @@ type Challenge = {
   exp: number;
 };
 
-function key(): Buffer {
+/**
+ * One key per purpose, derived from the same secret.
+ *
+ * The label is what keeps a login challenge from verifying as a signup
+ * confirmation. Same secret, different key, so a token minted for one purpose
+ * is just noise to the other.
+ */
+function key(label: string): Buffer {
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!secret) throw new Error("SUPABASE_SECRET_KEY is not set");
-  return createHmac("sha256", secret).update(LABEL).digest();
+  return createHmac("sha256", secret).update(label).digest();
 }
 
-function sign(payload: string): string {
-  return createHmac("sha256", key()).update(payload).digest("base64url");
-}
-
-/** Issued once the password has been accepted. */
-export function createChallenge(email: string, next: string): string {
-  const payload = Buffer.from(
-    JSON.stringify({ email, next, exp: Date.now() + CHALLENGE_TTL_MS } satisfies Challenge),
-    "utf8"
-  ).toString("base64url");
-
-  return `${payload}.${sign(payload)}`;
+function sign(payload: string, label: string): string {
+  return createHmac("sha256", key(label)).update(payload).digest("base64url");
 }
 
 /**
- * Returns the challenge, or null if it is missing, tampered with or expired.
+ * Signature first, then expiry. Shared by both cookies.
  *
  * Never throws on bad input: a malformed cookie is an ordinary thing to
  * receive and simply means "no valid challenge".
  */
-export function readChallenge(token: string | undefined): Challenge | null {
+function verify(token: string | undefined, label: string): Challenge | null {
   if (!token) return null;
 
   const [payload, signature] = token.split(".");
@@ -75,7 +72,7 @@ export function readChallenge(token: string | undefined): Challenge | null {
 
   let expected: string;
   try {
-    expected = sign(payload);
+    expected = sign(payload, label);
   } catch {
     return null;
   }
@@ -96,6 +93,21 @@ export function readChallenge(token: string | undefined): Challenge | null {
   }
 }
 
+/** Issued once the password has been accepted. */
+export function createChallenge(email: string, next: string): string {
+  const payload = Buffer.from(
+    JSON.stringify({ email, next, exp: Date.now() + CHALLENGE_TTL_MS } satisfies Challenge),
+    "utf8"
+  ).toString("base64url");
+
+  return `${payload}.${sign(payload, LOGIN_LABEL)}`;
+}
+
+/** Returns the challenge, or null if it is missing, tampered with or expired. */
+export function readChallenge(token: string | undefined): Challenge | null {
+  return verify(token, LOGIN_LABEL);
+}
+
 /**
  * The escape hatch.
  *
@@ -109,4 +121,51 @@ export function readChallenge(token: string | undefined): Challenge | null {
  */
 export function loginOtpDisabled(): boolean {
   return process.env.LOGIN_OTP_DISABLED === "1";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE SIGNUP CONFIRMATION CHALLENGE
+//
+// Same machinery, different job. /verify-otp used to take the address from
+// ?email= in the URL and hand it to the server, which meant two things:
+//
+//   • anyone could put any address in that URL and have the page display it,
+//     on the real domain, under the real logo — a ready-made phishing page;
+//   • the resend button posted that address to the server, so anyone could
+//     make us email a stranger, and the reply told them whether that stranger
+//     had an account here.
+//
+// Now the address comes from here instead: set when the account is created,
+// signed, and tied to the browser that created it. The URL carries nothing
+// and the server reads nothing the client typed.
+//
+// An hour, not ten minutes: the signup code itself lasts an hour, and a
+// challenge that died first would strand people who checked their email
+// slowly for no gain — unlike the login challenge, holding this one proves
+// nothing about a password and unlocks nothing on its own.
+//
+// The label differs from the login one on purpose. Both are signed with the
+// same secret, so without domain separation a login challenge would verify
+// as a confirmation challenge and vice versa.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const CONFIRM_TTL_MS = 60 * 60 * 1000;
+
+export const CONFIRM_COOKIE = "rv_signup_confirm";
+
+const CONFIRM_LABEL = "rydvest:signup-confirm:v1";
+
+/** Issued when an account is created, or when an unconfirmed one logs in. */
+export function createConfirm(email: string): string {
+  const payload = Buffer.from(
+    JSON.stringify({ email, next: "", exp: Date.now() + CONFIRM_TTL_MS } satisfies Challenge),
+    "utf8"
+  ).toString("base64url");
+
+  return `${payload}.${sign(payload, CONFIRM_LABEL)}`;
+}
+
+/** The address to confirm, or null if there is no valid cookie. */
+export function readConfirm(token: string | undefined): string | null {
+  return verify(token, CONFIRM_LABEL)?.email ?? null;
 }

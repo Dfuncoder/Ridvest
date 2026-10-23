@@ -30,7 +30,6 @@ import {
   adminLoginAlertHtml,
   type SignIn,
 } from "@/lib/notices";
-import { z } from "zod";
 import { cookies } from "next/headers";
 import { createSupabaseServerClient, createSupabaseCheckClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
@@ -42,6 +41,10 @@ import {
   CHALLENGE_TTL_MS,
   createChallenge,
   readChallenge,
+  CONFIRM_COOKIE,
+  CONFIRM_TTL_MS,
+  createConfirm,
+  readConfirm,
   loginOtpDisabled,
 } from "@/lib/login-challenge";
 import {
@@ -107,6 +110,13 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
   });
 
   if (error) {
+    // Supabase applies the project's own Password Requirements after our
+    // schema has already passed. Ours is written to be at least as strict, so
+    // this should be unreachable — but if the project rule is ever tightened
+    // further, the user gets the rule back instead of "something went wrong".
+    if (error.code === "weak_password") {
+      return { errors: { password: ERRORS.SIGNUP_PASSWORD_WEAK } };
+    }
     // Supabase rate limit or transient failure.
     if (error.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
     return { message: ERRORS.SIGNUP_FAILED };
@@ -119,18 +129,45 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
     return { errors: { email: ERRORS.SIGNUP_EMAIL_TAKEN } };
   }
 
-  // 3. Off to OTP entry. The email travels in the query string (not secret).
-  redirect(`/verify-otp?email=${encodeURIComponent(email)}`);
+  // 3. Off to the code page. The address goes in a signed cookie, never in the
+  //    URL: a page that displays whatever ?email= says is a phishing page on
+  //    our own domain, and a resend button that posts it is a way to make us
+  //    email strangers.
+  await setConfirmCookie(email);
+  redirect("/verify-otp");
+}
+
+/**
+ * Remembers, in this browser only, which address is waiting to be confirmed.
+ *
+ * Signed, so it cannot be edited into somebody else's address, and read only
+ * on the server. Nothing the client sends is trusted for this.
+ */
+async function setConfirmCookie(email: string) {
+  const jar = await cookies();
+  jar.set(CONFIRM_COOKIE, createConfirm(email), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor(CONFIRM_TTL_MS / 1000),
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // VERIFY OTP — confirms the email; on success the user is logged in
+//
+// The address comes from the signed cookie, never from the form. A posted
+// address would let anyone ask us to verify a code against an account that is
+// not theirs — and, before this, let them put any text they liked on a real
+// Rydvest page by editing the URL.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function verifyOtp(_prev: FormState, formData: FormData): Promise<FormState> {
-  const parsed = OtpSchema.safeParse({
-    email: formData.get("email"),
-    token: formData.get("token"),
-  });
+  const jar = await cookies();
+  const email = readConfirm(jar.get(CONFIRM_COOKIE)?.value);
+  if (!email) return { message: ERRORS.OTP_SESSION_EXPIRED };
+
+  const parsed = OtpSchema.safeParse({ email, token: formData.get("token") });
   if (!parsed.success) return { message: ERRORS.OTP_INVALID };
 
   const supabase = await createSupabaseServerClient();
@@ -140,7 +177,12 @@ export async function verifyOtp(_prev: FormState, formData: FormData): Promise<F
     type: "email", // verifies signup-confirmation email OTPs
   });
 
+  // One message for every way this can fail — wrong code, expired code, wrong
+  // account. Anything more specific is a hint to somebody guessing.
   if (error) return { message: ERRORS.OTP_INVALID };
+
+  // Spent. The account is confirmed and the cookie has no further use.
+  jar.delete(CONFIRM_COOKIE);
 
   const { data: verified } = await supabase.auth.getClaims();
   const verifiedId = verified?.claims?.sub as string | undefined;
@@ -151,15 +193,25 @@ export async function verifyOtp(_prev: FormState, formData: FormData): Promise<F
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RESEND OTP
+//
+// Also cookie-bound, for a second reason: when the address came from the
+// request, anyone could make us email a stranger a signup code, and the
+// difference between the success and failure replies answered "does this
+// address have an account here?" for free. Now it can only ever re-send to
+// the address this browser signed up with, and the reply is the same either
+// way.
 // ─────────────────────────────────────────────────────────────────────────────
-export async function resendOtp(_prev: FormState, formData: FormData): Promise<FormState> {
-  const email = z.email().safeParse(String(formData.get("email") ?? "").trim().toLowerCase());
-  if (!email.success) return { message: ERRORS.OTP_EMAIL_MISSING };
+export async function resendOtp(): Promise<FormState> {
+  const jar = await cookies();
+  const email = readConfirm(jar.get(CONFIRM_COOKIE)?.value);
+  if (!email) return { message: ERRORS.OTP_SESSION_EXPIRED };
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.resend({ type: "signup", email: email.data });
+  const { error } = await supabase.auth.resend({ type: "signup", email });
 
-  if (error) return { message: ERRORS.OTP_RESEND_FAILED };
+  // Logged, not shown. Whether Supabase accepted it is our business.
+  if (error) console.error("[auth] signup code resend failed", error.message);
+
   return { success: true, message: "A new code has been sent to your email." };
 }
 
@@ -284,7 +336,8 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     if (error.code === "email_not_confirmed") {
       const supabase = await createSupabaseServerClient();
       await supabase.auth.resend({ type: "signup", email: parsed.data.email });
-      redirect(`/verify-otp?email=${encodeURIComponent(parsed.data.email)}`);
+      await setConfirmCookie(parsed.data.email);
+      redirect("/verify-otp");
     }
     if (error.status === 429) return { message: ERRORS.AUTH_RATE_LIMITED };
     return { message: ERRORS.AUTH_INVALID_LOGIN };
@@ -493,7 +546,15 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   if (!data?.claims?.sub) return { message: ERRORS.RESET_LINK_INVALID };
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
-  if (error) return { message: ERRORS.RESET_PASSWORD_FAILED };
+  if (error) {
+    // The project's own Password Requirements, applied after ours. Saying
+    // "request a new reset link" to somebody whose link is fine and whose
+    // password is merely too weak sends them round a loop they cannot exit.
+    if (error.code === "weak_password") {
+      return { errors: { password: ERRORS.SIGNUP_PASSWORD_WEAK } };
+    }
+    return { message: ERRORS.RESET_PASSWORD_FAILED };
+  }
 
   // No password-change notice is sent from here on purpose.
   //
@@ -546,6 +607,9 @@ export async function changePassword(_prev: FormState, formData: FormData): Prom
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) {
+    if (error.code === "weak_password") {
+      return { errors: { password: ERRORS.SIGNUP_PASSWORD_WEAK } };
+    }
     console.error("[auth] password change failed", error.message);
     return { message: ERRORS.PASSWORD_CHANGE_FAILED };
   }
