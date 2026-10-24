@@ -13,7 +13,7 @@ import TransferForm from "@/components/dashboard/TransferForm";
 import { CodeCard } from "@/components/dashboard/ProfileDetails";
 import { ResponsiveMoney } from "@/components/BalanceToggle";
 import { fmtNaira, fmtDateTime } from "@/lib/format";
-import { TRANSFER_LIMITS } from "@/lib/economics";
+import { getMoneySettings } from "@/lib/settings";
 
 export const metadata = { title: "Send · Rydvest" };
 
@@ -57,6 +57,7 @@ export default async function TransferPage() {
       .limit(50),
   ]);
 
+  const money = await getMoneySettings();
   const walletBalance = Number(balance ?? 0);
   const kycStatus = (kyc ?? []).some((k) => k.status === "approved")
     ? "approved"
@@ -94,13 +95,13 @@ export default async function TransferPage() {
               <div className="flex justify-between gap-3">
                 <dt className="text-slate-500">Per transfer</dt>
                 <dd className="font-semibold text-slate-900 tabular-nums">
-                  {fmtNaira(TRANSFER_LIMITS.minAmount)} – {fmtNaira(TRANSFER_LIMITS.maxAmount)}
+                  {fmtNaira(money.transferMinAmount)} – {fmtNaira(money.transferMaxAmount)}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-slate-500">Per day</dt>
                 <dd className="font-semibold text-slate-900 tabular-nums">
-                  {fmtNaira(TRANSFER_LIMITS.maxPerDay)}
+                  {fmtNaira(money.transferMaxPerDay)}
                 </dd>
               </div>
             </dl>
@@ -111,8 +112,22 @@ export default async function TransferPage() {
         <Card className="p-6">
           <h2 className="text-sm font-extrabold text-slate-900 mb-4">Send money</h2>
 
-          {kycStatus === "approved" ? (
-            <TransferForm balance={walletBalance} hasPin={Boolean(hasPin)} />
+          {!money.transfersEnabled ? (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-slate-600">
+              Sending to other accounts is paused at the moment. Your balance is untouched and
+              everything else works as normal — try again a little later.
+            </p>
+          ) : kycStatus === "approved" ? (
+            <TransferForm
+              balance={walletBalance}
+              hasPin={Boolean(hasPin)}
+              fee={money.transferFee}
+              limits={{
+                minAmount: money.transferMinAmount,
+                maxAmount: money.transferMaxAmount,
+                maxPerDay: money.transferMaxPerDay,
+              }}
+            />
           ) : kycStatus === "pending" ? (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-slate-600">
               Your identity details are with us. We&apos;ll email you once they&apos;re confirmed,

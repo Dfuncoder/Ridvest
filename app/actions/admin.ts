@@ -17,7 +17,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
-import { parseEmailList } from "@/lib/settings";
+import { parseEmailList, MONEY_KEYS, SWITCH_KEYS } from "@/lib/settings";
 import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
 import { fmtNaira } from "@/lib/format";
 import { totalPackage } from "@/lib/economics";
@@ -30,7 +30,12 @@ import { ERRORS, DB_REASON_TO_ERROR } from "@/lib/errors";
 import { decryptSecret } from "@/lib/crypto";
 import { runNinLookup } from "./kyc";
 import { lookupIsStale } from "@/lib/kyc";
-import { PoolProductSchema, PaymentSettingsSchema, fieldErrors } from "@/lib/validation";
+import {
+  PoolProductSchema,
+  PaymentSettingsSchema,
+  MoneySettingsSchema,
+  fieldErrors,
+} from "@/lib/validation";
 import type { FormState } from "./auth";
 
 /** Writes one audit trail row for an admin action. */
@@ -594,6 +599,77 @@ export async function updatePaymentSettings(_prev: FormState, formData: FormData
   return { success: true, message: "Payment settings saved." };
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIMITS, FEES AND THE TWO SERVICE SWITCHES
+//
+// What this writes is only data: the rules that read it live in SQL, inside
+// the same transactions that move money, so a value saved here binds the next
+// transfer whether it comes from our form or from a crafted request.
+//
+// Checkboxes are absent from the form data when unticked, which is how HTML
+// works and is also how a switch gets turned off by accident if you read the
+// field as a string. Hence the explicit === "on".
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateMoneySettings(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const parsed = MoneySettingsSchema.safeParse({
+    transferMinAmount: formData.get("transferMinAmount"),
+    transferMaxAmount: formData.get("transferMaxAmount"),
+    transferMaxPerDay: formData.get("transferMaxPerDay"),
+    transferMaxPerHour: formData.get("transferMaxPerHour"),
+    transferMaxLookupsHour: formData.get("transferMaxLookupsHour"),
+    transferFee: formData.get("transferFee"),
+    withdrawalFee: formData.get("withdrawalFee"),
+    transfersEnabled: formData.get("transfersEnabled") === "on",
+    withdrawalsEnabled: formData.get("withdrawalsEnabled") === "on",
+  });
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+
+  const d = parsed.data;
+  const now = new Date().toISOString();
+  const admin = createSupabaseAdminClient();
+
+  const { error } = await admin.from("app_settings").upsert([
+    { key: MONEY_KEYS.transferMinAmount, value: String(d.transferMinAmount), updated_at: now },
+    { key: MONEY_KEYS.transferMaxAmount, value: String(d.transferMaxAmount), updated_at: now },
+    { key: MONEY_KEYS.transferMaxPerDay, value: String(d.transferMaxPerDay), updated_at: now },
+    { key: MONEY_KEYS.transferMaxPerHour, value: String(d.transferMaxPerHour), updated_at: now },
+    {
+      key: MONEY_KEYS.transferMaxLookupsHour,
+      value: String(d.transferMaxLookupsHour),
+      updated_at: now,
+    },
+    { key: MONEY_KEYS.transferFee, value: String(d.transferFee), updated_at: now },
+    { key: MONEY_KEYS.withdrawalFee, value: String(d.withdrawalFee), updated_at: now },
+    { key: SWITCH_KEYS.transfersEnabled, value: d.transfersEnabled ? "1" : "0", updated_at: now },
+    {
+      key: SWITCH_KEYS.withdrawalsEnabled,
+      value: d.withdrawalsEnabled ? "1" : "0",
+      updated_at: now,
+    },
+  ]);
+
+  if (error) {
+    console.error("[admin] updateMoneySettings failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  // Audited in full. Turning withdrawals off is the single most disruptive
+  // thing an admin can do without touching an account, and "who stopped them,
+  // and when" needs an answer that is not somebody's memory.
+  await audit(user.id, "settings.money", d.transfersEnabled && d.withdrawalsEnabled ? "all_on" : "paused", {
+    ...d,
+  });
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin");
+  revalidatePath("/dashboard/transfer");
+  revalidatePath("/dashboard/payouts");
+
+  return { success: true, message: "Limits, fees and switches saved." };
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // BANK LOOKUP FOR THE COMPANY ACCOUNT
 //

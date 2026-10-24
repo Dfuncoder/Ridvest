@@ -71,9 +71,17 @@ export default async function AdminUsersPage({
     .limit(500);
 
   if (query) {
-    // Match a name, an email or an account ID. The % wrapping is ours, so a
-    // user typing % cannot broaden the search beyond their own row set.
-    const safe = query.replace(/[%_]/g, "");
+    // The value is interpolated into a PostgREST filter STRING, so the
+    // characters that structure that string have to go, not just the LIKE
+    // wildcards:
+    //   , splits one filter from the next  → a crafted term could append
+    //     filters of its own, e.g. "x,role.eq.admin"
+    //   ( ) open and close a nested or()/and() group
+    //   % _ are LIKE wildcards, and the % wrapping is ours to add
+    // A dot is left alone on purpose: it delimits col.op.value, but only the
+    // first two, so a dot inside the value is safe — and email searches are
+    // useless without it.
+    const safe = query.replace(/[,()%_]/g, "");
     select = select.or(
       `full_name.ilike.%${safe}%,email.ilike.%${safe}%,user_code.ilike.%${safe}%`
     );

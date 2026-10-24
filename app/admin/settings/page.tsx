@@ -3,9 +3,10 @@
  * transfer needs checking, and whether this deployment is actually wired up.
  */
 import { requireAdmin } from "@/lib/auth";
-import { getPaymentSettings } from "@/lib/settings";
+import { getPaymentSettings, getMoneySettings } from "@/lib/settings";
 import { listBanksForAdmin } from "@/app/actions/admin";
 import { PaymentSettingsForm } from "@/components/admin/PaymentSettingsForm";
+import { MoneySettingsForm } from "@/components/admin/MoneySettingsForm";
 import { integrationStatus } from "@/lib/health";
 
 export const metadata = { title: "Settings · Rydvest admin" };
@@ -14,7 +15,11 @@ const eyebrow = "text-[10px] font-bold uppercase tracking-[0.14em]";
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
-  const [settings, banks] = await Promise.all([getPaymentSettings(), listBanksForAdmin()]);
+  const [settings, banks, money] = await Promise.all([
+    getPaymentSettings(),
+    listBanksForAdmin(),
+    getMoneySettings(),
+  ]);
 
   const integrations = integrationStatus();
   const broken = integrations.filter((i) => i.required && !i.ready);
@@ -96,6 +101,22 @@ export default async function AdminSettingsPage() {
             they are read at startup, so an existing deployment will not pick them up.
           </p>
         )}
+      </div>
+
+      {/* ── LIMITS, FEES AND SWITCHES ──
+          Above the payment method on purpose: this is the card somebody opens
+          in an emergency, and it should not be below a form about bank
+          details. */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="mb-5">
+          <h2 className="text-sm font-extrabold text-slate-900">Limits, fees &amp; switches</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+            Saved straight to the database and read on every transaction — no deploy needed. The
+            rules are enforced in SQL, so pausing a service here stops it everywhere, not just on
+            the screens that hide the button.
+          </p>
+        </div>
+        <MoneySettingsForm settings={money} />
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6">

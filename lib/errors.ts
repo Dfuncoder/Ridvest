@@ -131,6 +131,15 @@ export const ERRORS = {
   KYC_REQUIRED:
     "Verify your identity before you can withdraw. Go to Verification to submit your details.",
 
+
+  // ── Paused services ───────────────────────────────────────────────────────
+  // Said plainly and without a reason: the reason is ours, and "scheduled
+  // maintenance" when it is actually a fraud investigation is a lie told to
+  // the one person who might be innocent.
+  WITHDRAWALS_PAUSED:
+    "Withdrawals are temporarily unavailable. Your balance is safe — please try again later.",
+  TRANSFERS_PAUSED:
+    "Sending to other accounts is temporarily unavailable. Your balance is safe — please try again later.",
   // ── Transaction PIN ───────────────────────────────────────────────────────
   PIN_INVALID: "Your PIN must be 4 digits.",
   PIN_TOO_SIMPLE: "Pick a less obvious PIN — not 1234, 0000 or four of the same digit.",
@@ -227,6 +236,8 @@ export const DYNAMIC_ERRORS = {
  */
 export const DB_REASON_TO_ERROR: Record<string, string> = {
   not_authenticated: ERRORS.AUTH_NOT_LOGGED_IN,
+  withdrawals_paused: ERRORS.WITHDRAWALS_PAUSED,
+  transfers_paused: ERRORS.TRANSFERS_PAUSED,
   account_locked: ERRORS.ACCOUNT_LOCKED,
   kyc_required: ERRORS.KYC_REQUIRED,
   pin_not_set: ERRORS.PIN_NOT_SET,

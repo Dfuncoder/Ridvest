@@ -384,14 +384,33 @@ export function WithdrawForm({
   balance,
   kycStatus,
   hasPin,
+  fee = 0,
+  paused = false,
 }: {
   accounts: Array<{ id: string; bank_name: string; account_number: string; account_name: string }>;
   balance: number;
   kycStatus: "approved" | "pending" | "none";
   hasPin: boolean;
+  /** Charged on top of the amount. Zero by default, set in admin settings. */
+  fee?: number;
+  /** Withdrawals switched off by an admin. */
+  paused?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(requestWithdrawal, undefined);
   const [amount, setAmount] = useState<number | null>(null);
+
+  // Checked before anything else about the account: when the service is off,
+  // nothing about this person's verification or bank details is the reason
+  // they cannot withdraw, and saying otherwise sends them to fix the wrong
+  // thing. request_withdrawal() refuses regardless.
+  if (paused) {
+    return (
+      <p className="text-xs leading-relaxed text-slate-600 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
+        Withdrawals are paused at the moment. Your balance is safe and untouched — please try
+        again a little later.
+      </p>
+    );
+  }
 
   if (!hasPin) return <NeedsPin action="withdraw" />;
 
@@ -451,12 +470,20 @@ export function WithdrawForm({
           value={amount}
           onChange={setAmount}
           min={1}
-          max={balance}
+          max={Math.max(balance - fee, 0)}
           required
           placeholder="Amount to withdraw"
           className={`${input} tabular-nums`}
         />
         <FieldErr msg={state?.errors?.amount} />
+        {/* Only shown when there is one. A "Fee: ₦0" line on every withdrawal
+            screen invites the question it is answering. */}
+        {fee > 0 && (
+          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+            A {fmtNaira(fee)} fee comes out of your balance on top of this, so{" "}
+            {amount ? fmtNaira(amount + fee) : "the amount plus the fee"} leaves your account.
+          </p>
+        )}
       </div>
 
       <PinInput name="pin" label="Transaction PIN" error={state?.errors?.pin} />
