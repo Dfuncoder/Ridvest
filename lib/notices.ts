@@ -191,7 +191,33 @@ export type SignIn = {
   ip: string | null;
   location: string | null;
   device: string;
+  /** First time this account has been used from this address. */
+  newIp?: boolean;
+  /** First time from this browser-and-OS combination. */
+  newDevice?: boolean;
+  /** Kept for the stored record; deliberately never shown in the email. */
+  userAgent?: string | null;
 };
+
+/**
+ * The one sentence worth putting above everything else, or nothing at all.
+ *
+ * A notice that reads identically every time becomes wallpaper. When the
+ * history says this device or this network has never been used on the account
+ * before, the email should say so first — that is the whole signal.
+ */
+function whatIsNew(s: SignIn): string | null {
+  if (s.newDevice && s.newIp) {
+    return "This is the first time your account has been opened on this device and from this network.";
+  }
+  if (s.newDevice) {
+    return "This is the first time your account has been opened on this device.";
+  }
+  if (s.newIp) {
+    return "This sign-in came from a network your account has not been used from before.";
+  }
+  return null;
+}
 
 /**
  * Lagos time, said out loud.
@@ -237,13 +263,20 @@ function detailTable(rows: Array<[string, string]>): string {
   return `<table role="presentation" width="100%" style="border-top:1px solid #f1f5f9" cellpadding="0" cellspacing="0">${body}</table>`;
 }
 
-export const loginNoticeSubject = "New sign-in to your Rydvest account";
+/** Says what changed, where anything did. */
+export function loginNoticeSubject(s: SignIn): string {
+  if (s.newDevice) return "New sign-in to your Rydvest account from a new device";
+  if (s.newIp) return "New sign-in to your Rydvest account from a new network";
+  return "New sign-in to your Rydvest account";
+}
 
 export function loginNoticeText(name: string, s: SignIn): string {
+  const headline = whatIsNew(s);
   return [
     `Hi ${firstName(name)},`,
     ``,
     `Your Rydvest account was just signed in to.`,
+    ...(headline ? [``, headline.toUpperCase()] : []),
     ``,
     `SIGN-IN DETAILS`,
     ...signInRows(s).map(([k, v]) => `${k}: ${v}`),
@@ -260,6 +293,20 @@ export function loginNoticeText(name: string, s: SignIn): string {
 }
 
 export function loginNoticeHtml(name: string, s: SignIn): string {
+  const headline = whatIsNew(s);
+
+  // Amber, not red: unfamiliar is not the same as wrong, and most of these
+  // are somebody on a new phone or a different network. Red here would train
+  // people to dismiss the colour that matters.
+  const banner = headline
+    ? `<tr><td style="padding:18px 28px 0">
+<table role="presentation" width="100%" style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px" cellpadding="0" cellspacing="0">
+<tr><td style="padding:14px 16px">
+<p style="margin:0;color:#854d0e;font-size:14px;line-height:1.6;font-weight:600">${esc(headline)}</p>
+</td></tr></table>
+</td></tr>`
+    : "";
+
   return wrap(
     `<tr><td style="padding:30px 28px 4px" align="center">
 <div style="width:52px;height:52px;line-height:52px;border-radius:26px;background:#e0f2fe;color:#0369a1;font-size:24px;margin:0 auto 14px">&#128274;</div>
@@ -269,6 +316,7 @@ Hi ${esc(firstName(name))}, your Rydvest account was just signed in to.
 </p>
 </td></tr>
 
+${banner}
 <tr><td style="padding:22px 28px 8px">
 <p style="margin:0 0 4px;color:#94a3b8;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">Sign-in details</p>
 ${detailTable(signInRows(s))}

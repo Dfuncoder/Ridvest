@@ -146,8 +146,15 @@ export async function GET(request: NextRequest) {
     removed.push(...batch);
   }
 
+  // Sign-in history ages out here too — same nightly slot, same reason. An IP
+  // address is personal data, and ninety days is long enough to settle a
+  // dispute without quietly keeping a movement history of every customer.
+  const { data: expiredSignIns, error: signInError } = await admin.rpc("expire_sign_in_events");
+  if (signInError) console.error("[cron] sign-in history purge failed", signInError.message);
+  const purged = (expiredSignIns as { deleted?: number } | null)?.deleted ?? 0;
+
   console.log(
-    `[cron] kyc cleanup: ${expiredRows.length} expired, ${orphans.length} orphaned, ${removed.length} removed`
+    `[cron] kyc cleanup: ${expiredRows.length} expired, ${orphans.length} orphaned, ${removed.length} removed; sign-in history purged ${purged}`
   );
 
   return NextResponse.json({
@@ -155,5 +162,6 @@ export async function GET(request: NextRequest) {
     expired: expiredRows.length,
     orphaned: orphans.length,
     removed: removed.length,
+    signInEventsPurged: purged,
   });
 }

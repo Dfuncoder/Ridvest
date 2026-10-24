@@ -261,11 +261,22 @@ async function startIdleClock(userId: string) {
  * locks everybody out of their own accounts — is far worse than a missing
  * notice.
  */
-async function announceSignIn(params: { email: string; name: string; isAdmin: boolean }) {
+async function announceSignIn(params: {
+  userId: string | null;
+  email: string;
+  name: string;
+  isAdmin: boolean;
+}) {
   let session: SignIn;
   try {
     const info = await requestInfo();
-    session = { at: new Date(), ip: info.ip, location: info.location, device: info.device };
+    session = {
+      at: new Date(),
+      ip: info.ip,
+      location: info.location,
+      device: info.device,
+      userAgent: info.userAgent,
+    };
   } catch (err) {
     console.error("[auth] could not read sign-in details", err);
     return;
@@ -275,12 +286,34 @@ async function announceSignIn(params: { email: string; name: string; isAdmin: bo
 
   after(async () => {
     try {
+      // Written before the email is composed, because the answer to "have we
+      // seen this device before?" is decided against the history as it stood
+      // a moment ago — and because the record is the part that still has
+      // value in a month, when somebody disputes a withdrawal.
+      if (params.userId) {
+        const admin = createSupabaseAdminClient();
+        const { data, error } = await admin.rpc("record_sign_in", {
+          p_user_id: params.userId,
+          p_ip: session.ip,
+          p_location: session.location,
+          p_device: session.device,
+          p_user_agent: session.userAgent ?? null,
+        });
+        if (error) {
+          console.error("[auth] could not record sign-in", error.message);
+        } else {
+          const flags = data as { new_ip?: boolean; new_device?: boolean } | null;
+          session.newIp = Boolean(flags?.new_ip);
+          session.newDevice = Boolean(flags?.new_device);
+        }
+      }
+
       const res = await sendEmail({
         from: noReplyFrom(),
         to: params.email,
         // The email invites a reply; it has to reach a person.
         replyTo: supportEmail(),
-        subject: loginNoticeSubject,
+        subject: loginNoticeSubject(session),
         text: loginNoticeText(who, session),
         html: loginNoticeHtml(who, session),
       });
@@ -374,6 +407,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
     if (signInError) return { message: ERRORS.AUTH_INVALID_LOGIN };
     if (profile?.id) await startIdleClock(profile.id);
     await announceSignIn({
+      userId: profile?.id ?? null,
       email: parsed.data.email,
       name: profile?.full_name ?? "",
       isAdmin: profile?.role === "admin",
@@ -471,6 +505,7 @@ export async function verifyLoginOtp(_prev: FormState, formData: FormData): Prom
   // The address comes from the challenge, which is where the password was
   // checked — the same one the code was just sent to.
   await announceSignIn({
+    userId: userId ?? null,
     email: challenge.email,
     name: profile?.full_name ?? "",
     isAdmin: profile?.role === "admin",

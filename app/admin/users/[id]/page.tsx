@@ -75,6 +75,7 @@ export default async function AdminUserDetailPage({
     { data: kycRows },
     { data: transfersOut },
     { data: transfersIn },
+    { data: signIns },
   ] = await Promise.all([
     admin
       .from("withdrawal_accounts")
@@ -126,6 +127,15 @@ export default async function AdminUserDetailPage({
       .eq("recipient_id", id)
       .order("created_at", { ascending: false })
       .limit(100),
+    // Sign-in history: the first thing to read when somebody says their
+    // account was used without them. Service role, because the admin is
+    // reading another person's rows.
+    admin
+      .from("sign_in_events")
+      .select("id, ip, location, device, new_ip, new_device, created_at")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
   const invested = (investments ?? [])
@@ -541,6 +551,67 @@ export default async function AdminUserDetailPage({
         )}
       </Card>
 
+
+      {/* ── SIGN-IN HISTORY ──
+          Read this first when somebody reports their account was used without
+          them. What you are looking for is a break in the pattern: the same
+          phone and the same city for months, then one row that is neither,
+          followed by a withdrawal. Rows older than 90 days are purged, so an
+          empty table on an old account means nothing. */}
+      <Card className="overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-3.5">
+          <h2 className="text-sm font-extrabold text-slate-900">
+            Sign-ins <span className="font-bold text-slate-400">({(signIns ?? []).length})</span>
+          </h2>
+          <p className="text-xs text-slate-400">Last 20 · kept 90 days</p>
+        </div>
+
+        {(signIns ?? []).length === 0 ? (
+          <p className="px-5 py-6 text-sm text-slate-500">
+            Nothing recorded. Either this account has not signed in since sign-in history was
+            switched on, or the rows have aged out.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-150 text-left">
+              <thead>
+                <tr className="border-b border-slate-200/80">
+                  <th className={th}>When</th>
+                  <th className={th}>Device</th>
+                  <th className={th}>Location</th>
+                  <th className={th}>IP address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(signIns ?? []).map((s) => (
+                  <tr key={s.id} className="border-b border-slate-100 last:border-0 odd:bg-slate-50/60">
+                    <td className={`${td} text-sm font-semibold whitespace-nowrap text-slate-900`}>
+                      {fmtDateTime(s.created_at)}
+                    </td>
+                    <td className={`${td} text-sm text-slate-700`}>
+                      {s.device || "—"}
+                      {s.new_device && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                          first seen
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${td} text-sm text-slate-700`}>{s.location || "—"}</td>
+                    <td className={`${td} text-sm tabular-nums text-slate-700`}>
+                      {s.ip || "—"}
+                      {s.new_ip && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                          new
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
       {/* ── ADMIN ACTIONS ── */}
       <Card className="p-6">
         <h2 className="text-sm font-extrabold text-slate-900 mb-1">Account actions</h2>
