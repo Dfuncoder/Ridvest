@@ -56,7 +56,7 @@ export default function Calculator() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0f6ff", borderRadius: 14, padding: "14px 16px", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#dcfce7", color: "#15803d", fontSize: 10, padding: "3px 8px", borderRadius: 100, fontWeight: 700 }}>● LIVE</span>
-              Annual rate
+              Total yield
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{(rate * 100).toFixed(0)}% earnings</div>
           </div>

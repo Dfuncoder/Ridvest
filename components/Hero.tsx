@@ -164,7 +164,7 @@ export default function Hero({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               animationDelay: "1.5s",
             }}
           >
-            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Annual earnings</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2 }}>Total yield</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>50%</div>
             <div style={{ fontSize: 11, color: "#f59e0b" }}>Asset-backed</div>
           </div>

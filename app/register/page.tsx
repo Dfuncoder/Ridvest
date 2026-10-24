@@ -12,7 +12,7 @@
 import Link from "next/link";
 import { useState, useActionState } from "react";
 import { signup, type FormState } from "@/app/actions/auth";
-import { NIGERIAN_STATES } from "@/lib/validation";
+import { NIGERIAN_STATES, signupFieldError, type SignupField } from "@/lib/validation";
 import {
   AuthShell, FieldIcon, icons, inputClass, labelClass,
   PasswordStrength, EyeToggle, ErrorBanner, FieldError, useStaleErrors,
@@ -21,18 +21,70 @@ import {
 const steps = ["Personal details", "Residence & consent"];
 
 // Field → step mapping so a server-side error can bounce you back to step 1.
-const STEP1_FIELDS = ["fullName", "email", "phone", "password", "confirmPassword"];
+const STEP1_FIELDS: SignupField[] = [
+  "fullName",
+  "email",
+  "phone",
+  "password",
+  "confirmPassword",
+];
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [showPwd, setShowPwd] = useState(false);
-  const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [state, formAction, pending] = useActionState<FormState, FormData>(signup, undefined);
 
   const { errorFor, clearOn, message } = useStaleErrors(state);
   // If the server rejected a step-1 field while we're on step 2, tell the user.
   const step1HasError = STEP1_FIELDS.some((f) => errorFor(f));
+
+  // ── Step 1, checked as it is typed ────────────────────────────────────────
+  //
+  // Every field on this step is controlled so the rule can run on each
+  // keystroke. The alternative — finding out at the end that the phone number
+  // was wrong — makes people retype a form they already filled in.
+  //
+  // A field only speaks up once it has something in it, or once it has been
+  // left empty. Red text on a form nobody has touched yet is just shouting.
+  const [values, setValues] = useState<Record<SignupField, string>>({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [blurred, setBlurred] = useState<Partial<Record<SignupField, boolean>>>({});
+
+  const liveError = (field: SignupField): string | null => {
+    const value = values[field];
+    if (!value) return blurred[field] ? signupFieldError(field, "", values.password) : null;
+    return signupFieldError(field, value, values.password);
+  };
+
+  /** The server's complaint if there is one, otherwise ours. */
+  const errorOn = (field: SignupField): string | undefined =>
+    errorFor(field) ?? liveError(field) ?? undefined;
+
+  const onField = (field: SignupField) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const next = e.target.value;
+    setValues((prev) => ({ ...prev, [field]: next }));
+    clearOn(field);
+    // The two password boxes are one rule between them: typing in either can
+    // fix or break the other, so both are re-checked together.
+    if (field === "password") clearOn("confirmPassword");
+    if (field === "confirmPassword") clearOn("password");
+  };
+
+  const markBlurred = (field: SignupField) => () =>
+    setBlurred((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+
+  // Nothing is missing and nothing is wrong — the only state Continue allows.
+  const step1Ready = STEP1_FIELDS.every(
+    (f) => values[f] && !signupFieldError(f, values[f], values.password)
+  );
 
   return (
     <AuthShell>
@@ -88,27 +140,27 @@ export default function RegisterPage() {
               <label htmlFor="fullName" className={labelClass}>Full name</label>
               <div className="relative">
                 <FieldIcon path={icons.user} />
-                <input id="fullName" name="fullName" type="text" placeholder="John Doe" autoComplete="name" required className={inputClass} onChange={() => clearOn("fullName")} />
+                <input id="fullName" name="fullName" type="text" placeholder="John Doe" autoComplete="name" required className={inputClass} value={values.fullName} onChange={onField("fullName")} onBlur={markBlurred("fullName")} />
               </div>
-              <FieldError message={errorFor("fullName")} />
+              <FieldError message={errorOn("fullName")} />
             </div>
 
             <div>
               <label htmlFor="email" className={labelClass}>Email address</label>
               <div className="relative">
                 <FieldIcon path={icons.mail} />
-                <input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required className={inputClass} onChange={() => clearOn("email")} />
+                <input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required className={inputClass} value={values.email} onChange={onField("email")} onBlur={markBlurred("email")} />
               </div>
-              <FieldError message={errorFor("email")} />
+              <FieldError message={errorOn("email")} />
             </div>
 
             <div>
               <label htmlFor="phone" className={labelClass}>Phone number</label>
               <div className="relative">
                 <FieldIcon path={icons.phone} />
-                <input id="phone" name="phone" type="tel" placeholder="+234 800 000 0000" autoComplete="tel" required className={inputClass} onChange={() => clearOn("phone")} />
+                <input id="phone" name="phone" type="tel" placeholder="+234 800 000 0000" autoComplete="tel" required className={inputClass} value={values.phone} onChange={onField("phone")} onBlur={markBlurred("phone")} />
               </div>
-              <FieldError message={errorFor("phone")} />
+              <FieldError message={errorOn("phone")} />
             </div>
 
             <div>
@@ -120,35 +172,40 @@ export default function RegisterPage() {
                   name="password"
                   type={showPwd ? "text" : "password"}
                   placeholder="Create a strong password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    clearOn("password");
-                    clearOn("confirmPassword");
-                  }}
+                  value={values.password}
+                  onChange={onField("password")}
+                  onBlur={markBlurred("password")}
                   autoComplete="new-password"
                   required
                   className="w-full pl-9 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-slate-600 outline-none focus:border-amber-400 transition-colors"
                 />
                 <EyeToggle show={showPwd} onToggle={() => setShowPwd(!showPwd)} />
               </div>
-              <PasswordStrength password={password} />
-              <FieldError message={errorFor("password")} />
+              <PasswordStrength password={values.password} />
+              <FieldError message={errorOn("password")} />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className={labelClass}>Confirm password</label>
               <div className="relative">
                 <FieldIcon path={icons.lock} />
-                <input id="confirmPassword" name="confirmPassword" type={showPwd ? "text" : "password"} placeholder="Repeat your password" autoComplete="new-password" required className={inputClass} onChange={() => { clearOn("confirmPassword"); clearOn("password"); }} />
+                <input id="confirmPassword" name="confirmPassword" type={showPwd ? "text" : "password"} placeholder="Repeat your password" autoComplete="new-password" required className={inputClass} value={values.confirmPassword} onChange={onField("confirmPassword")} onBlur={markBlurred("confirmPassword")} />
               </div>
-              <FieldError message={errorFor("confirmPassword")} />
+              <FieldError message={errorOn("confirmPassword")} />
             </div>
 
+            {/* Dead until step 1 is actually right. The rules run on every
+                keystroke above, so by the time this lights up there is nothing
+                left for the server to reject on this step. */}
             <button
               type="button"
               onClick={() => setStep(2)}
-              className="w-full py-3.5 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-150 shadow-lg shadow-amber-400/20 mt-1"
+              disabled={!step1Ready}
+              className={`w-full py-3.5 font-extrabold text-sm rounded-xl transition-all duration-150 mt-1 ${
+                step1Ready
+                  ? "bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] shadow-lg shadow-amber-400/20"
+                  : "bg-amber-400/40 text-[#0d2137]/70 cursor-not-allowed"
+              }`}
             >
               Continue →
             </button>

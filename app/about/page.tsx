@@ -14,7 +14,7 @@ export default async function AboutPage() {
   return (
     <main>
       <SiteNavbar />
-      <AboutUs />
+      <AboutUs isLoggedIn={isLoggedIn} />
       <CTABanner isLoggedIn={isLoggedIn} />
       <Footer />
     </main>

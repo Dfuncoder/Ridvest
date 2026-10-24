@@ -31,7 +31,7 @@ export default async function Home() {
     <main>
       <SiteNavbar />
       <Hero isLoggedIn={isLoggedIn} />
-      <AboutUs />
+      <AboutUs isLoggedIn={isLoggedIn} />
       <HowItWorks isLoggedIn={isLoggedIn} />
       <VehicleLineup />
       <Calculator />

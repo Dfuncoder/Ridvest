@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 function useIntersection(threshold = 0.1) {
@@ -82,7 +83,7 @@ const operations = [
   "Real-time daily operations tracking",
 ];
 
-export default function AboutUs() {
+export default function AboutUs({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <section id="about" className="relative bg-white py-24 sm:py-32 overflow-hidden">
       {/* Radial gradients instead of filter:blur — avoids mobile GPU artifacts. */}
@@ -176,12 +177,16 @@ export default function AboutUs() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => document.getElementById("invest")?.scrollIntoView({ behavior: "smooth" })}
-                  className="w-full py-4 bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20"
+                {/* Was a scroll to #invest, which lives in a section the home
+                    page no longer renders — so the button did nothing at all.
+                    It goes where the plans actually are now: the pools, or the
+                    login wall that leads to them. */}
+                <Link
+                  href={isLoggedIn ? "/dashboard/pools" : "/login?next=/dashboard/pools"}
+                  className="block w-full py-4 text-center bg-amber-400 hover:bg-amber-300 active:scale-[0.98] text-[#0d2137] font-extrabold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-amber-400/20"
                 >
                   See ownership plans →
-                </button>
+                </Link>
               </div>
             </FadeUp>
           </div>
