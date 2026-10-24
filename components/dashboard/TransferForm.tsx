@@ -22,7 +22,6 @@ import { lookupUserCode, sendTransfer } from "@/app/actions/transfer";
 import { MoneyInput } from "./MoneyInput";
 import { ERRORS } from "@/lib/errors";
 import { fmtNaira } from "@/lib/format";
-import { TRANSFER_LIMITS, TRANSFER_FEE } from "@/lib/economics";
 import { normaliseUserCode } from "@/lib/validation";
 import PinInput from "./PinInput";
 import type { FormState } from "@/app/actions/auth";
@@ -42,9 +41,15 @@ type Lookup =
 export default function TransferForm({
   balance,
   hasPin,
+  fee,
+  limits,
 }: {
   balance: number;
   hasPin: boolean;
+  /** The live fee, read from settings by the page. */
+  fee: number;
+  /** The live caps. The database enforces these again on submit. */
+  limits: { minAmount: number; maxAmount: number; maxPerDay: number };
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(
     sendTransfer,
@@ -160,7 +165,7 @@ export default function TransferForm({
     amount !== null &&
     amount > 0 &&
     // The fee comes out of the same balance, so it has to fit too.
-    amount + TRANSFER_FEE <= balance &&
+    amount + fee <= balance &&
     !pending;
 
   return (
@@ -232,10 +237,10 @@ export default function TransferForm({
               name="amount"
               value={amount}
               onChange={setAmount}
-              min={TRANSFER_LIMITS.minAmount}
-              max={Math.min(Math.max(balance - TRANSFER_FEE, 0), TRANSFER_LIMITS.maxAmount)}
+              min={limits.minAmount}
+              max={Math.min(Math.max(balance - fee, 0), limits.maxAmount)}
               required
-              placeholder={`From ${fmtNaira(TRANSFER_LIMITS.minAmount)}`}
+              placeholder={`From ${fmtNaira(limits.minAmount)}`}
               className={`${input} tabular-nums`}
             />
             {state?.errors?.amount && (
@@ -269,13 +274,13 @@ export default function TransferForm({
             <div className="flex justify-between gap-3">
               <dt className="text-slate-500">Transfer fee</dt>
               <dd className="font-semibold tabular-nums text-slate-900">
-                {fmtNaira(TRANSFER_FEE)}
+                {fmtNaira(fee)}
               </dd>
             </div>
             <div className="flex justify-between gap-3 border-t border-slate-200 pt-1.5">
               <dt className="font-bold text-slate-700">Leaves your balance</dt>
               <dd className="font-extrabold tabular-nums text-slate-900">
-                {amount ? fmtNaira(amount + TRANSFER_FEE) : "—"}
+                {amount ? fmtNaira(amount + fee) : "—"}
               </dd>
             </div>
           </dl>

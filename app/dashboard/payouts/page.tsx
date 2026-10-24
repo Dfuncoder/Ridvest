@@ -11,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { WithdrawForm } from "@/components/dashboard/forms";
 import { ResponsiveMoney } from "@/components/BalanceToggle";
 import { fmtNaira, fmtDate } from "@/lib/format";
+import { getMoneySettings } from "@/lib/settings";
 
 export const metadata = { title: "Withdraw · Rydvest" };
 
@@ -77,6 +78,7 @@ export default async function PayoutsPage() {
 
   const upcoming = (payouts ?? []).filter((p) => p.status === "scheduled");
   const paid = (payouts ?? []).filter((p) => p.status === "paid").reverse();
+  const money = await getMoneySettings();
   const rows = withdrawals ?? [];
 
   // An approved row anywhere in the history is what counts; a rejected one
@@ -117,6 +119,8 @@ export default async function PayoutsPage() {
             balance={Number(balance ?? 0)}
             kycStatus={kycStatus}
             hasPin={Boolean(hasPin)}
+            fee={money.withdrawalFee}
+            paused={!money.withdrawalsEnabled}
           />
         </Card>
       </div>

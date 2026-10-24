@@ -175,6 +175,59 @@ export const ChangePasswordSchema = z
     error: ERRORS.PASSWORD_SAME_AS_CURRENT,
     path: ["password"],
   });
+
+/**
+ * Limits, fees and switches set from /admin/settings.
+ *
+ * Every figure is a whole naira, non-negative, and capped at something no
+ * legitimate setting would exceed — an admin with a slipped finger should not
+ * be able to set a ₦2,000,000,000 per-transfer ceiling, and a negative fee
+ * would pay people to transfer.
+ *
+ * The ordering rules (minimum below maximum, daily above per-transfer) are
+ * checked too: a pair that contradicts each other produces a form nobody can
+ * satisfy and support tickets nobody can explain.
+ */
+const wholeNaira = (max: number) =>
+  z.coerce
+    .number({ error: "Enter a number." })
+    .int({ error: "Whole naira only." })
+    .min(0, { error: "Cannot be negative." })
+    .max(max, { error: `Too large — the most allowed here is ${max.toLocaleString("en-NG")}.` });
+
+export const MoneySettingsSchema = z
+  .object({
+    transferMinAmount: wholeNaira(1_000_000),
+    transferMaxAmount: wholeNaira(100_000_000),
+    transferMaxPerDay: wholeNaira(500_000_000),
+    transferMaxPerHour: z.coerce
+      .number({ error: "Enter a number." })
+      .int({ error: "Whole numbers only." })
+      .min(1, { error: "At least 1, or turn transfers off instead." })
+      .max(1000, { error: "Too large — 1000 at most." }),
+    transferMaxLookupsHour: z.coerce
+      .number({ error: "Enter a number." })
+      .int({ error: "Whole numbers only." })
+      .min(1, { error: "At least 1." })
+      .max(1000, { error: "Too large — 1000 at most." }),
+    transferFee: wholeNaira(100_000),
+    withdrawalFee: wholeNaira(100_000),
+    transfersEnabled: z.boolean(),
+    withdrawalsEnabled: z.boolean(),
+  })
+  .refine((d) => d.transferMinAmount <= d.transferMaxAmount, {
+    error: "The minimum cannot be above the maximum.",
+    path: ["transferMinAmount"],
+  })
+  .refine((d) => d.transferMaxAmount <= d.transferMaxPerDay, {
+    error: "The daily total cannot be below a single transfer.",
+    path: ["transferMaxPerDay"],
+  })
+  .refine((d) => d.transferFee < d.transferMinAmount, {
+    error: "The fee must be smaller than the smallest transfer allowed.",
+    path: ["transferFee"],
+  });
+
 // ── Profile update ──────────────────────────────────────────────────────────
 export const ProfileUpdateSchema = z.object({
   fullName: z.string().trim().min(3, { error: ERRORS.SIGNUP_NAME_REQUIRED }).max(120),
