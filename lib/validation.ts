@@ -78,6 +78,54 @@ export const SignupSchema = z
     path: ["confirmPassword"],
   });
 
+
+// ── Live checks for the signup form ─────────────────────────────────────────
+//
+// The same rules as SignupSchema above, exposed one field at a time so the
+// register form can show a problem while it is being typed instead of after
+// the whole thing is submitted. Deliberately built from the same regexes and
+// the same passwordSchema: two copies of a rule is how a form starts accepting
+// what the server then rejects.
+//
+// Nothing here is a security control. SignupSchema still runs on the server,
+// and Supabase applies its own rules after that. This is purely so nobody
+// fills in six fields to be told the second one was wrong.
+
+export type SignupField =
+  | "fullName"
+  | "email"
+  | "phone"
+  | "password"
+  | "confirmPassword";
+
+/** The first thing wrong with this value, or null when it is fine. */
+export function signupFieldError(
+  field: SignupField,
+  value: string,
+  password = ""
+): string | null {
+  const v = value.trim();
+
+  switch (field) {
+    case "fullName":
+      return v.length >= 3 && v.length <= 120 ? null : ERRORS.SIGNUP_NAME_REQUIRED;
+
+    case "email":
+      return z.email().safeParse(v.toLowerCase()).success ? null : ERRORS.SIGNUP_EMAIL_INVALID;
+
+    case "phone":
+      // Spaces and dashes are stripped before the test, exactly as the schema
+      // does, so "0801 234 5678" is not reported as wrong while being typed.
+      return NG_PHONE_REGEX.test(v.replace(/[\s-]/g, "")) ? null : ERRORS.SIGNUP_PHONE_INVALID;
+
+    case "password":
+      return passwordSchema.safeParse(value).success ? null : ERRORS.SIGNUP_PASSWORD_WEAK;
+
+    case "confirmPassword":
+      return value === password ? null : ERRORS.SIGNUP_PASSWORDS_DONT_MATCH;
+  }
+}
+
 // ── Login ───────────────────────────────────────────────────────────────────
 export const LoginSchema = z.object({
   email: z.email({ error: ERRORS.AUTH_INVALID_LOGIN }).trim().toLowerCase(),
