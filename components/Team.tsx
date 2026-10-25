@@ -31,13 +31,13 @@ const TEAM: Member[] = [
   {
     name: "Mbakwe Augustine",
     role: "Co-founder",
-    title: "Chief Operations Manager",
+    title: "CMO / Growth & Partnerships",
     photo: "/team-augustine.jpg",
   },
   {
     name: "Meputaife Joseph",
     role: "Co-founder",
-    title: "CMO / Growth & Partnerships",
+    title: "Chief Operations Manager",
     photo: "/team-joseph.jpg",
   },
 ];
