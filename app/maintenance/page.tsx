@@ -5,6 +5,13 @@
  */
 import type { Metadata } from "next";
 import Image from "next/image";
+import { launchAt } from "@/lib/maintenance";
+import LaunchCountdown from "@/components/LaunchCountdown";
+
+// Read per request, so moving MAINTENANCE_UNTIL does not need a rebuild to
+// show on the page — and so the countdown is never served from a cache that
+// was rendered hours ago.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Rydvest — launching October 2026",
@@ -18,6 +25,8 @@ const WHATSAPP = "https://wa.me/2347065284100";
 const EMAIL = "info@rydvest.com";
 
 export default function MaintenancePage() {
+  const opensAt = launchAt();
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0d2137] flex items-center justify-center px-6 py-16">
       {/* Radial washes rather than filter:blur — mobile GPUs glitch on extra
@@ -56,6 +65,8 @@ export default function MaintenancePage() {
             weekly earnings. We&apos;re putting the finishing touches to the platform — it opens this
             October.
           </p>
+
+          {opensAt && <LaunchCountdown target={opensAt.toISOString()} />}
 
           <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3">
             <a

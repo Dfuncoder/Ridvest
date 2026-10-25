@@ -11,7 +11,7 @@
  * Preview, so MAINTENANCE_MODE=1 alone would hide the test site too. The code
  * works out where it is running instead:
  *
- *   MAINTENANCE_MODE unset / 0   off everywhere
+ *  | "off:launched"; MAINTENANCE_MODE unset / 0   off everywhere
  *   MAINTENANCE_MODE=1           on, EXCEPT on preview deployments
  *   MAINTENANCE_MODE=all         on everywhere, including preview and local
  *                                (use this to check the page itself)
@@ -27,6 +27,9 @@
  */
 
 export const BYPASS_COOKIE = "rv_preview";
+
+/** One warning per process, not one per request. */
+let warnedAboutPastLaunch = false;
 
 function setting(): string {
   return (process.env.MAINTENANCE_MODE ?? "").trim().toLowerCase();
@@ -46,6 +49,37 @@ function liveHosts(): string[] {
  * @param host the request's Host header, so a preview domain can be spared
  *             even if the environment variables are identical to production's.
  */
+/**
+ * The moment the holding page lets go of its own accord.
+ *
+ * MAINTENANCE_UNTIL is an ISO 8601 instant — include the offset, so there is
+ * no argument about which clock it means:
+ *
+ *   2026-10-26T08:00:00+01:00   8am West Africa Time
+ *   2026-10-26T07:00:00Z        the same instant, written in UTC
+ *
+ * Once it passes, every request is let through even with MAINTENANCE_MODE
+ * still set. That is the point: launching should not depend on somebody being
+ * awake to change an environment variable, and a site that stays dark because
+ * the person with the Vercel login overslept is a worse failure than one that
+ * opens a minute early.
+ *
+ * Unset or unparseable means "no scheduled end" — the flag alone decides, as
+ * it always did.
+ */
+export function launchAt(): Date | null {
+  const raw = (process.env.MAINTENANCE_UNTIL ?? "").trim();
+  if (!raw) return null;
+  const when = new Date(raw);
+  return Number.isNaN(when.getTime()) ? null : when;
+}
+
+/** Has the scheduled launch moment passed? */
+export function launched(now: number = Date.now()): boolean {
+  const at = launchAt();
+  return at !== null && now >= at.getTime();
+}
+
 export type MaintenanceDecision =
   /** MAINTENANCE_MODE is not set to anything truthy. */
   | "off"
@@ -54,7 +88,9 @@ export type MaintenanceDecision =
   /** Spared: this is a Vercel preview deployment. */
   | "skip:preview"
   /** Spared: the host is listed in MAINTENANCE_LIVE_HOSTS. */
-  | "skip:host";
+  | "skip:host"
+  /** Spared: the scheduled launch moment has passed. */
+  | "off:launched";
 
 /**
  * Should this request see the holding page, and why?
@@ -68,6 +104,23 @@ export type MaintenanceDecision =
 export function maintenanceDecision(host?: string | null): MaintenanceDecision {
   const mode = setting();
   if (mode !== "1" && mode !== "true" && mode !== "on" && mode !== "all") return "off";
+
+  // The clock outranks the flag. Checked before "all" as well, so there is one
+  // rule to remember rather than two: after this instant, nobody is held.
+  if (launched()) {
+    // Said once per process, because the quiet version of this is somebody
+    // setting MAINTENANCE_MODE=1 a month from now, seeing the site stay up,
+    // and hunting through Vercel for a flag that was never the problem.
+    if (!warnedAboutPastLaunch) {
+      warnedAboutPastLaunch = true;
+      console.warn(
+        `[maintenance] MAINTENANCE_MODE is on, but MAINTENANCE_UNTIL (${
+          launchAt()?.toISOString() ?? "?"
+        }) has already passed, so the site is open. Clear that variable, or set it to a new time in the future, to hold the site again.`
+      );
+    }
+    return "off:launched";
+  }
 
   // "all" is the deliberate escape hatch for checking the page itself.
   if (mode === "all") return "hold";

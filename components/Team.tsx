@@ -29,10 +29,10 @@ const TEAM: Member[] = [
     photo: "/team-johnbosco.jpg",
   },
   {
-    name: "Mbakwe Austine",
+    name: "Mbakwe Augustine",
     role: "Co-founder",
     title: "Chief Operations Manager",
-    photo: "/team-austine.jpg",
+    photo: "/team-augustine.jpg",
   },
   {
     name: "Meputaife Joseph",
