@@ -306,6 +306,13 @@ export async function korapayVerifyNin(nin: string): Promise<NinLookup> {
 
     if (!res.ok || json?.status !== true || !data?.first_name || !data?.last_name) {
       const message = json?.message ?? `HTTP ${res.status}`;
+      // Logged with the status code before any branching: when an integration
+      // is new, "which of these three things is wrong" is answered by the
+      // number, and a 401 reads very differently from a 403 or a 404.
+      console.error(
+        "[korapay] nin verification failed",
+        JSON.stringify({ httpStatus: res.status, korapayStatus: json?.status ?? null, message })
+      );
       // A NIN that does not exist is an answer, not a failure of ours. Anything
       // else — a 401, a 402 for an empty balance, a 5xx — is Korapay's side and
       // has to stay distinguishable, or an admin rejects a real customer over
@@ -313,7 +320,6 @@ export async function korapayVerifyNin(nin: string): Promise<NinLookup> {
       if (res.status === 404 || res.status === 400) {
         return { status: "not_found", message };
       }
-      console.error("[korapay] nin verification failed", res.status, message);
       return { status: "unavailable", message };
     }
 

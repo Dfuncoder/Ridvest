@@ -62,6 +62,7 @@ export default function NinCheck({
   profileName,
   checkedAt,
   submissionId,
+  error,
 }: {
   status: string;
   nimcName: string;
@@ -69,6 +70,8 @@ export default function NinCheck({
   profileName: string;
   checkedAt: string | null;
   submissionId: string;
+  /** The provider's own words, kept for whoever is fixing the integration. */
+  error: string | null;
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(recheckKycNin, undefined);
 
@@ -156,6 +159,23 @@ export default function NinCheck({
         <p className="text-xs leading-relaxed text-amber-800">
           The check did not complete. Nothing is wrong with this submission — run it again.
         </p>
+      )}
+
+      {/* The provider's own words, folded away.
+          Not shown open, because on a good day it is plumbing an admin should
+          not have to read — but this is the admin console, and when an
+          integration is broken "the check did not complete" is useless on its
+          own. Expanding it is how you tell an empty wallet from a bad key from
+          an endpoint that was never enabled on the account. */}
+      {error && (key === "failed" || key === "not_found") && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-[11px] font-semibold text-slate-500 hover:text-slate-700">
+            Technical detail
+          </summary>
+          <p className="mt-1.5 rounded-lg bg-slate-900/90 px-2.5 py-2 font-mono text-[10px] leading-relaxed break-all text-slate-200">
+            {error}
+          </p>
+        </details>
       )}
 
       {checkedAt && (key !== "checking" || stuck) && (
