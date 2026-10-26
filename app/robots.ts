@@ -21,6 +21,10 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
 
+  // The test site is NOT blocked here on purpose. It is served with an
+  // X-Robots-Tag: noindex header from proxy.ts instead, and a page Google is
+  // forbidden to crawl is a page it can never be told to drop — the URLs would
+  // sit in results indefinitely. Allow the crawl; the header does the work.
   return {
     rules: {
       userAgent: "*",
@@ -34,5 +38,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         "/reset-password",
       ],
     },
+    // Pointed at from here as well as submitted in Search Console: crawlers
+    // other than Google find it this way, and it costs one line.
+    sitemap: `https://${host ?? "rydvest.com"}/sitemap.xml`,
   };
 }

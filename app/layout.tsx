@@ -24,8 +24,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Rydvest - Co-own a keke, earn consistent weekly earnings",
   description: "Rydvest lets everyday Nigerians co-own tricycles and earn consistent weekly earnings — fully managed, asset-backed, and transparent.  ",
+  // Google needs a square raster icon that is a multiple of 48px before it
+  // will show one beside a search result, and it has to be crawlable. The SVG
+  // stays first for browsers, which render it crisply at any size; the PNG is
+  // what search engines and Android actually use. /favicon.ico exists too —
+  // plenty of crawlers still ask for it by name and ignore these tags.
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
 };
 
