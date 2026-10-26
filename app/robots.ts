@@ -38,5 +38,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         "/reset-password",
       ],
     },
+    // Pointed at from here as well as submitted in Search Console: crawlers
+    // other than Google find it this way, and it costs one line.
+    sitemap: `https://${host ?? "rydvest.com"}/sitemap.xml`,
   };
 }
