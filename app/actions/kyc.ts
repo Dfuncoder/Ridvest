@@ -67,6 +67,18 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
   });
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
 
+  // ── Consent ──────────────────────────────────────────────────────────────
+  //
+  // Re-checked here because the disabled button is a courtesy, not a control:
+  // this action is an HTTP endpoint and a request can arrive without ever
+  // having loaded the form. Every provider requires the subject to have
+  // agreed, and one of them refuses the call outright without the flag — so
+  // asserting consent we were never given would be a lie told to a third
+  // party about somebody else's data.
+  if (String(formData.get("consent") ?? "") !== "on") {
+    return { errors: { consent: ERRORS.KYC_CONSENT_REQUIRED } };
+  }
+
   // ── The photo ────────────────────────────────────────────────────────────
   const selfie = formData.get("selfie");
   if (!(selfie instanceof File) || selfie.size === 0) {
@@ -124,6 +136,9 @@ export async function submitKyc(_prev: FormState, formData: FormData): Promise<F
       // be spotted as stale and run again.
       lookup_status: "checking",
       lookup_at: new Date().toISOString(),
+      // When they agreed, not merely that they did. A consent record without
+      // a timestamp is hard to stand behind months later.
+      consented_at: new Date().toISOString(),
     })
     .select("id")
     .single();
@@ -184,7 +199,7 @@ export async function runNinLookup(
   // Whichever provider the admin has selected. Recorded with the result, so a
   // row that failed six weeks ago still says who was asked.
   const provider = await getNinProvider();
-  const result = await verifyNin(nin, provider);
+  const result = await verifyNin(nin, provider, submissionId);
 
   if (result.status !== "ok") {
     await admin

@@ -14,6 +14,12 @@ import type { NinProvider } from "@/lib/nin";
 
 const OPTIONS: Array<{ value: NinProvider; title: string; blurb: string }> = [
   {
+    value: "ninja",
+    title: "Ninja",
+    blurb:
+      "One key, no token step. Sandbox and live keys are separate — NINJA_BASE_URL must match the key in use.",
+  },
+  {
     value: "korapay",
     title: "Korapay",
     blurb:
@@ -48,7 +54,7 @@ export function NinProviderForm({ current }: { current: NinProvider }) {
         </p>
       )}
 
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid gap-2.5 sm:grid-cols-3">
         {OPTIONS.map((o) => (
           <label
             key={o.value}

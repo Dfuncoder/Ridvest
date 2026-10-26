@@ -257,6 +257,7 @@ export default async function AdminKycPage({
                       profileName={user?.full_name ?? ""}
                       checkedAt={s.lookup_at}
                       submissionId={s.id}
+                      error={s.lookup_error}
                     />
 
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
