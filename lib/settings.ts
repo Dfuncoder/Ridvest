@@ -170,5 +170,5 @@ export async function getNinProvider(): Promise<NinProvider> {
     .maybeSingle();
 
   const value = (data?.value ?? "").trim().toLowerCase();
-  return isNinProvider(value) ? value : "korapay";
+  return isNinProvider(value) ? value : "ninja";
 }

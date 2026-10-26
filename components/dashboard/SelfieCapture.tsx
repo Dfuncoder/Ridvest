@@ -71,6 +71,8 @@ export default function SelfieCapture() {
 
   const [state, setState] = useState<FormState>(undefined);
   const [pending, setPending] = useState(false);
+  // Consent is given, never assumed: this starts false and gates the button.
+  const [consented, setConsented] = useState(false);
 
   // ── Attach the stream, after the DOM exists ──────────────────────────────
   useEffect(() => {
@@ -392,9 +394,42 @@ export default function SelfieCapture() {
         </ul>
       </div>
 
+      {/* ── CONSENT ──
+          Every provider that answers a NIN lookup requires the subject to
+          have agreed to it, and at least one refuses the call outright
+          without the flag. More to the point, it is their number: asking is
+          the right thing to do whether or not an API insists.
+
+          A ticked-by-default box is not consent, so this starts empty and the
+          button stays dead until it is ticked. The time it was given is
+          recorded on the submission. */}
+      <label
+        htmlFor="consent"
+        className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors ${
+          consented ? "border-slate-200 bg-slate-50" : "border-amber-300 bg-amber-50/60"
+        }`}
+      >
+        <input
+          id="consent"
+          name="consent"
+          type="checkbox"
+          checked={consented}
+          onChange={(e) => setConsented(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-amber-500"
+        />
+        <span className="text-xs leading-relaxed text-slate-600">
+          I confirm this is my own NIN, and I authorise Rydvest to check it against the national
+          identity database (NIMC) and compare the result with my name and photo. This is used
+          only to verify my identity.
+        </span>
+      </label>
+      {state?.errors?.consent && (
+        <p className="-mt-3 text-[11px] text-red-600">{state.errors.consent}</p>
+      )}
+
       <button
         type="submit"
-        disabled={pending || !shot}
+        disabled={pending || !shot || !consented}
         className="py-3.5 px-4 bg-[#0d2137] hover:bg-[#14314f] active:scale-[0.99] text-white font-extrabold text-sm rounded-xl transition-all duration-150 disabled:opacity-40 disabled:active:scale-100"
       >
         {pending ? "Sending..." : "Submit for verification"}

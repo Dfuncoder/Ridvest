@@ -114,6 +114,8 @@ export const ERRORS = {
 
   // ── Identity verification ─────────────────────────────────────────────────
   KYC_ID_NUMBER_INVALID: "Your NIN is exactly 11 digits.",
+  KYC_CONSENT_REQUIRED:
+    "Please tick the box to confirm this is your NIN and that we may check it.",
   KYC_SELFIE_REQUIRED: "Take a photo of your face to continue.",
   KYC_SELFIE_INVALID: "That photo didn't come through. Please take it again.",
   KYC_CAMERA_BLOCKED:

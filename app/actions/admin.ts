@@ -1274,6 +1274,12 @@ export async function refundInvestment(
 // lookup — including the "run it again" button on a submission that already
 // failed, which is how an admin recovers the ones lost during an outage.
 // ─────────────────────────────────────────────────────────────────────────────
+const PROVIDER_NAMES: Record<string, string> = {
+  ninja: "Ninja",
+  korapay: "Korapay",
+  monnify: "Monnify",
+};
+
 export async function updateNinProvider(_prev: FormState, formData: FormData): Promise<FormState> {
   const { user } = await requireAdmin();
 
@@ -1297,6 +1303,6 @@ export async function updateNinProvider(_prev: FormState, formData: FormData): P
 
   return {
     success: true,
-    message: `Identity checks now run through ${provider === "korapay" ? "Korapay" : "Monnify"}.`,
+    message: `Identity checks now run through ${PROVIDER_NAMES[provider]}.`,
   };
 }
