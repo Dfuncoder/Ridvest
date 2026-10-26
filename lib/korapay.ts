@@ -18,6 +18,7 @@
  */
 import "server-only";
 import crypto from "crypto";
+import type { NinLookup } from "./nin";
 
 const BASE_URL = "https://api.korapay.com/merchant/api/v1";
 
@@ -248,5 +249,85 @@ export async function korapayResolveAccount(
   } catch (err) {
     console.error("[korapay] resolve error", err);
     return { status: "unavailable" };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NIN VERIFICATION
+//
+// POST /identities/ng/nin, authenticated with the same secret key as payments.
+//
+// Facial matching is deliberately NOT used. Korapay will compare a selfie
+// against the NIMC photo if you send one, but that means posting a customer's
+// face to a payment processor on every submission, and the admin already
+// compares the two images by eye on the review screen. The lookup gives us the
+// name on the national record, which is the fact we actually act on.
+//
+// Data matching is not used either, for a duller reason: Korapay compares the
+// strings it is given, and Nigerian names arrive in whatever order the holder
+// wrote them. namesMatch() in lib/names.ts already handles that, and doing the
+// comparison ourselves keeps both providers answering the same question.
+//
+// verification_consent must be true or the check is refused. It is true: the
+// user typed their own NIN into our form and asked us to verify it.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function korapayVerifyNin(nin: string): Promise<NinLookup> {
+  const key = process.env.KORAPAY_SECRET_KEY;
+  if (!key) {
+    return { status: "unavailable", message: "Korapay is not configured" };
+  }
+
+  try {
+    const res = await fetch(`${BASE_URL}/identities/ng/nin`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: nin, verification_consent: true }),
+      cache: "no-store",
+    });
+
+    const json = (await res.json().catch(() => null)) as {
+      status?: boolean;
+      message?: string;
+      data?: {
+        id?: string;
+        first_name?: string;
+        last_name?: string;
+        middle_name?: string;
+        date_of_birth?: string;
+        gender?: string;
+        phone_number?: string;
+      };
+    } | null;
+
+    const data = json?.data;
+
+    if (!res.ok || json?.status !== true || !data?.first_name || !data?.last_name) {
+      const message = json?.message ?? `HTTP ${res.status}`;
+      // A NIN that does not exist is an answer, not a failure of ours. Anything
+      // else — a 401, a 402 for an empty balance, a 5xx — is Korapay's side and
+      // has to stay distinguishable, or an admin rejects a real customer over
+      // an outage.
+      if (res.status === 404 || res.status === 400) {
+        return { status: "not_found", message };
+      }
+      console.error("[korapay] nin verification failed", res.status, message);
+      return { status: "unavailable", message };
+    }
+
+    return {
+      status: "ok",
+      nin: data.id ?? nin,
+      firstName: data.first_name.trim(),
+      lastName: data.last_name.trim(),
+      dateOfBirth: data.date_of_birth?.trim(),
+      gender: data.gender?.trim(),
+      phoneNumber: data.phone_number?.trim(),
+    };
+  } catch (err) {
+    console.error("[korapay] nin verification error", err);
+    return { status: "unavailable", message: "Could not reach Korapay" };
   }
 }

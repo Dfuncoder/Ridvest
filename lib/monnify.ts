@@ -220,18 +220,10 @@ export async function monnifyValidateAccount(
 // expect, so it cannot be led to agree with one.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type NinLookup =
-  | {
-      status: "ok";
-      nin: string;
-      firstName: string;
-      lastName: string;
-      dateOfBirth?: string;
-      gender?: string;
-      phoneNumber?: string;
-    }
-  | { status: "not_found"; message: string }
-  | { status: "unavailable"; message: string };
+// The shape now lives in lib/nin.ts, which both providers answer in. Re-exported
+// so existing imports from here keep working.
+export type { NinLookup } from "./nin";
+import type { NinLookup } from "./nin";
 
 export async function monnifyVerifyNin(nin: string): Promise<NinLookup> {
   const accessToken = await token();

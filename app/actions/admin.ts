@@ -17,7 +17,8 @@ import { requireAdmin } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendEmail, supportFrom, supportEmail, noReplyFrom } from "@/lib/email";
-import { parseEmailList, MONEY_KEYS, SWITCH_KEYS } from "@/lib/settings";
+import { parseEmailList, MONEY_KEYS, SWITCH_KEYS, NIN_PROVIDER_KEY } from "@/lib/settings";
+import { isNinProvider } from "@/lib/nin";
 import { monnifyListBanks, monnifyValidateAccount, type Bank } from "@/lib/monnify";
 import { fmtNaira } from "@/lib/format";
 import { totalPackage } from "@/lib/economics";
@@ -1261,5 +1262,41 @@ export async function refundInvestment(
   return {
     success: true,
     message: `Refunded ${fmtNaira(Number(result.amount ?? 0))} to their Rydvest balance.`,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHICH PROVIDER VERIFIES A NIN
+//
+// Its own action rather than a field on the payment form: this is the switch
+// somebody reaches for when verifications start failing, and it should not be
+// buried in a form about bank account numbers. Takes effect on the next
+// lookup — including the "run it again" button on a submission that already
+// failed, which is how an admin recovers the ones lost during an outage.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateNinProvider(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { user } = await requireAdmin();
+
+  const provider = String(formData.get("provider") ?? "");
+  if (!isNinProvider(provider)) return { message: ERRORS.ADMIN_ACTION_FAILED };
+
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("app_settings")
+    .upsert([{ key: NIN_PROVIDER_KEY, value: provider, updated_at: new Date().toISOString() }]);
+
+  if (error) {
+    console.error("[admin] updateNinProvider failed", error);
+    return { message: ERRORS.ADMIN_ACTION_FAILED };
+  }
+
+  await audit(user.id, "settings.nin_provider", provider);
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin/kyc");
+
+  return {
+    success: true,
+    message: `Identity checks now run through ${provider === "korapay" ? "Korapay" : "Monnify"}.`,
   };
 }

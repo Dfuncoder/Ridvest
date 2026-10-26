@@ -4,6 +4,7 @@
  */
 import "server-only";
 import { createSupabaseAdminClient } from "./supabase/admin";
+import { isNinProvider, type NinProvider } from "./nin";
 
 export type PaymentMethod = "korapay" | "manual";
 
@@ -148,4 +149,26 @@ export async function getMoneySettings(): Promise<MoneySettings> {
       MONEY_DEFAULTS.withdrawalsEnabled
     ),
   };
+}
+
+// ── Which provider verifies a NIN ───────────────────────────────────────────
+//
+// Read from the database rather than the environment so it can be changed
+// while a provider is down, without a redeploy. The fallback is Korapay:
+// whichever is selected, an unconfigured provider reports "unavailable" and
+// the submission is kept for an admin to re-run, so a wrong value here costs
+// a retry rather than a lost verification.
+
+export const NIN_PROVIDER_KEY = "nin_provider";
+
+export async function getNinProvider(): Promise<NinProvider> {
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from("app_settings")
+    .select("value")
+    .eq("key", NIN_PROVIDER_KEY)
+    .maybeSingle();
+
+  const value = (data?.value ?? "").trim().toLowerCase();
+  return isNinProvider(value) ? value : "korapay";
 }

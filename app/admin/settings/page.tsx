@@ -3,10 +3,11 @@
  * transfer needs checking, and whether this deployment is actually wired up.
  */
 import { requireAdmin } from "@/lib/auth";
-import { getPaymentSettings, getMoneySettings } from "@/lib/settings";
+import { getPaymentSettings, getMoneySettings, getNinProvider } from "@/lib/settings";
 import { listBanksForAdmin } from "@/app/actions/admin";
 import { PaymentSettingsForm } from "@/components/admin/PaymentSettingsForm";
 import { MoneySettingsForm } from "@/components/admin/MoneySettingsForm";
+import { NinProviderForm } from "@/components/admin/NinProviderForm";
 import { integrationStatus } from "@/lib/health";
 
 export const metadata = { title: "Settings · Rydvest admin" };
@@ -15,10 +16,11 @@ const eyebrow = "text-[10px] font-bold uppercase tracking-[0.14em]";
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
-  const [settings, banks, money] = await Promise.all([
+  const [settings, banks, money, ninProvider] = await Promise.all([
     getPaymentSettings(),
     listBanksForAdmin(),
     getMoneySettings(),
+    getNinProvider(),
   ]);
 
   const integrations = integrationStatus();
@@ -101,6 +103,19 @@ export default async function AdminSettingsPage() {
             they are read at startup, so an existing deployment will not pick them up.
           </p>
         )}
+      </div>
+
+      {/* ── IDENTITY VERIFICATION ── */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="mb-5">
+          <h2 className="text-sm font-extrabold text-slate-900">Identity verification</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+            Which provider looks a NIN up against the national record. Switch it if checks start
+            failing — submissions are kept either way, and you can re-run a failed one from
+            Verification.
+          </p>
+        </div>
+        <NinProviderForm current={ninProvider} />
       </div>
 
       {/* ── LIMITS, FEES AND SWITCHES ──

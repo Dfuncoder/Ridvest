@@ -19,9 +19,9 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, noReplyFrom } from "@/lib/email";
-import { getPaymentSettings } from "@/lib/settings";
+import { getPaymentSettings, getNinProvider } from "@/lib/settings";
 import { encryptSecret } from "@/lib/crypto";
-import { monnifyVerifyNin } from "@/lib/monnify";
+import { verifyNin } from "@/lib/nin";
 import { namesMatch } from "@/lib/names";
 import { ERRORS } from "@/lib/errors";
 import { KycSubmissionSchema, fieldErrors } from "@/lib/validation";
@@ -181,18 +181,20 @@ export async function runNinLookup(
   profileName: string
 ): Promise<void> {
   const admin = createSupabaseAdminClient();
-  const result = await monnifyVerifyNin(nin);
+  // Whichever provider the admin has selected. Recorded with the result, so a
+  // row that failed six weeks ago still says who was asked.
+  const provider = await getNinProvider();
+  const result = await verifyNin(nin, provider);
 
   if (result.status !== "ok") {
     await admin
       .from("kyc_submissions")
       .update({
         lookup_status: result.status === "not_found" ? "not_found" : "failed",
-        lookup_error: result.message.slice(0, 300),
+        lookup_error: `[${provider}] ${result.message}`.slice(0, 300),
         lookup_at: new Date().toISOString(),
       })
       .eq("id", submissionId);
-
     revalidatePath("/admin/kyc");
     revalidatePath("/dashboard/verify");
     return;
