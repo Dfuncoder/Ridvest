@@ -48,6 +48,11 @@ let inFlight: Promise<string | null> | null = null;
 
 const TOKEN_SAFETY_WINDOW_MS = 60_000;
 
+/**
+ * The last reason a login failed, so the NIN lookup can say "the key was
+ * rejected" instead of the uselessly vague "Monnify is not configured".
+ */
+let lastLoginError: string | null = null;
 async function fetchToken(): Promise<string | null> {
   const basic = Buffer.from(
     `${process.env.MONNIFY_API_KEY}:${process.env.MONNIFY_SECRET_KEY}`
@@ -68,10 +73,26 @@ async function fetchToken(): Promise<string | null> {
     const expiresIn = Number(json?.responseBody?.expiresIn ?? 0);
 
     if (!res.ok || !json?.requestSuccessful || !token) {
-      console.error("[monnify] login failed", res.status, json?.responseMessage);
+      // Structured, and with the response code Monnify sends alongside its
+      // own message: "invalid credentials" and "this account cannot use this
+      // service" arrive through the same HTTP status, and only the code tells
+      // them apart.
+      console.error(
+        "[monnify] login failed",
+        JSON.stringify({
+          httpStatus: res.status,
+          responseCode: json?.responseCode ?? null,
+          message: json?.responseMessage ?? null,
+          baseUrl: BASE_URL,
+        })
+      );
+      lastLoginError = json?.responseMessage
+        ? `login: ${json.responseMessage}`
+        : `login: HTTP ${res.status}`;
       return null;
     }
 
+    lastLoginError = null;
     cachedToken = {
       value: token,
       // expiresIn is seconds. Fall back to 10 minutes if it is missing, rather
@@ -81,6 +102,7 @@ async function fetchToken(): Promise<string | null> {
     return token;
   } catch (err) {
     console.error("[monnify] login error", err);
+    lastLoginError = "login: could not reach Monnify";
     return null;
   }
 }
@@ -228,7 +250,17 @@ import type { NinLookup } from "./nin";
 export async function monnifyVerifyNin(nin: string): Promise<NinLookup> {
   const accessToken = await token();
   if (!accessToken) {
-    return { status: "unavailable", message: "Monnify is not configured" };
+    // Says which of the two it is. "Not configured" sent somebody hunting for
+    // a missing environment variable once when the keys were present and
+    // simply being refused.
+    return {
+      status: "unavailable",
+      message: lastLoginError
+        ? `Monnify ${lastLoginError}`
+        : monnifyConfigured()
+          ? "Monnify login failed"
+          : "Monnify is not configured (MONNIFY_API_KEY / MONNIFY_SECRET_KEY missing)",
+    };
   }
 
   try {
@@ -256,14 +288,24 @@ export async function monnifyVerifyNin(nin: string): Promise<NinLookup> {
 
     if (!res.ok || !json?.requestSuccessful || !body?.firstName || !body?.lastName) {
       const message = json?.responseMessage ?? `HTTP ${res.status}`;
+      const code = json?.responseCode ?? null;
+      // The response code is the part that identifies the problem: an account
+      // without the VAS product enabled, an empty wallet and a bad NIN all
+      // come back as a failure, and only this tells them apart.
+      console.error(
+        "[monnify] nin verification failed",
+        JSON.stringify({ httpStatus: res.status, responseCode: code, message, baseUrl: BASE_URL })
+      );
       // An NIN that does not exist is an answer, not a failure of ours. A 402
       // or 5xx is Monnify's side — usually an empty wallet — and must stay
       // distinguishable so an admin knows to top up rather than reject a user.
+      // The code travels with the message so the admin screen shows it too —
+      // Monnify names the problem in the code more often than in the text.
+      const detail = code ? `${message} (code ${code})` : message;
       if (res.status === 404 || res.status === 400) {
-        return { status: "not_found", message };
+        return { status: "not_found", message: detail };
       }
-      console.error("[monnify] nin verification failed", res.status, message);
-      return { status: "unavailable", message };
+      return { status: "unavailable", message: detail };
     }
 
     return {
