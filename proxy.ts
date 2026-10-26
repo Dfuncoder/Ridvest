@@ -17,6 +17,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNextPath } from "@/lib/redirects";
 import {
+  isNonProductionHost,
   maintenanceDecision,
   bypassToken,
   alwaysAllowed,
@@ -42,12 +43,30 @@ function needsSession(path: string): boolean {
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
+  // ── 0b. Keep the test site out of search results ─────────────────────────
+  //
+  // Vercel adds a noindex to *.vercel.app preview URLs automatically, but NOT
+  // to a branch deployment on a custom domain, so test.rydvest.com was indexed
+  // as an ordinary site — and while production sat behind the holding page, it
+  // was the only Rydvest Google could see.
+  //
+  // Deliberately a header and NOT a robots.txt Disallow: a blocked page cannot
+  // be re-crawled, so Google would never see the instruction to drop it and
+  // the URLs would linger in results for months. Allow the crawl, tell it
+  // noindex, and the pages fall out within a few weeks.
+  const nonProduction = isNonProductionHost(request.headers.get("host"));
+  const noindex = (res: NextResponse) => {
+    if (nonProduction) res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  };
+
   // ── 0. Maintenance gate ──────────────────────────────────────────────────
   // The decision is echoed as x-rv-maintenance on every response, so why the
   // holding page did or did not appear is one curl away.
   const decision = maintenanceDecision(request.headers.get("host"));
   const tag = (res: NextResponse, note?: string) => {
     res.headers.set("x-rv-maintenance", note ? decision + " (" + note + ")" : decision);
+    noindex(res);
     return res;
   };
 
@@ -124,7 +143,7 @@ export async function proxy(request: NextRequest) {
     const intended = safeNextPath(path + request.nextUrl.search);
     url.pathname = "/login";
     url.search = intended ? `?next=${encodeURIComponent(intended)}` : "";
-    return NextResponse.redirect(url);
+    return noindex(NextResponse.redirect(url));
   }
 
   // Logged-in user on an auth page → on to wherever they were headed.
@@ -139,10 +158,10 @@ export async function proxy(request: NextRequest) {
     } else {
       url.pathname = "/dashboard";
     }
-    return NextResponse.redirect(url);
+    return noindex(NextResponse.redirect(url));
   }
 
-  return response;
+  return noindex(response);
 }
 
 export const config = {

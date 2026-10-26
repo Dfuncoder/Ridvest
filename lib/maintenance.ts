@@ -134,6 +134,20 @@ export function maintenanceDecision(host?: string | null): MaintenanceDecision {
   return "hold";
 }
 
+/**
+ * Is this request hitting a non-production deployment?
+ *
+ * Two signals, same as the maintenance skip, because one can fail: Vercel's
+ * own VERCEL_ENV, and the host allowlist. A branch deployment on a custom
+ * domain — test.rydvest.com — does NOT get Vercel's automatic noindex, which
+ * is how the test site ended up ranking in Google above the real one.
+ */
+export function isNonProductionHost(host?: string | null): boolean {
+  if ((process.env.VERCEL_ENV ?? "").toLowerCase() === "preview") return true;
+  const h = (host ?? "").toLowerCase().split(":")[0];
+  return Boolean(h) && liveHosts().includes(h);
+}
+
 export function maintenanceEnabled(host?: string | null): boolean {
   return maintenanceDecision(host) === "hold";
 }
