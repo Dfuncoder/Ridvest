@@ -52,7 +52,7 @@ const features = [
       </svg>
     ),
     title: "Weekly payouts",
-    desc: "Returns hit your bank account every 7 days — consistent, predictable, no chasing anyone.",
+    desc: "Earnings hit your account every 7 days — consistent, predictable, no chasing anyone.",
   },
   {
     icon: (

@@ -127,7 +127,7 @@ const poolTypes = [
 
 const timeline = [
   { when: "Day 1", title: "Payment confirmed", sub: "Vehicle acquired, driver assigned" },
-  { when: "Week 1–78", title: "Weekly earnings paid", sub: "Directly to your dashboard, every 7 days" },
+  { when: "Week 1–78", title: "Weekly earnings paid", sub: "Straight to your account, every 7 days" },
   { when: "Week 78", title: "Final payout", sub: "Your last payment. Cycle complete." },
   { when: "After 1.5 years", title: "Your choice", sub: "Own another or join a new pool." },
 ];

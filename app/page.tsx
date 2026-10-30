@@ -9,12 +9,13 @@ import InvestmentCards from "@/components/InvestmentCards";
 import VehicleLineup from "@/components/VehicleLineup";
 import Calculator from "@/components/Calculator";
 import { CTABanner, Footer } from "@/components/Footer";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
-  title: "Rydvest — Co-own a Keke. Earn Weekly.",
+export const metadata = pageMeta({
+  title: "Rydvest — Co-own transport assets, earn weekly",
   description:
-    "Rydvest lets everyday Nigerians co-own tricycles and earn consistent earnings. Asset-backed, fully managed, starting from ₦100,000.",
-};
+    "Co-own keke, minibuses and other income-earning transport assets from ₦100,000. Fully managed, asset-backed, with earnings paid every week.",
+});
 
 /**
  * The public home page.

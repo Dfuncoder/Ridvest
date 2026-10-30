@@ -6,12 +6,13 @@
 import SiteNavbar from "@/components/SiteNavbar";
 import { Footer } from "@/components/Footer";
 import ContactForm from "@/components/ContactForm";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMeta({
   title: "Talk to us — Rydvest",
   description:
-    "Questions about investing with Rydvest? Send us a message and we'll get back to you within one business day.",
-};
+    "Questions about co-owning a transport asset, how pools work, or partnering with Rydvest? Send us a message and we'll reply.",
+});
 
 const contactPoints = [
   {
