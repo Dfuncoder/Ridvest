@@ -64,9 +64,9 @@ export default function Calculator() {
           {hasValue ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
               {[
-                { label: "Weekly profit", value: fmt(weekly), accent: true },
-                { label: "Monthly profit", value: fmt(monthly), accent: true },
-                { label: "Total profit", value: fmt(yearly) },
+                { label: "Weekly payout", value: fmt(weekly), accent: true },
+                { label: "Monthly payout", value: fmt(monthly), accent: true },
+                { label: "Total payout", value: fmt(yearly) },
               ].map((r) => (
                 <div key={r.label} style={{ background: "#0d2137", borderRadius: 16, padding: "24px 20px", textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: "#64748b", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>{r.label}</div>

@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMeta({
   title: "Privacy Policy — Rydvest",
-  description: "How Rydvest collects, uses, and protects your personal data.",
-};
+  description:
+    "How Rydvest collects, uses and protects your personal data, including identity details used for verification.",
+});
 
 const sections = [
   {
