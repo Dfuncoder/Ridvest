@@ -158,7 +158,7 @@ export default function RegisterPage() {
               <label htmlFor="phone" className={labelClass}>Phone number</label>
               <div className="relative">
                 <FieldIcon path={icons.phone} />
-                <input id="phone" name="phone" type="tel" placeholder="+234 800 000 0000" autoComplete="tel" required className={inputClass} value={values.phone} onChange={onField("phone")} onBlur={markBlurred("phone")} />
+                <input id="phone" name="phone" type="tel" placeholder="08012345678 or +44…" autoComplete="tel" required className={inputClass} value={values.phone} onChange={onField("phone")} onBlur={markBlurred("phone")} />
               </div>
               <FieldError message={errorOn("phone")} />
             </div>

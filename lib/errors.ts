@@ -23,7 +23,8 @@ export const ERRORS = {
   SIGNUP_PASSWORDS_DONT_MATCH: "Passwords do not match.",
   SIGNUP_DOB_REQUIRED: "Please enter your date of birth.",
   SIGNUP_UNDERAGE: "You must be at least 18 years old to use Rydvest.",
-  SIGNUP_PHONE_INVALID: "Please enter a valid Nigerian phone number (e.g. 08012345678 or +2348012345678).",
+  SIGNUP_PHONE_INVALID:
+    "Enter a Nigerian number like 08012345678, or a number from another country with its code, like +447700900123.",
   SIGNUP_ADDRESS_REQUIRED: "Please enter your home address.",
   SIGNUP_STATE_REQUIRED: "Please select your state of residence.",
   SIGNUP_TERMS_REQUIRED: "You must agree to the Terms of Service and Privacy Policy.",

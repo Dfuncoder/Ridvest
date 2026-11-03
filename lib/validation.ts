@@ -23,8 +23,33 @@ export const NIGERIAN_STATES = [
   "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
 ] as const;
 
-/** Nigerian phone: 0801..., 070..., 090..., or the +234 international form. */
+/**
+ * Phone numbers, Nigerian or not.
+ *
+ * A Nigerian number may be written locally (08012345678) or internationally
+ * (+2348012345678). Anything else has to carry its country code, because
+ * "7700900123" is not interpretable without one and guessing a country for a
+ * customer is worse than asking.
+ *
+ * Why foreign numbers are allowed at all: the terms admit anyone resident in
+ * Nigeria OR holding a Nigerian bank account, which is most of the diaspora,
+ * and the platform never sends an SMS — the number is contact detail an admin
+ * reads, not a channel we dial. Refusing it only blocked people who qualify.
+ */
 const NG_PHONE_REGEX = /^(?:\+?234|0)[789][01]\d{8}$/;
+
+/** E.164: a plus, a country code that cannot start with 0, then 8–15 digits. */
+const INTL_PHONE_REGEX = /^\+[1-9]\d{7,14}$/;
+
+/** Strips the punctuation people type: "+44 (0)7700 900-123" → "+4407700900123". */
+export function normalisePhone(raw: string): string {
+  return raw.replace(/[\s().-]/g, "");
+}
+
+export function isValidPhone(raw: string): boolean {
+  const v = normalisePhone(raw);
+  return NG_PHONE_REGEX.test(v) || INTL_PHONE_REGEX.test(v);
+}
 
 /**
  * Strong password: ≥8 characters with a lowercase letter, an uppercase
@@ -67,8 +92,8 @@ export const SignupSchema = z
     phone: z
       .string()
       .trim()
-      .transform((v) => v.replace(/[\s-]/g, "")) // allow "0801 234 5678" style input
-      .refine((v) => NG_PHONE_REGEX.test(v), { error: ERRORS.SIGNUP_PHONE_INVALID }),
+      .transform(normalisePhone) // "0801 234 5678" and "+44 (0)7700 900123" both arrive
+      .refine(isValidPhone, { error: ERRORS.SIGNUP_PHONE_INVALID }),
     address: z.string().trim().min(5, { error: ERRORS.SIGNUP_ADDRESS_REQUIRED }).max(300),
     state: z.enum(NIGERIAN_STATES, { error: ERRORS.SIGNUP_STATE_REQUIRED }),
     agreedToTerms: z.literal("on", { error: ERRORS.SIGNUP_TERMS_REQUIRED }),
@@ -114,9 +139,9 @@ export function signupFieldError(
       return z.email().safeParse(v.toLowerCase()).success ? null : ERRORS.SIGNUP_EMAIL_INVALID;
 
     case "phone":
-      // Spaces and dashes are stripped before the test, exactly as the schema
-      // does, so "0801 234 5678" is not reported as wrong while being typed.
-      return NG_PHONE_REGEX.test(v.replace(/[\s-]/g, "")) ? null : ERRORS.SIGNUP_PHONE_INVALID;
+      // Punctuation is stripped before the test, exactly as the schema does,
+      // so a number being typed with spaces is not reported as wrong.
+      return isValidPhone(v) ? null : ERRORS.SIGNUP_PHONE_INVALID;
 
     case "password":
       return passwordSchema.safeParse(value).success ? null : ERRORS.SIGNUP_PASSWORD_WEAK;
@@ -234,8 +259,8 @@ export const ProfileUpdateSchema = z.object({
   phone: z
     .string()
     .trim()
-    .transform((v) => v.replace(/[\s-]/g, ""))
-    .refine((v) => NG_PHONE_REGEX.test(v), { error: ERRORS.SIGNUP_PHONE_INVALID }),
+    .transform(normalisePhone)
+    .refine(isValidPhone, { error: ERRORS.SIGNUP_PHONE_INVALID }),
   address: z.string().trim().min(5, { error: ERRORS.SIGNUP_ADDRESS_REQUIRED }).max(300),
   state: z.enum(NIGERIAN_STATES, { error: ERRORS.SIGNUP_STATE_REQUIRED }),
 });
