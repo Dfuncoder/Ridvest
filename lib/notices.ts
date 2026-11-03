@@ -401,3 +401,92 @@ ${button(`${site()}/admin/users`, "Open admin users")}
     helpLine("This alert goes to the Rydvest notification list. Questions, contact")
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A BROADCAST — whatever an admin wrote, in the Rydvest frame
+//
+// The admin supplies a heading, some paragraphs and optionally one button.
+// Everything else — the bar, the card, the footer, the unsubscribe line — is
+// fixed, so a message written in thirty seconds still arrives looking like it
+// came from the same company as the receipts.
+//
+// Every piece of admin text is escaped. It is typed by a trusted person, but
+// "trusted" is not the same as "never pastes a stray angle bracket from Word",
+// and an email that renders half a tag looks worse than one that is plain.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type Broadcast = {
+  heading: string;
+  /** Plain text. Blank lines separate paragraphs; nothing else is markup. */
+  body: string;
+  ctaLabel?: string | null;
+  ctaUrl?: string | null;
+  /** Absolute URL, already signed. Omitted for hand-picked recipients. */
+  unsubscribeUrl?: string | null;
+};
+
+/** Blank-line-separated paragraphs, trimmed, empties dropped. */
+function paragraphs(body: string): string[] {
+  return body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+export function broadcastText(name: string, b: Broadcast): string {
+  const lines = [
+    `Hi ${firstName(name)},`,
+    ``,
+    ...paragraphs(b.body).flatMap((p) => [p.replace(/\n/g, " "), ``]),
+  ];
+
+  if (b.ctaLabel && b.ctaUrl) lines.push(`${b.ctaLabel}: ${b.ctaUrl}`, ``);
+
+  lines.push(`Rydvest`);
+
+  if (b.unsubscribeUrl) {
+    lines.push(
+      ``,
+      `Don't want updates like this? Unsubscribe here — you will still get`,
+      `receipts, codes and security notices:`,
+      b.unsubscribeUrl
+    );
+  }
+
+  return lines.join("\n");
+}
+
+export function broadcastHtml(name: string, b: Broadcast): string {
+  const body = paragraphs(b.body)
+    .map(
+      (p) =>
+        `<p style="margin:0 0 14px;color:#334155;font-size:15px;line-height:1.7">${esc(p).replace(
+          /\n/g,
+          "<br />"
+        )}</p>`
+    )
+    .join("");
+
+  const cta = b.ctaLabel && b.ctaUrl ? button(b.ctaUrl, b.ctaLabel) : "";
+
+  // Below the support line, quieter than it, because most people reading a
+  // broadcast are not looking for the exit — but it has to be there and it
+  // has to work in one click.
+  const unsubscribe = b.unsubscribeUrl
+    ? `<br /><span style="color:#94a3b8;font-size:12px">Don't want updates like this?
+<a href="${esc(b.unsubscribeUrl)}" style="color:#94a3b8;text-decoration:underline">Unsubscribe</a>.
+Receipts, codes and security notices are not affected.</span>`
+    : "";
+
+  return wrap(
+    `<tr><td style="padding:30px 28px 4px">
+<p style="margin:0 0 14px;color:#0f172a;font-size:20px;font-weight:800">${esc(b.heading)}</p>
+<p style="margin:0 0 14px;color:#334155;font-size:15px;line-height:1.7">Hi ${esc(
+      firstName(name)
+    )},</p>
+${body}
+${cta}
+</td></tr>`,
+    helpLine("Questions? Reply to this email or contact") + unsubscribe
+  );
+}
