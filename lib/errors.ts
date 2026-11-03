@@ -134,6 +134,11 @@ export const ERRORS = {
     "Verify your identity before you can withdraw. Go to Verification to submit your details.",
 
 
+
+  // ── Admin broadcasts ──────────────────────────────────────────────────────
+  BROADCAST_NO_RECIPIENTS: "Pick at least one person to send to.",
+  BROADCAST_TOO_MANY:
+    "That is more than 500 hand-picked recipients — use “Everyone” instead.",
   // ── Paused services ───────────────────────────────────────────────────────
   // Said plainly and without a reason: the reason is ours, and "scheduled
   // maintenance" when it is actually a fraud investigation is a lie told to

@@ -453,6 +453,49 @@ export const PoolProductSchema = z.object({
   companyCharge: z.coerce.number().min(0).optional().default(0),
 });
 
+
+/**
+ * An email an admin is about to send to real people.
+ *
+ * The confirm box is part of the schema rather than the UI because it is the
+ * only thing standing between a half-written draft and every customer's
+ * inbox, and a check that lives only in the browser is not a check.
+ */
+export const BroadcastSchema = z.object({
+  subject: z
+    .string()
+    .trim()
+    .min(3, { error: "Give it a subject line." })
+    .max(150, { error: "Subject lines over 150 characters get cut off." }),
+  heading: z
+    .string()
+    .trim()
+    .min(3, { error: "Add a heading for the top of the email." })
+    .max(120, { error: "Keep the heading under 120 characters." }),
+  body: z
+    .string()
+    .trim()
+    .min(10, { error: "Write the message." })
+    .max(8000, { error: "That is too long for an email — link to a page instead." }),
+  // Both or neither: a button with no link does nothing, and a link with no
+  // label renders as an empty amber bar.
+  ctaLabel: z.string().trim().max(40, { error: "Keep the button text short." }),
+  ctaUrl: z.string().trim().max(300),
+  fromRole: z.enum(["support", "noreply"], { error: "Choose who it comes from." }),
+  audience: z.enum(["all", "selected"], { error: "Choose who receives it." }),
+  confirm: z.literal(true, { error: "Tick the box to confirm you want this sent." }),
+})
+  .refine((d) => Boolean(d.ctaLabel) === Boolean(d.ctaUrl), {
+    error: "A button needs both a label and a link.",
+    path: ["ctaUrl"],
+  })
+  .refine((d) => !d.ctaUrl || /^https:\/\/[^\s]+$/i.test(d.ctaUrl), {
+    // https only: a http link in a fintech email is a phishing lesson in the
+    // wrong direction.
+    error: "The link must start with https://",
+    path: ["ctaUrl"],
+  });
+
 // ── Contact form ────────────────────────────────────────────────────────────
 export const ContactSchema = z.object({
   name: z.string().trim().min(2, { error: ERRORS.CONTACT_NAME_REQUIRED }).max(120),
