@@ -521,6 +521,44 @@ export const BroadcastSchema = z.object({
     path: ["ctaUrl"],
   });
 
+
+/**
+ * An article being saved from /admin/articles.
+ *
+ * The slug pattern matches the database's CHECK exactly. Two copies of a rule
+ * is usually a smell, but here the database must refuse a bad slug whatever
+ * wrote it, and the form must say WHY before somebody loses a draft to a
+ * constraint error.
+ */
+export const ArticleSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, { error: "The web address needs at least 3 characters." })
+    .max(90, { error: "Keep the web address under 90 characters." })
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
+      error: "Lowercase letters, numbers and single hyphens only — no spaces or punctuation.",
+    }),
+  title: z
+    .string()
+    .trim()
+    .min(5, { error: "Give it a title." })
+    .max(160, { error: "Titles over 160 characters get cut off in search results." }),
+  summary: z
+    .string()
+    .trim()
+    .min(10, { error: "Write a short summary — it is what shows on the index and in search." })
+    .max(320, { error: "Keep the summary under 320 characters." }),
+  body: z
+    .string()
+    .trim()
+    .min(50, { error: "The article is too short to publish." })
+    .max(40000, { error: "That is longer than one article should be — split it in two." }),
+  category: z.enum(["News", "Company"], { error: "Pick a category." }),
+  status: z.enum(["draft", "published"], { error: "Pick draft or published." }),
+});
+
 // ── Contact form ────────────────────────────────────────────────────────────
 export const ContactSchema = z.object({
   name: z.string().trim().min(2, { error: ERRORS.CONTACT_NAME_REQUIRED }).max(120),

@@ -22,6 +22,7 @@ export default function Navbar({ isLoggedIn = false }: { isLoggedIn?: boolean })
     { label: "About us", href: "/about" },
     { label: "Team", href: "/team" },
     { label: "How it works", href: "/how-it-works" },
+    { label: "Articles", href: "/articles" },
     { label: "Calculator", href: "/#calc" },
     { label: "Contact", href: "/contact" },
   ];

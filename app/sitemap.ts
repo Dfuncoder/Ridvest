@@ -20,6 +20,7 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { maintenanceEnabled, isNonProductionHost } from "@/lib/maintenance";
+import { listPublished } from "@/lib/articles";
 
 // Read per request for the same reason robots.txt is: the maintenance flag is
 // meant to change without a rebuild.
@@ -35,6 +36,7 @@ const PAGES: Array<{ path: string; priority: number; changeFrequency: "monthly" 
   { path: "/about", priority: 0.7, changeFrequency: "monthly" },
   { path: "/team", priority: 0.6, changeFrequency: "monthly" },
   { path: "/faq", priority: 0.6, changeFrequency: "monthly" },
+  { path: "/articles", priority: 0.6, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" },
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
@@ -51,13 +53,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const protocol = headerList.get("x-forwarded-proto") ?? "https";
   const base = `${protocol}://${host ?? "rydvest.com"}`;
 
-  // lastModified is deliberately absent. The honest value is "when the page
-  // last changed", which we do not track, and stamping every page with today
-  // on every request tells Google the whole site changes hourly — a claim it
-  // learns to ignore.
-  return PAGES.map((page) => ({
-    url: `${base}${page.path}`,
-    changeFrequency: page.changeFrequency,
-    priority: page.priority,
-  }));
+  // Published articles, newest first. Listing them is the point of having a
+  // sitemap at all: the static pages are linked from every header and Google
+  // finds them anyway; a new article is linked from one index page.
+  const articles = await listPublished(200);
+
+  return [
+    ...PAGES.map((page) => ({
+      url: `${base}${page.path}`,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    })),
+    ...articles.map((a) => ({
+      url: `${base}/articles/${a.slug}`,
+      // The one date we genuinely know, so this one is honest.
+      lastModified: new Date(a.updated_at),
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
+    })),
+  ];
 }

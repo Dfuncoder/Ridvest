@@ -24,6 +24,7 @@ const navItems = [
   { label: "Verification", href: "/admin/kyc" },
   { label: "Messages", href: "/admin/messages" },
   { label: "Email users", href: "/admin/email" },
+  { label: "Articles", href: "/admin/articles" },
   { label: "Settings", href: "/admin/settings" },
 ];
 
@@ -50,6 +51,7 @@ const NAV_GROUPS: Array<{ title: string; hrefs: string[] }> = [
       "/admin/kyc",
       "/admin/messages",
       "/admin/email",
+      "/admin/articles",
       "/admin/settings",
     ],
   },

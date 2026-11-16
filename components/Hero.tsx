@@ -47,9 +47,8 @@ export default function Hero({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               letterSpacing: -1,
             }}
           >
-            Turn{" "}
-            <span style={{ color: "#f59e0b" }}>₦100k</span>{" "}
-            into an asset that earns for you
+            Own or Co-Own a transportation vehicle with a minimum of{" "}
+            <span style={{ color: "#f59e0b" }}>100k Naira</span>
           </h1>
 
           <p
@@ -61,8 +60,9 @@ export default function Hero({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               maxWidth: 480,
             }}
           >
-            Rydvest lets everyday Nigerians co-own transport vehicles and earn consistent
-            weekly earnings — fully managed, asset-backed, and transparent.
+            With Rydvest you can invest in transportation businesses in Nigeria, own and co-own
+            transport vehicles and earn consistent weekly returns — fully managed, asset backed
+            and transparent.
           </p>
 
           <div className="hero-btns" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>

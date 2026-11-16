@@ -137,6 +137,8 @@ export const ERRORS = {
 
 
   // ── Admin broadcasts ──────────────────────────────────────────────────────
+  ARTICLE_SLUG_TAKEN:
+    "Another article already uses that web address. Change it to something unique.",
   BROADCAST_NO_RECIPIENTS: "Pick at least one person to send to.",
   BROADCAST_TOO_MANY:
     "That is more than 500 hand-picked recipients — use “Everyone” instead.",
