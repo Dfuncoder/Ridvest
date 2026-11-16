@@ -39,11 +39,11 @@ const features = [
   {
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
       </svg>
     ),
-    title: "Structured earnings",
-    desc: "No informal arrangements. Every naira is tracked, every payout is scheduled and transparent.",
+    title: "Vehicle hire purchase and management",
+    desc: "Buy a keke, motorcycle or other commercial vehicle while we handle the day-to-day management and maintenance.",
   },
   {
     icon: (
@@ -51,27 +51,26 @@ const features = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
       </svg>
     ),
-    title: "Weekly payouts",
-    desc: "Earnings hit your account every 7 days — consistent, predictable, no chasing anyone.",
+    title: "Weekly payouts for 78 weeks",
+    desc: "Our managed vehicle ownership programme is structured around scheduled weekly payouts over 78 weeks, roughly 18 months.",
   },
   {
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12A1.125 1.125 0 0119.75 21.75H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
       </svg>
     ),
-    title: "Capital protected",
-    desc: "You get your capital alongside your profit, weekly for 78 weeks.",
+    title: "Vehicle sales in Nigeria",
+    desc: "Vehicle sales and automotive solutions, connecting individuals and businesses with vehicles that meet their personal, commercial and transportation needs.",
   },
   {
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
       </svg>
     ),
-    title: "Real, physical asset",
-    desc: "What you own is an actual transportation vehicle — on actual Nigerian roads — not a digital promise.",
+    title: "The Rydvest roadmap",
+    desc: "The future of transportation goes beyond buying and selling vehicles. We are connecting vehicle ownership, automotive sales, transportation, logistics and financial technology.",
   },
 ];
 
@@ -102,16 +101,19 @@ export default function AboutUs({ isLoggedIn = false }: { isLoggedIn?: boolean }
           <div className="lg:col-span-7">
             <FadeUp delay={50}>
               <h2 className="text-4xl sm:text-5xl lg:text-[56px] font-black text-slate-900 leading-[1.05] tracking-tight mb-8">
-                The asset that was{" "}
-                <span className="text-blue-600">always on</span>{" "}
-                your street.
+                Building opportunities for{" "}
+                <span className="text-blue-600">everyone</span>{" "}
+                in the transportation industry.
               </h2>
               <p className="text-lg sm:text-xl text-slate-600 leading-relaxed font-medium mb-5">
-                Transport vehicles have moved millions of Nigerians for decades. They run everyday, earn everyday, and stop for nothing. Yet for the everyday Nigerian, a structured way to profit from them has never existed, until now.
+                Rydvest is a Nigerian vehicle and mobility company, focused on making vehicle
+                ownership, transport solutions and investment opportunities more accessible for
+                individuals and businesses.
               </p>
-              {/*<p className="text-base text-slate-500 leading-relaxed">
-                Rydvest changes that. We built the structure so you can own a stake in a transport vehicle, collect monthly returns for a year, and walk away with your capital intact; without touching a steering wheel.
-              </p>*/}
+              <p className="text-base text-slate-500 leading-relaxed">
+                Our values are integrity, innovation, accessibility, accountability and customer
+                commitment.
+              </p>
             </FadeUp>
 
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">

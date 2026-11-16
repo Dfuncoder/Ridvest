@@ -151,7 +151,7 @@ export default function HowItWorks({ isLoggedIn = false }: { isLoggedIn?: boolea
               to <span className="text-blue-600">earning.</span>
             </h2>
             <p className="text-lg text-slate-500 leading-relaxed">
-              No driving. No operations. No headaches. You handle the money — we handle everything else.
+              Under our vehicle management program, you handle the money — we handle everything else.
             </p>
           </div>
         </FadeUp>
@@ -195,7 +195,7 @@ export default function HowItWorks({ isLoggedIn = false }: { isLoggedIn?: boolea
                   </div>
                   <div>
                     <div className="text-sm font-bold text-slate-900 mb-1">Full ownership</div>
-                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full cost yourself. You own it alone and keep all the earnings.</div>
+                    <div className="text-xs text-slate-500 leading-relaxed">Pay the full cost of the vehicle, you own it alone and keep all the earnings.</div>
                   </div>
                 </div>
 

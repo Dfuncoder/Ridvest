@@ -116,6 +116,7 @@ const navLinks = [
   { label: "Returns calculator", href: "/#calc" },
   { label: "About us", href: "/about" },
   { label: "Our team", href: "/team" },
+  { label: "Articles", href: "/articles" },
   { label: "Talk to us", href: "/contact" },
 ];
 

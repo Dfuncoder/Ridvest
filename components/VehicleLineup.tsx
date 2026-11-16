@@ -10,14 +10,14 @@ const vehicles = [
   {
     name: "🚌 Mini Buses",
     img: "/minibus_image.png",
-    status: "soon",
-    label: "Coming soon",
+    status: "live",
+    label: "Live now",
   },
   {
     name: "🏍️ Motorcycles",
     img: "/delivery_cycle_image.png",
-    status: "soon",
-    label: "Coming soon",
+    status: "live",
+    label: "Live now",
   },
 ];
 

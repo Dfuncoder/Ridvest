@@ -190,7 +190,88 @@ Rydvest is not a bank or a licensed financial institution. This platform is stru
     content: `These Terms are governed by the laws of the Federal Republic of Nigeria. Any dispute arising from your use of Rydvest that cannot be resolved through direct communication will be referred to the appropriate court or arbitration body in Anambra State, Nigeria.`,
   },
   {
-    title: "14. Contact",
+    title: "14. Vehicle Sales",
+    content: `These Terms govern the purchase of vehicles, automotive accessories and spare parts offered by RYDVEST LTD ("Rydvest", "we", "our" or "us") through our website, official communication channels, representatives or physical business locations.
+
+By browsing our vehicle listings, requesting a quotation, placing an order or purchasing any product from Rydvest, you ("Customer", "Buyer" or "you") acknowledge that you have read and agreed to these Terms. If you do not agree with these Terms, please do not proceed with a purchase.
+
+SCOPE OF SERVICES
+
+Rydvest provides vehicle sales and automotive product services in Nigeria. Depending on availability, our offerings may include:
+
+— Cars: vehicles for personal, family and commercial transportation.
+— Trucks: commercial vehicles for logistics, business and transportation purposes.
+— Keke (tricycles): commercial tricycles for passenger transportation and business operations.
+— Motorcycles: motorcycles for personal mobility and commercial use.
+— Car accessories and spare parts: selected automotive accessories, replacement parts and related products.
+
+Not every category, model or product may be available at all times. Products and services may be introduced, updated or discontinued as our operations develop.
+
+VEHICLE CONDITION AND DISCLOSURE
+
+Rydvest may offer new, used, pre-owned or reconditioned vehicles, depending on availability. Before completing a purchase, the Customer will be informed of the vehicle's relevant condition and material information, including, where applicable:
+
+— Whether the vehicle is new, used or reconditioned.
+— Make, model, year and trim.
+— Mileage, where available and reasonably verifiable.
+— Engine number and chassis/VIN, where applicable.
+— Known material defects, damage or significant repairs disclosed to Rydvest.
+— Available ownership and vehicle documentation.
+— Any applicable warranty or after-sales support.
+
+Customers are encouraged to inspect used vehicles and may arrange an independent mechanic's inspection before completing payment.
+
+PRICING AND QUOTATIONS
+
+All prices will be communicated in Nigerian Naira (₦), unless otherwise stated. A quotation may specify the vehicle or product price, any deposit or initial payment, the balance payable, delivery or transportation charges, registration, documentation or administrative charges where applicable, and other agreed costs associated with the transaction.
+
+Unless expressly stated otherwise, a quotation is not a final purchase confirmation until Rydvest has confirmed the order in writing.
+
+Rydvest reserves the right to correct genuine pricing or listing errors before accepting an order. If an error affects an order for which payment has already been made, Rydvest will communicate with the Customer and provide an appropriate lawful resolution. Rydvest may decline or cancel an order where a product is unavailable, a payment cannot be verified, there is a material listing error or the transaction cannot lawfully be completed.
+
+PAYMENT
+
+Customers must make payments through bank accounts or payment channels officially provided or confirmed by Rydvest. The following conditions apply:
+
+1. Customers should verify payment details directly with Rydvest before transferring funds.
+2. Payments made to personal accounts or unauthorised third parties are not recognised as payments to Rydvest unless expressly authorised and confirmed by the company.
+3. Customers must provide valid payment evidence when requested.
+4. A payment is recognised only after it has been successfully received and verified by Rydvest or its authorised payment provider.
+5. Any outstanding balance must be paid within the timeframe stated in the applicable quotation or purchase agreement.
+6. Customers are responsible for ensuring that the correct payment reference and transaction details are used.
+
+Rydvest will not request that customers disclose their bank PIN, card PIN, password or one-time password (OTP).
+
+INSPECTION AND DELIVERY
+
+Customers are encouraged to inspect vehicles before taking delivery. Where an inspection is arranged, the Customer may examine the exterior and interior condition, engine and mechanical condition, tyres, brakes, lights and other visible components, vehicle identification details, available documentation, and any accessories or additional equipment included in the sale.
+
+A Customer may appoint an independent mechanic or qualified professional to conduct an inspection at the Customer's expense, subject to reasonable access and safety arrangements.
+
+The Customer's inspection or acceptance does not remove Rydvest's legal responsibilities concerning undisclosed defects, misleading descriptions, statutory warranties or other rights that cannot lawfully be excluded.
+
+WARRANTY
+
+Any manufacturer warranty, dealer warranty or additional warranty offered by Rydvest will be communicated to the Customer in writing. The warranty information will specify, where applicable, the warranty duration, components covered, conditions for making a claim, exclusions and limitations, approved repair or service arrangements, and procedures for reporting a defect.
+
+Where no additional written warranty is offered, the Customer's statutory rights under applicable Nigerian law remain unaffected. Rydvest will not use a warranty disclaimer to exclude responsibilities that cannot legally be excluded.
+
+Rydvest may request reasonable identification or transaction information where necessary to verify a purchase, comply with legal requirements or prevent fraud.
+
+RESPONSIBILITY
+
+Rydvest will perform its sales obligations with reasonable care and in accordance with applicable laws. To the extent permitted by law, Rydvest will not be responsible for losses arising solely from a Customer's misuse or unauthorised modification of a vehicle or product, failure to follow applicable operating or maintenance instructions, negligence or misconduct by an independent third-party service provider where Rydvest is not legally responsible for that conduct, or events beyond Rydvest's reasonable control that affect delivery or fulfilment.
+
+INTELLECTUAL PROPERTY
+
+All content published on Rydvest's website and official platforms, including its company name, logo, designs, text, graphics, photographs and other materials, belongs to Rydvest or its respective licensors unless otherwise stated. No person may reproduce, distribute, modify or commercially use Rydvest's intellectual property without prior written permission, except where permitted by law.
+
+RELATIONSHIP TO OTHER RYDVEST SERVICES
+
+This section applies specifically to direct sales of vehicles, automotive accessories and spare parts. It does not automatically govern separate Rydvest programmes or services, including managed vehicle ownership, vehicle co-ownership, transport asset management, investment-related or participation programmes, or future logistics, transportation or financial services. Those services are governed by their own applicable agreements, terms and conditions, including the sections above.`,
+  },
+  {
+    title: "15. Contact",
     content: `If you have questions about these Terms, please contact us at hello@rydvest.com or reach us on WhatsApp at +234 706 528 4100. We are also available at our office in Anambra State, Nigeria.`,
   },
 ];
